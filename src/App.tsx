@@ -18,6 +18,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ExamPage } from './pages/ExamPage';
 import { LoginPage } from './pages/LoginPage';
+import { MorePage } from './pages/MorePage';
 
 function ComingSoonPage({ title, description }: { title: string; description: string }) {
   return (
@@ -93,6 +94,7 @@ function AppContent() {
       case 'ils': return <ComingSoonPage title="ILS" description="Informasi dan layanan ILS sedang dalam tahap persiapan." />;
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
       case 'schedule': return <ComingSoonPage title="Jadwal" description="Informasi jadwal kegiatan dan pembelajaran sedang dalam tahap persiapan." />;
+      case 'more': return <MorePage />;
       default: return <DashboardPage activeTab={activeTab} onNavigate={(tab) => setActiveTab(tab)} />;
     }
   };
