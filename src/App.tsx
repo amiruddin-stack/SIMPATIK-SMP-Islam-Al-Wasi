@@ -61,7 +61,7 @@ function AppContent() {
       <main className="flex min-h-screen items-center justify-center bg-[#f8fbf9]">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-700" />
-          <p className="text-sm font-medium text-slate-500">Memeriksa sesi SIMPATIK…</p>
+          <p className="text-sm font-medium text-slate-500">SIMPATIK sedang dipersiapkan…</p>
         </div>
       </main>
     );
