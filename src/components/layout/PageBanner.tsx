@@ -2,7 +2,7 @@ import React from 'react';
 import {
   ArrowLeft, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList,
   FileBarChart, FileText, GraduationCap, HeartHandshake, Home,
-  Library, ShieldCheck, Users, UserRound, School, Sparkles, CalendarDays
+  Library, ShieldCheck, Users, UserRound, School, Sparkles, CalendarDays, MoreHorizontal
 } from 'lucide-react';
 import { NavTab } from './Sidebar';
 
@@ -23,6 +23,7 @@ const pageDetails: Record<NavTab, { title: string; description: string; icon: Re
   ils: { title: 'ILS', description: 'Informasi dan layanan ILS SMP Islam Al-Wasi’', icon: Sparkles },
   homeroom: { title: 'Guru Wali', description: 'Ruang kerja dan pendampingan Guru Wali', icon: UserRound },
   schedule: { title: 'Jadwal', description: 'Jadwal kegiatan dan pembelajaran sekolah', icon: CalendarDays },
+  more: { title: 'More', description: 'Layanan tambahan SIMPATIK SMP Islam Al-Wasi’', icon: MoreHorizontal },
 };
 
 interface PageBannerProps {
