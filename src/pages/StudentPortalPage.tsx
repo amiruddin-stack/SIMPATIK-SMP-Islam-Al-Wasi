@@ -42,7 +42,7 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^\\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
+    if (!/^\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
     setBusy(true);
     setMessage('');
     try {
