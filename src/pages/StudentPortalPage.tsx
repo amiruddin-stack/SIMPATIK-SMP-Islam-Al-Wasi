@@ -4,10 +4,10 @@ import {
   GraduationCap, KeyRound, LogOut, Menu, ShieldCheck, UserRound,
   UserSquare2, X
 } from 'lucide-react';
-import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase/config';
-import { normalizeStudentNisn, studentNisnHash } from '../lib/studentLookup';
+import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithCustomToken, signOut } from 'firebase/auth';
+import { auth } from '../firebase/config';
+import { normalizeStudentNisn } from '../lib/studentLookup';
+import { simpatikApi } from '../lib/backendApi';
 import { RegistrationPage } from './MasterDataPage';
 import { ExamPage } from './ExamPage';
 
@@ -42,14 +42,24 @@ export const StudentPortalPage: React.FC = () => {
 
   useEffect(() => {
     let alive = true;
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!alive) return;
-      if (!user) { setStudentSession(false); setStudent(null); return; }
+      if (!user || user.isAnonymous) { setStudentSession(false); setStudent(null); return; }
       try {
-        const saved = localStorage.getItem('simpatik_student_identity');
-        if (!saved) { setStudentSession(false); setStudent(null); return; }
+        const [saved, tokenResult] = await Promise.all([
+          Promise.resolve(localStorage.getItem('simpatik_student_identity')),
+          user.getIdTokenResult()
+        ]);
+        if (!alive) return;
+        if (!saved || tokenResult.claims.role !== 'student' || typeof tokenResult.claims.studentId !== 'string') {
+          setStudentSession(false);
+          setStudent(null);
+          return;
+        }
         const profile = JSON.parse(saved) as StudentProfile;
-        if (!profile.id || !profile.name || !profile.className) throw new Error('Identitas siswa tidak valid.');
+        if (!profile.id || profile.id !== tokenResult.claims.studentId || !profile.name || !profile.className) {
+          throw new Error('Identitas sesi siswa tidak cocok.');
+        }
         setStudent(profile);
         setStudentSession(true);
       } catch (error) {
@@ -72,26 +82,25 @@ export const StudentPortalPage: React.FC = () => {
     setBusy(true);
     setMessage('');
     try {
-      const lookupId = await studentNisnHash(normalizedNisn);
-      const lookupSnapshot = await getDoc(doc(db, 'studentLoginLookup', lookupId));
-      if (!lookupSnapshot.exists()) throw new Error('NISN tidak ditemukan. Pastikan pendaftaran sudah disetujui admin.');
-      const lookup = lookupSnapshot.data();
-      if (String(lookup.nisn || '') !== normalizedNisn || !lookup.studentId) throw new Error('Data NISN tidak cocok. Silakan hubungi admin sekolah.');
+      const response = await fetch(simpatikApi('/api/student-login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nisn: normalizedNisn })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.token || !result.student?.id || !result.student?.name || !result.student?.className) {
+        throw new Error(result.message || 'Login siswa belum dapat diproses.');
+      }
       if (auth.currentUser) await signOut(auth);
-      await signInAnonymously(auth);
-      const directorySnapshot = await getDoc(doc(db, 'studentExamDirectory', String(lookup.studentId)));
-      if (!directorySnapshot.exists()) {
-        await signOut(auth);
-        throw new Error('Akun siswa belum aktif atau belum disinkronkan admin.');
-      }
-      const directory = directorySnapshot.data();
-      if (directory.status !== 'Aktif' || !directory.name || !directory.className) {
-        await signOut(auth);
-        throw new Error('Akun siswa belum aktif. Silakan hubungi admin sekolah.');
-      }
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithCustomToken(auth, result.token);
       const profile: StudentProfile = {
-        id: String(directory.id || lookup.studentId), name: String(directory.name),
-        className: String(directory.className), nis: '', nisn: normalizedNisn, gender: ''
+        id: String(result.student.id),
+        name: String(result.student.name),
+        className: String(result.student.className),
+        nis: String(result.student.nis || ''),
+        nisn: normalizedNisn,
+        gender: String(result.student.gender || '')
       };
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
@@ -242,7 +251,7 @@ export const StudentPortalPage: React.FC = () => {
     <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] px-4 py-8">
       <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-[#D9EEE2] bg-white shadow-[0_18px_55px_rgba(8,127,73,0.09)]">
         <header className="bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-6 py-8 text-center text-white">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15"><GraduationCap size={34}/></div>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-emerald-950/15"><img src="/logo-alwasi.png" alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain"/></div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/80">SMP Islam Al-Wasi’</p>
           <h1 className="mt-2 text-2xl font-extrabold tracking-tight">SIMPATIK for Student</h1>
           <p className="mt-3 text-sm leading-6 text-white/90">Selamat datang siswa-siswi terbaik SMP Islam Al-Wasi’</p>
