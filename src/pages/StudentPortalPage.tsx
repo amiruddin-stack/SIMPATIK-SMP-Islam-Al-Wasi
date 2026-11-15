@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
-import { onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
-import { simpatikApi } from '../lib/backendApi';
+import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { RegistrationPage } from './MasterDataPage';
 import { auth } from '../firebase/config';
 import { ExamPage } from './ExamPage';
@@ -42,19 +43,55 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
+    const normalizedNisn = nisn.replace(/\\D/g, '');
+    if (!/^\\d{10}$/.test(normalizedNisn)) {
+      setMessage('NISN harus terdiri dari 10 angka.');
+      return;
+    }
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch(simpatikApi('/api/student-login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nisn }) });
-      const result = await response.json();
-      if (!response.ok || !result.success || !result.token || !result.student) throw new Error(result.message || 'NISN belum terdaftar atau belum disetujui admin.');
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalizedNisn));
+      const lookupId = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+      const lookupSnapshot = await getDoc(doc(db, 'studentLoginLookup', lookupId));
+      if (!lookupSnapshot.exists()) {
+        throw new Error('NISN tidak ditemukan. Pastikan pendaftaran sudah disetujui admin.');
+      }
+
+      const lookup = lookupSnapshot.data();
+      if (String(lookup.nisn || '') !== normalizedNisn || !lookup.studentId) {
+        throw new Error('Data NISN tidak cocok. Silakan hubungi admin sekolah.');
+      }
+
       if (auth.currentUser) await signOut(auth);
-      await signInWithCustomToken(auth, result.token);
-      const profile: StudentProfile = { id: String(result.student.id || ''), name: String(result.student.name || ''), className: String(result.student.className || ''), nis: '', nisn, gender: '' };
-      if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa SIMPATIK belum lengkap. Hubungi admin sekolah.');
+      await signInAnonymously(auth);
+
+      const directorySnapshot = await getDoc(doc(db, 'studentExamDirectory', String(lookup.studentId)));
+      if (!directorySnapshot.exists()) {
+        await signOut(auth);
+        throw new Error('Akun siswa belum aktif atau belum disinkronkan admin.');
+      }
+
+      const directory = directorySnapshot.data();
+      if (directory.status !== 'Aktif' || !directory.name || !directory.className) {
+        await signOut(auth);
+        throw new Error('Akun siswa belum aktif. Silakan hubungi admin sekolah.');
+      }
+
+      const profile: StudentProfile = {
+        id: String(directory.id || lookup.studentId),
+        name: String(directory.name),
+        className: String(directory.className),
+        nis: '',
+        nisn: normalizedNisn,
+        gender: ''
+      };
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
-      setStudent(profile); setStudentSession(true);
+      setStudent(profile);
+      setStudentSession(true);
+    } catch (error) {
+      console.error('Login siswa gagal:', error);
+      setMessage(error instanceof Error ? error.message : 'Tidak dapat masuk. Periksa koneksi internet lalu coba lagi.');
     } finally {
       setBusy(false);
     }
