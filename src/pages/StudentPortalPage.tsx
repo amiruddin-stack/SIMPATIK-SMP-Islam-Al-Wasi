@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
+import { normalizeStudentNisn, studentNisnHash } from '../lib/studentLookup';
 import { RegistrationPage } from './MasterDataPage';
 import { ExamPage } from './ExamPage';
 
@@ -42,16 +43,15 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    const normalizedNisn = nisn.replace(/\D/g, '');
-    if (!/^\d{10}$/.test(normalizedNisn)) {
-      setMessage('NISN harus terdiri dari 10 angka.');
+    const normalizedNisn = normalizeStudentNisn(nisn);
+    if (!normalizedNisn || normalizedNisn.length > 30) {
+      setMessage('Masukkan NISN yang benar (maksimal 30 karakter).');
       return;
     }
     setBusy(true);
     setMessage('');
     try {
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalizedNisn));
-      const lookupId = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+      const lookupId = await studentNisnHash(normalizedNisn);
       const lookupSnapshot = await getDoc(doc(db, 'studentLoginLookup', lookupId));
       if (!lookupSnapshot.exists()) {
         throw new Error('NISN tidak ditemukan. Pastikan pendaftaran sudah disetujui admin.');
@@ -159,7 +159,7 @@ export const StudentPortalPage: React.FC = () => {
         {view === 'login' && <div className="border-t border-[#E7F1EA] px-5 py-5 sm:px-6">
           <div className="mb-3"><h2 className="font-bold text-slate-800">Masuk SIMPATIK for Student</h2><p className="mt-1 text-xs leading-5 text-slate-500">Masukkan NISN. Perangkat akan diingat setelah login berhasil.</p></div>
           <form onSubmit={loginStudent} className="grid gap-3">
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.replace(/\D/g,'').slice(0,10))} inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required placeholder="Masukkan 10 digit NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.slice(0,30))} maxLength={30} required placeholder="Masukkan NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
             {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
             <button type="submit" disabled={busy} className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640] disabled:opacity-60">{busy ? 'Memeriksa NISN…' : 'Masuk'}</button>
           </form>
