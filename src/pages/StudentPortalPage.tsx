@@ -1,13 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
+import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithCustomToken, signOut, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { RegistrationPage } from './MasterDataPage';
+import { auth, db } from '../firebase/config';
 
 type StudentView = 'home' | 'register' | 'login';
+type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
 
 export const StudentPortalPage: React.FC = () => {
   const [view, setView] = useState<StudentView>('home');
   const [nisn, setNisn] = useState('');
   const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [student, setStudent] = useState<StudentProfile | null>(null);
+  const [studentSession, setStudentSession] = useState<User | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const unsubscribe = onAuthStateChanged(auth, async user => {
+      if (!alive) return;
+      if (!user || user.isAnonymous) { setStudentSession(null); setStudent(null); return; }
+      try {
+        const claims = (await user.getIdTokenResult()).claims;
+        if (claims.role !== 'student' || typeof claims.studentId !== 'string') return;
+        const snap = await getDoc(doc(db, 'students', claims.studentId));
+        if (!alive) return;
+        if (!snap.exists() || String(snap.data().status || '').trim().toLowerCase() !== 'aktif') {
+          await signOut(auth);
+          setMessage('Akun siswa belum aktif. Hubungi admin sekolah.');
+          return;
+        }
+        const data = snap.data();
+        setStudent({
+          id: snap.id,
+          name: String(data.name || ''),
+          className: String(data.className || ''),
+          nis: String(data.nis || ''),
+          nisn: String(data.nisn || ''),
+          gender: String(data.gender || ''),
+        });
+        setStudentSession(user);
+      } catch (error) {
+        console.error('Gagal memuat sesi siswa:', error);
+        if (alive) setMessage('Profil siswa belum dapat dimuat. Periksa koneksi internet.');
+      }
+    });
+    return () => { alive = false; unsubscribe(); };
+  }, []);
+
+  const loginStudent = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!/^\\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
+    setBusy(true);
+    setMessage('');
+    try {
+      const response = await fetch('https://simpatik-backend.onrender.com/api/student-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nisn }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.token) throw new Error(result.message || 'Login gagal.');
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithCustomToken(auth, result.token);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Login belum berhasil. Silakan coba kembali.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (view === 'register') return (
     <div className="min-h-screen bg-[#F7FBF8] px-3 py-5 sm:px-6">
@@ -16,6 +78,36 @@ export const StudentPortalPage: React.FC = () => {
         <RegistrationPage type="siswa" studentPortal />
       </div>
     </div>
+  );
+
+  if (studentSession && student) return (
+    <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] px-4 py-8">
+      <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-[#D9EEE2] bg-white shadow-xl">
+        <header className="bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-6 py-7 text-center text-white">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><GraduationCap size={30}/></div>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/80">SIMPATIK for Student</p>
+          <h1 className="mt-2 text-xl font-black">Assalamu’alaikum</h1>
+          <p className="mt-1 font-semibold">{student.name}</p>
+          <p className="text-sm text-white/85">Kelas {student.className}</p>
+        </header>
+        <div className="grid gap-3 p-5">
+          <section className="rounded-2xl border border-[#D9EEE2] p-4">
+            <h2 className="font-bold text-slate-800">Profil Siswa</h2>
+            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <div><dt className="text-xs text-slate-500">NIS</dt><dd className="font-semibold text-slate-800">{student.nis || '—'}</dd></div>
+              <div><dt className="text-xs text-slate-500">NISN</dt><dd className="font-semibold text-slate-800">{student.nisn || '—'}</dd></div>
+              <div><dt className="text-xs text-slate-500">Jenis kelamin</dt><dd className="font-semibold text-slate-800">{student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '—'}</dd></div>
+              <div><dt className="text-xs text-slate-500">Status</dt><dd className="font-semibold text-[#0B8F4D]">Aktif</dd></div>
+            </dl>
+          </section>
+          <button type="button" onClick={() => setMessage('Menu ujian sedang disambungkan ke mesin ujian SIMPATIK. Akun siswa Anda sudah berhasil diverifikasi.')} className="rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:bg-[#F5FCF7]">
+            <span className="block font-bold text-slate-800">Ujian</span><span className="mt-1 block text-xs text-slate-500">Lihat ujian aktif sesuai kelas dan kerjakan ujian.</span>
+          </button>
+          {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
+          <button type="button" onClick={() => void signOut(auth)} className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar</button>
+        </div>
+      </section>
+    </main>
   );
 
   return (
@@ -41,10 +133,10 @@ export const StudentPortalPage: React.FC = () => {
         </div>
         {view === 'login' && <div className="border-t border-[#E7F1EA] px-5 py-5 sm:px-6">
           <div className="mb-3"><h2 className="font-bold text-slate-800">Masuk SIMPATIK for Student</h2><p className="mt-1 text-xs leading-5 text-slate-500">Masukkan NISN. Perangkat akan diingat setelah login berhasil.</p></div>
-          <form onSubmit={e => { e.preventDefault(); setMessage('Login siswa sedang menunggu aktivasi layanan verifikasi aman. Pendaftaran dan menu masuk sudah tersedia; akses akan dibuka setelah backend siswa diaktifkan.'); }} className="grid gap-3">
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.replace(/\D/g,'').slice(0,10))} inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required placeholder="Masukkan 10 digit NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
+          <form onSubmit={loginStudent} className="grid gap-3">
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.replace(/\\D/g,'').slice(0,10))} inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required placeholder="Masukkan 10 digit NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
             {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
-            <button type="submit" className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640]">Masuk</button>
+            <button type="submit" disabled={busy} className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640] disabled:opacity-60">{busy ? 'Memeriksa NISN…' : 'Masuk'}</button>
           </form>
         </div>}
         <footer className="border-t border-[#E7F1EA] px-5 py-4 text-center text-[11px] text-slate-400">Qurani, Ramah Anak dan Berkarakter · SIMPATIK</footer>
