@@ -113,8 +113,8 @@ async function startServer() {
       if (!services) { res.status(503).json({ success: false, message: 'Sinkronisasi Firestore belum dikonfigurasi.' }); return; }
       const name = typeof req.body?.name === 'string' ? req.body.name.trim().replace(/\\s+/g, ' ').toLocaleUpperCase('id-ID') : '';
       const className = typeof req.body?.className === 'string' ? req.body.className.trim() : '';
-      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\\D/g, '') : '';
-      if (name.length < 3 || name.length > 100 || !/^\\d{10}$/.test(nisn) || !/^(VII|VIII|IX)\\b/i.test(className)) { res.status(400).json({ success: false, message: 'Nama, kelas, atau NISN tidak valid.' }); return; }
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
+      if (name.length < 3 || name.length > 100 || !nisn || nisn.length > 30 || !/^(VII|VIII|IX)\\b/i.test(className)) { res.status(400).json({ success: false, message: 'Nama, kelas, atau NISN tidak valid.' }); return; }
       const students = services.adminDb.collection('students');
       const existing = await students.where('nisn', '==', nisn).limit(1).get();
       if (!existing.empty) {
