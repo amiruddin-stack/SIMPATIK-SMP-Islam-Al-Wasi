@@ -74,52 +74,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let active = true;
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (!active) return;
-      setFirebaseUser(user);
-      setCurrentUser(null);
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      if (user.isAnonymous) {
-        setLoading(false);
-        return;
-      }
-
-      const tokenResult = await user.getIdTokenResult();
-      if (tokenResult.claims.role === 'student' && typeof tokenResult.claims.studentId === 'string') {
-        setLoading(false);
-        return;
-      }
-
-      if (!isAllowedSchoolAccount(user)) {
-        await signOut(auth);
-        if (active) {
-          setFirebaseUser(null);
-          setCurrentUser(null);
-          setLoading(false);
-          alert('Akses SIMPATIK hanya untuk akun Google sekolah yang terverifikasi (@smpialwasi-maros.sch.id).');
-        }
-        return;
-      }
-
+    let unsubscribe = () => {};
+    const initializeSession = async () => {
       try {
-        const profile = await buildSchoolProfile(user);
-        if (active) setCurrentUser(profile);
+        await setPersistence(auth, browserLocalPersistence);
       } catch (error) {
-        console.error('Gagal memuat profil akun sekolah:', error);
-        if (active) {
-          setCurrentUser(null);
-          alert('Login berhasil, tetapi profil SIMPATIK belum dapat disiapkan. Periksa koneksi dan Firestore Rules.');
-        }
-      } finally {
-        if (active) setLoading(false);
+        console.warn('Persistensi login lokal tidak dapat diatur:', error);
       }
-    });
+      if (!active) return;
+      unsubscribe = onAuthStateChanged(auth, async user => {
+        if (!active) return;
+        setFirebaseUser(user);
+        setCurrentUser(null);
 
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        if (user.isAnonymous) {
+          setLoading(false);
+          return;
+        }
+
+        const tokenResult = await user.getIdTokenResult();
+        if (tokenResult.claims.role === 'student' && typeof tokenResult.claims.studentId === 'string') {
+          setLoading(false);
+          return;
+        }
+
+        if (!isAllowedSchoolAccount(user)) {
+          await signOut(auth);
+          if (active) {
+            setFirebaseUser(null);
+            setCurrentUser(null);
+            setLoading(false);
+            alert('Akses SIMPATIK hanya untuk akun Google sekolah yang terverifikasi (@smpialwasi-maros.sch.id).');
+          }
+          return;
+        }
+
+        try {
+          const profile = await buildSchoolProfile(user);
+          if (active) setCurrentUser(profile);
+        } catch (error) {
+          console.error('Gagal memuat profil akun sekolah:', error);
+          if (active) {
+            setCurrentUser(null);
+            alert('Login berhasil, tetapi profil SIMPATIK belum dapat disiapkan. Periksa koneksi dan Firestore Rules.');
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      });
+    };
+    void initializeSession();
     return () => {
       active = false;
       unsubscribe();
