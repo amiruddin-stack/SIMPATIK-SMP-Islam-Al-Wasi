@@ -139,6 +139,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
         setOfflineReady(Boolean(cachedQuestions?.length && cachedExams?.length));
         await auth.authStateReady();
         let studentClassForQuery = '';
+        let studentClassNameForQuery = '';
         if (studentMode) {
           const currentStudentUser = auth.currentUser;
           if (!currentStudentUser || currentStudentUser.isAnonymous) { setRosterLoadState('error'); setMessage('Sesi siswa belum aktif. Silakan masuk kembali menggunakan NISN.'); return; }
@@ -149,6 +150,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
           if (!studentSnapshot.exists() || String(studentSnapshot.data().status || '').toLowerCase() !== 'aktif') { setRosterLoadState('error'); setMessage('Akun siswa belum disetujui atau sudah tidak aktif. Hubungi admin sekolah.'); return; }
           const studentData = studentSnapshot.data();
           studentClassForQuery = String(tokenResult.claims.classLevel || classLevel(String(studentData.className || '')));
+          studentClassNameForQuery = String(tokenResult.claims.className || studentData.className || '');
           const verifiedStudent = { id: studentSnapshot.id, name: String(studentData.name || ''), className: String(studentData.className || ''), status: 'Aktif' };
           setExamStudents([verifiedStudent]); setStudentId(verifiedStudent.id); setSelectedRosterStudentId(verifiedStudent.id);
           setStudentClass(verifiedStudent.className); setVerifiedStudentName(verifiedStudent.name); setRosterLoadState('ready');
@@ -183,7 +185,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
   
         }
         
-        const questionsSource = studentMode ? query(collection(db, 'examPublicQuestions'), where('className', '==', studentClassForQuery)) : collection(db, 'examPublicQuestions');
+        const questionsSource = studentMode ? query(collection(db, 'examPublicQuestions'), where('className', '==', studentClassNameForQuery)) : collection(db, 'examPublicQuestions');
         unQ = onSnapshot(questionsSource, snap => {
           const rows = snap.docs.map(d => ({ ...d.data(), id: d.id, answer: undefined } as Question));
           setQuestions(rows);
