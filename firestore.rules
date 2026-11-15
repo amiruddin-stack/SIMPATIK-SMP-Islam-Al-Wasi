@@ -176,7 +176,7 @@ service cloud.firestore {
             'title', 'subject', 'className', 'academicYear', 'semester',
             'prompt', 'options', 'points', 'createdAt'
           ])
-          && (!isStudent() || resource.data.className == request.auth.token.classLevel));
+          && (!isStudent() || resource.data.className == request.auth.token.className));
       allow create, update: if isGuruOrAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'subject', 'className', 'academicYear', 'semester',
@@ -192,7 +192,7 @@ service cloud.firestore {
         || (signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
         || (isStudent()
           && exists(/databases/$(database)/documents/examPublicQuestions/$(questionId))
-          && get(/databases/$(database)/documents/examPublicQuestions/$(questionId)).data.className == request.auth.token.classLevel);
+          && get(/databases/$(database)/documents/examPublicQuestions/$(questionId)).data.className == request.auth.token.className);
       allow create, update, delete: if isGuruOrAdmin();
     }
 
