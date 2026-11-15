@@ -203,6 +203,7 @@ export const StudentPortalPage: React.FC = () => {
             <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-800 sm:text-base">{student.name}</p><p className="text-[11px] font-medium text-slate-500">Kelas {student.className}</p></div>
             <button type="button" aria-label="Notifikasi" title="Notifikasi" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9EEE2] bg-white text-[#087F49] shadow-sm"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"/></button>
           </div>
+          {activeMenu === 'dashboard' && (
           <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0B8F4D] via-[#087F49] to-[#06663A] px-5 py-6 text-white shadow-lg sm:px-7 sm:py-7">
             <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full border-[24px] border-white/10"/>
             <div className="pointer-events-none absolute -bottom-24 right-24 h-44 w-44 rounded-full bg-white/5"/>
@@ -212,7 +213,14 @@ export const StudentPortalPage: React.FC = () => {
               <p className="mt-4 text-xs font-semibold text-white/80">Qurani, Ramah Anak dan Berkarakter</p>
             </div>
           </header>
+          )}
 
+          {activeMenu !== 'dashboard' && (
+            <header className="mt-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
+              <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kembali ke dashboard" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
+              <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
+            </header>
+          )}
           <div className="mt-4 grid items-start gap-4 md:grid-cols-[250px_minmax(0,1fr)]">
             <aside className="hidden rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm md:block">
               <p className="px-3 pb-3 pt-2 text-[11px] font-black uppercase tracking-wider text-slate-400">Menu Siswa</p>
@@ -220,10 +228,10 @@ export const StudentPortalPage: React.FC = () => {
             </aside>
 
             <section className="min-w-0">
-              <header className="mb-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
+              {activeMenu === 'dashboard' && (<header className="mb-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
                 <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kembali ke dashboard" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
                 <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
-              </header>
+              </header>)}
               {renderContent()}
             </section>
           </div>
