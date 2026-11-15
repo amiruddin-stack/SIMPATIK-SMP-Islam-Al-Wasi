@@ -19,6 +19,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ExamPage } from './pages/ExamPage';
 import { LoginPage } from './pages/LoginPage';
 import { MorePage } from './pages/MorePage';
+import { StudentPortalPage } from './pages/StudentPortalPage';
 
 function ComingSoonPage({ title, description }: { title: string; description: string }) {
   return (
@@ -67,6 +68,9 @@ function AppContent() {
       </main>
     );
   }
+
+  const studentPortal = new URLSearchParams(window.location.search).get('student') === '1';
+  if (studentPortal) return <StudentPortalPage />;
 
   const sharedExamLink = new URLSearchParams(window.location.search).has('ujian');
   if (sharedExamLink) return <ExamPage />;

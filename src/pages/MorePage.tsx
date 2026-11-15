@@ -1,24 +1,52 @@
-import React from 'react';
-import { GraduationCap, UserRound, ClipboardList, ArrowUpRight, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { GraduationCap, Share2, ArrowUpRight, ChevronRight } from 'lucide-react';
 
 export const MorePage: React.FC = () => {
-  const registrationUrl = new URL(window.location.href);
-  registrationUrl.search = '?daftar=siswa';
+  const [notice, setNotice] = useState('');
+  const studentUrl = new URL(window.location.href);
+  studentUrl.search = '';
+  studentUrl.hash = '';
+  studentUrl.searchParams.set('student', '1');
+
+  const shareWeb = async () => {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.search = '';
+    shareUrl.hash = '';
+    const shareData = {
+      title: 'SIMPATIK SMP Islam Al-Wasi’',
+      text: 'Akses SIMPATIK SMP Islam Al-Wasi’.',
+      url: shareUrl.toString(),
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareData.url);
+        setNotice('Tautan SIMPATIK berhasil disalin.');
+      } else {
+        setNotice('Salin tautan dari alamat web aplikasi.');
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        setNotice('Tautan belum dapat dibagikan. Silakan coba kembali.');
+      }
+    }
+  };
+
   return (
-    <section className="space-y-5">
-      <div className="rounded-3xl border border-[#D5EADB] bg-gradient-to-br from-[#F3FBF6] to-white p-5 sm:p-7">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#DFF6E9] text-[#087F49]"><GraduationCap size={29}/></div>
-          <div><p className="text-xs font-extrabold uppercase tracking-[0.15em] text-[#0B8F4D]">Layanan siswa</p><h2 className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">SIMPATIK for Student</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Ruang khusus siswa SMP Islam Al-Wasi’ yang terhubung dengan SIMPATIK sekolah.</p></div>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-[#D5EADB] bg-white p-4"><UserRound className="text-[#0B8F4D]" size={22}/><h3 className="mt-2 font-extrabold text-slate-800">Profil</h3><p className="mt-1 text-xs leading-5 text-slate-500">Data diri dan informasi siswa setelah akun disetujui.</p></div>
-          <div className="rounded-2xl border border-[#D5EADB] bg-white p-4"><ClipboardList className="text-[#0B8F4D]" size={22}/><h3 className="mt-2 font-extrabold text-slate-800">Ujian</h3><p className="mt-1 text-xs leading-5 text-slate-500">Akses ujian siswa melalui layanan SIMPATIK.</p></div>
-        </div>
-        <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800"><ShieldCheck size={17} className="mt-0.5 shrink-0"/>Pendaftaran harus disetujui admin sekolah sebelum akun siswa dapat digunakan.</div>
-        <a href={registrationUrl.toString()} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0B8F4D] px-5 py-3.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#087640] sm:w-auto">Pendaftaran Siswa <ArrowUpRight size={17}/></a>
-      </div>
-      <p className="text-center text-xs text-slate-400">SIMPATIK · SMP Islam Al-Wasi’ · Qurani, Ramah Anak dan Berkarakter</p>
+    <section className="mx-auto max-w-3xl space-y-3">
+      <p className="px-1 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Layanan SIMPATIK</p>
+      <a href={studentUrl.toString()} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-2xl border border-[#D5EADB] bg-white p-4 shadow-sm transition hover:border-[#8ED6AE] hover:bg-[#F7FCF9]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#087F49]"><GraduationCap size={25}/></span>
+        <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold text-slate-800">SIMPATIK for Student</span><span className="mt-1 block text-xs text-slate-500">Cabang SIMPATIK khusus siswa</span></span>
+        <ArrowUpRight size={19} className="shrink-0 text-[#087F49]"/>
+      </a>
+      <button type="button" onClick={() => void shareWeb()} className="flex w-full items-center gap-3 rounded-2xl border border-[#E2E8E5] bg-white p-4 text-left shadow-sm transition hover:border-[#8ED6AE] hover:bg-[#F7FCF9]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600"><Share2 size={23}/></span>
+        <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold text-slate-800">Bagikan Web</span><span className="mt-1 block text-xs text-slate-500">Bagikan tautan SIMPATIK kepada orang lain</span></span>
+        <ChevronRight size={19} className="shrink-0 text-slate-400"/>
+      </button>
+      {notice && <p role="status" className="rounded-xl bg-[#E3F7EC] px-4 py-3 text-xs font-semibold text-[#087640]">{notice}</p>}
     </section>
   );
 };
