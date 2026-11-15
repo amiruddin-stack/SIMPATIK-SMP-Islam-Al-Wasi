@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -89,7 +90,46 @@ async function startServer() {
   const port = Number(process.env.PORT || 3000);
   const isProd = process.env.NODE_ENV === 'production';
 
+
+  const allowedOrigins = new Set(['https://amiruddin-stack.github.io', 'http://localhost:3000', ...(process.env.ALLOWED_ORIGINS || '').split(',').map(v => v.trim()).filter(Boolean)]);
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin || '';
+    if (allowedOrigins.has(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    }
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+    next();
+  });
   app.use(express.json({ limit: '256kb' }));
+  const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+  app.post('/api/student-login', async (req, res) => {
+    try {
+      const services = getAdminServices();
+      if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi. Hubungi admin SIMPATIK.' }); return; }
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\\D/g, '') : '';
+      if (!/^\\d{10}$/.test(nisn)) { res.status(400).json({ success: false, message: 'Masukkan NISN yang terdiri dari 10 angka.' }); return; }
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const now = Date.now();
+      const bucket = loginAttempts.get(ip);
+      if (bucket && bucket.resetAt > now && bucket.count >= 12) { res.status(429).json({ success: false, message: 'Terlalu banyak percobaan. Coba kembali beberapa menit lagi.' }); return; }
+      if (!bucket || bucket.resetAt <= now) loginAttempts.set(ip, { count: 1, resetAt: now + 600000 });
+      else bucket.count += 1;
+      const snapshot = await services.adminDb.collection('students').where('nisn', '==', nisn).limit(2).get();
+      const matches = snapshot.docs.filter(item => String(item.get('status') || '').trim().toLowerCase() === 'aktif');
+      if (matches.length !== 1) { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
+      const studentDoc = matches[0];
+      const data = studentDoc.data();
+      const token = await services.adminAuth.createCustomToken('student_' + studentDoc.id, { role: 'student', studentId: studentDoc.id, className: String(data.className || '') });
+      res.json({ success: true, token, student: { id: studentDoc.id, name: String(data.name || ''), className: String(data.className || '') } });
+    } catch (error) {
+      console.error('Login siswa gagal:', error);
+      res.status(500).json({ success: false, message: 'Login belum dapat diproses. Silakan coba kembali.' });
+    }
+  });
+
 
   app.get('/api/health', (_req, res) => {
     const services = getAdminServices();

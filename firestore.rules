@@ -109,8 +109,10 @@ service cloud.firestore {
     }
 
     match /students/{studentId} {
-      // Guru dan admin boleh membaca data siswa; akun anonim tetap ditolak.
-      allow read: if isGuruOrAdmin();
+      // Siswa hanya boleh membaca dokumen miliknya berdasarkan klaim token server.
+      allow get: if isGuruOrAdmin()
+        || (signedIn() && request.auth.token.role == 'student' && request.auth.token.studentId == studentId);
+      allow list: if isGuruOrAdmin();
       // Impor Excel memakai setDoc(..., {merge:true}); admin perlu create dan update.
       allow create: if isAdmin() || validStudentRegistration(studentId);
       allow update, delete: if isAdmin();

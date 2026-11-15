@@ -89,6 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      const tokenResult = await user.getIdTokenResult();
+      if (tokenResult.claims.role === 'student' && typeof tokenResult.claims.studentId === 'string') {
+        setLoading(false);
+        return;
+      }
+
       if (!isAllowedSchoolAccount(user)) {
         await signOut(auth);
         if (active) {
