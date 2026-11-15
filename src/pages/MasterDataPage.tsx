@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, signOut } from 'firebase/auth';
+import { studentNisnHash } from '../lib/studentLookup';
 import { db, auth } from '../firebase/config';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -34,14 +35,29 @@ export const RegistrationPage:React.FC<{type:'guru'|'siswa';studentPortal?:boole
    if(!/^\d{10}$/.test(nisn)){setMessage('Masukkan NISN yang terdiri dari 10 angka.');return;}
    setSaving(true);setMessage('');
    try{
-    const api=(import.meta.env.VITE_API_BASE_URL||'https://simpatik-backend.onrender.com').replace(/\/$/,'');
-    const response=await fetch(api+'/api/student-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,className:form.className,nisn})});
-    const result=await response.json();
-    if(!response.ok||!result.success)throw new Error(result.message||'Pendaftaran belum berhasil.');
+    if (!auth.currentUser || !auth.currentUser.isAnonymous) {
+     if (auth.currentUser) await signOut(auth);
+     await signInAnonymously(auth);
+    }
+    const studentId='std-'+await studentNisnHash(nisn);
+    await setDoc(doc(db,'students',studentId),{
+     id:studentId,
+     nis:'',
+     nisn,
+     name,
+     gender:form.gender,
+     className:form.className,
+     status:'menunggu',
+     registeredAt:new Date().toISOString(),
+     registrationSource:'public_form'
+    });
     setSent(true);
    }catch(error){
     console.error('Pendaftaran siswa:',error);
-    setMessage('Pendaftaran belum berhasil. Jika nama dan kelas ini sudah pernah didaftarkan, data tidak akan dibuat dua kali. Silakan coba lagi atau hubungi sekolah.');
+    const code=(error as {code?:string})?.code||'';
+    setMessage(code==='permission-denied'
+     ? 'NISN ini mungkin sudah terdaftar, atau aturan pendaftaran Firebase belum diterbitkan. Jika belum pernah mendaftar, hubungi operator sekolah.'
+     : error instanceof Error ? 'Pendaftaran gagal: '+error.message : 'Pendaftaran gagal. Periksa koneksi internet lalu coba lagi.');
    }finally{setSaving(false);}
    return;
   }
