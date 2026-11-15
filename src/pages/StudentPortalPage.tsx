@@ -13,9 +13,10 @@ import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
 type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
-type StudentMenu = 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'keamanan';
+type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'keamanan';
 
 const menuGroups = [
+  { title: 'Utama', items: [{ id: 'dashboard', label: 'Dashboard', icon: GraduationCap }] },
   { title: 'Akun', items: [{ id: 'profil', label: 'Profil', icon: UserRound }, { id: 'biodata', label: 'Biodata Siswa', icon: UserSquare2 }] },
   { title: 'Islamic Life Skill', items: [{ id: 'tahsin', label: 'Tahsin', icon: BookOpen, soon: true }, { id: 'bacaan-sholat', label: 'Bacaan Sholat', icon: BookOpen, soon: true }] },
   { title: 'Asesmen', items: [{ id: 'ujian-semester', label: 'Ujian Semester', icon: CalendarDays }, { id: 'ujian-sekolah', label: 'Ujian Sekolah', icon: ClipboardCheck }] },
@@ -23,6 +24,7 @@ const menuGroups = [
 ] as const;
 
 const menuTitles: Record<StudentMenu, string> = {
+  dashboard: 'Dashboard',
   profil: 'Profil', biodata: 'Biodata Siswa', tahsin: 'Tahsin',
   'bacaan-sholat': 'Bacaan Sholat', 'ujian-semester': 'Ujian Semester',
   'ujian-sekolah': 'Ujian Sekolah', keamanan: 'Keamanan'
@@ -35,7 +37,7 @@ export const StudentPortalPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [studentSession, setStudentSession] = useState(false);
-  const [activeMenu, setActiveMenu] = useState<StudentMenu>('profil');
+  const [activeMenu, setActiveMenu] = useState<StudentMenu>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -94,7 +96,7 @@ export const StudentPortalPage: React.FC = () => {
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
       setStudentSession(true);
-      setActiveMenu('profil');
+      setActiveMenu('dashboard');
     } catch (error) {
       console.error('Login siswa gagal:', error);
       setMessage(error instanceof Error ? error.message : 'Tidak dapat masuk. Periksa koneksi internet lalu coba lagi.');
@@ -123,6 +125,25 @@ export const StudentPortalPage: React.FC = () => {
     const selectMenu = (id: StudentMenu) => { setActiveMenu(id); setSidebarOpen(false); };
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
+      if (activeMenu === 'dashboard') return (
+        <div className="grid gap-4">
+          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4"><h2 className="text-lg font-black text-slate-800">Perkembangan Siswa</h2><p className="mt-1 text-xs text-slate-500">Pantau perkembangan pembelajaran dan kedisiplinanmu.</p></div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[{ label: 'Bacaan Sholat', value: 80, icon: BookOpen }, { label: 'Doa Harian', value: 70, icon: BookOpen }, { label: 'Kehadiran', value: 90, icon: CalendarDays }].map(item => { const Icon = item.icon; return (
+                <div key={item.label} className="rounded-xl border border-[#E5F1E9] bg-[#FAFDFA] p-4">
+                  <div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-bold text-slate-700"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E3F7EC] text-[#087F49]"><Icon size={18}/></span>{item.label}</div><span className="text-lg font-black tabular-nums text-[#087F49]">{item.value}%</span></div>
+                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#E7F1EA]"><div className="h-full rounded-full bg-gradient-to-r from-[#0B8F4D] to-[#34B56F]" style={{ width: item.value + '%' }}/></div>
+                </div>
+              ); })}
+            </div>
+          </section>
+          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-center gap-2"><GraduationCap className="text-[#087F49]" size={21}/><h2 className="font-black text-slate-800">Perkembangan Akademik</h2></div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">Ringkasan nilai dan hasil belajar akan ditampilkan di bagian ini setelah data akademik siswa tersedia.</p>
+          </section>
+        </div>
+      );
       if (activeMenu === 'profil') return (
         <div className="grid gap-4">
           <section className="rounded-2xl border border-[#D9EEE2] bg-white p-5 shadow-sm">
@@ -177,23 +198,20 @@ export const StudentPortalPage: React.FC = () => {
     return (
       <main className="min-h-screen bg-[#F7FBF8]">
         <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
+          <div className="mb-3 flex items-center gap-3 px-1">
+            <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Buka menu" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9EEE2] bg-white text-[#087F49] shadow-sm"><Menu size={21}/></button>
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-800 sm:text-base">{student.name}</p><p className="text-[11px] font-medium text-slate-500">Kelas {student.className}</p></div>
+            <button type="button" aria-label="Notifikasi" title="Notifikasi" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9EEE2] bg-white text-[#087F49] shadow-sm"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"/></button>
+          </div>
           <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0B8F4D] via-[#087F49] to-[#06663A] px-5 py-6 text-white shadow-lg sm:px-7 sm:py-7">
             <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full border-[24px] border-white/10"/>
             <div className="pointer-events-none absolute -bottom-24 right-24 h-44 w-44 rounded-full bg-white/5"/>
             <div className="relative z-10">
               <h1 className="text-lg font-black leading-tight tracking-wide sm:text-2xl">SIMPATIK FOR STUDENTS</h1>
               <p className="mt-1 text-sm font-bold text-white/90 sm:text-base">SMP Islam Al-Wasi'</p>
-              <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
-                <div className="min-w-0"><p className="text-xs font-medium text-white/80">Selamat datang,</p><p className="mt-1 truncate text-lg font-extrabold sm:text-xl">{student.name}</p><p className="mt-0.5 text-sm font-semibold text-white/90">Kelas {student.className}</p></div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-xs font-bold"><Bell size={15}/> Akun aktif</div>
-              </div>
+              <p className="mt-4 text-xs font-semibold text-white/80">Qurani, Ramah Anak dan Berkarakter</p>
             </div>
           </header>
-
-          <div className="mt-4 flex items-center justify-between md:hidden">
-            <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-[#D9EEE2] bg-white px-4 py-2.5 text-sm font-bold text-[#087F49] shadow-sm"><Menu size={18}/> Menu</button>
-            <span className="text-xs font-semibold text-slate-500">{activeLabel}</span>
-          </div>
 
           <div className="mt-4 grid items-start gap-4 md:grid-cols-[250px_minmax(0,1fr)]">
             <aside className="hidden rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm md:block">
@@ -203,7 +221,7 @@ export const StudentPortalPage: React.FC = () => {
 
             <section className="min-w-0">
               <header className="mb-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
-                <button type="button" onClick={() => setActiveMenu('profil')} aria-label="Kembali ke profil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
+                <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kembali ke dashboard" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
                 <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
               </header>
               {renderContent()}
