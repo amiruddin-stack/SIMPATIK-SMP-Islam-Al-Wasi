@@ -92,22 +92,14 @@ export const StudentPortalPage: React.FC = () => {
         throw new Error('Akun siswa belum aktif. Silakan hubungi admin sekolah.');
       }
 
-      let extraProfile: Record<string, unknown> = {};
-      try {
-        const studentSnapshot = await getDoc(doc(db, 'students', String(lookup.studentId)));
-        if (studentSnapshot.exists()) extraProfile = studentSnapshot.data();
-      } catch (profileError) {
-        console.warn('Data profil tambahan tidak dapat dimuat:', profileError);
-      }
-
       const profile: StudentProfile = {
         id: String(directory.id || lookup.studentId),
         name: String(directory.name),
         className: String(directory.className),
-        nis: String(extraProfile.nis || ''),
+        nis: '',
         nisn: normalizedNisn,
-        gender: String(extraProfile.gender || ''),
-        status: String(extraProfile.status || directory.status || 'Aktif')
+        gender: '',
+        status: String(directory.status || 'Aktif')
       };
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
