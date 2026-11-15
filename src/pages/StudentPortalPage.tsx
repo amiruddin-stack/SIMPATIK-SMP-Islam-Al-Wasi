@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
-import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithCustomToken, signOut, User } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { studentNisnHash } from '../lib/studentLookup';
 import { RegistrationPage } from './MasterDataPage';
 import { auth, db } from '../firebase/config';
 import { ExamPage } from './ExamPage';
@@ -15,40 +16,25 @@ export const StudentPortalPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [student, setStudent] = useState<StudentProfile | null>(null);
-  const [studentSession, setStudentSession] = useState<User | null>(null);
+  const [studentSession, setStudentSession] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const unsubscribe = onAuthStateChanged(auth, async user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (!alive) return;
-      if (!user || user.isAnonymous) { setStudentSession(null); setStudent(null); return; }
+      if (!user || !user.isAnonymous) { setStudentSession(false); setStudent(null); return; }
       try {
-        const claims = (await user.getIdTokenResult()).claims;
-        if (claims.role !== 'student' || typeof claims.studentId !== 'string') {
-          await signOut(auth);
-          setMessage('Akun ini bukan akun siswa SIMPATIK. Silakan masuk menggunakan NISN.');
-          return;
-        }
-        const snap = await getDoc(doc(db, 'students', claims.studentId));
-        if (!alive) return;
-        if (!snap.exists() || String(snap.data().status || '').trim().toLowerCase() !== 'aktif') {
-          await signOut(auth);
-          setMessage('Akun siswa belum aktif. Hubungi admin sekolah.');
-          return;
-        }
-        const data = snap.data();
-        setStudent({
-          id: snap.id,
-          name: String(data.name || ''),
-          className: String(data.className || ''),
-          nis: String(data.nis || ''),
-          nisn: String(data.nisn || ''),
-          gender: String(data.gender || ''),
-        });
-        setStudentSession(user);
+        const saved = localStorage.getItem('simpatik_student_identity');
+        if (!saved) { setStudentSession(false); setStudent(null); return; }
+        const profile = JSON.parse(saved) as StudentProfile;
+        if (!profile.id || !profile.name || !profile.className) throw new Error('Identitas siswa tidak valid.');
+        setStudent(profile);
+        setStudentSession(true);
       } catch (error) {
-        console.error('Gagal memuat sesi siswa:', error);
-        if (alive) setMessage('Profil siswa belum dapat dimuat. Periksa koneksi internet.');
+        console.error('Gagal memulihkan sesi siswa:', error);
+        localStorage.removeItem('simpatik_student_identity');
+        setStudentSession(false);
+        setStudent(null);
       }
     });
     return () => { alive = false; unsubscribe(); };
@@ -56,21 +42,31 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
+    if (!/^\\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('https://simpatik-backend.onrender.com/api/student-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nisn }),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.success || !result.token) throw new Error(result.message || 'Login gagal.');
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithCustomToken(auth, result.token);
+      const lookupId = await studentNisnHash(nisn);
+      const lookup = await getDoc(doc(db, 'studentLoginLookup', lookupId));
+      if (!lookup.exists()) throw new Error('NISN tidak ditemukan. Pastikan sudah terdaftar dan disetujui admin.');
+      const data = lookup.data();
+      if (String(data.status || '').toLowerCase() !== 'aktif') throw new Error('Pendaftaran belum disetujui admin.');
+      const profile: StudentProfile = {
+        id: String(data.studentId || ''),
+        name: String(data.name || ''),
+        className: String(data.className || ''),
+        nis: String(data.nis || ''),
+        nisn,
+        gender: String(data.gender || ''),
+      };
+      if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa belum lengkap. Hubungi admin sekolah.');
+      if (!auth.currentUser) await signInAnonymously(auth);
+      localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
+      setStudent(profile);
+      setStudentSession(true);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Login belum berhasil. Silakan coba kembali.');
+      console.error('Login siswa SIMPATIK:', error);
+      setMessage(error instanceof Error ? error.message : 'Login gagal. Periksa koneksi internet.');
     } finally {
       setBusy(false);
     }
@@ -110,7 +106,7 @@ export const StudentPortalPage: React.FC = () => {
           <ExamPage studentMode />
         </section>
         {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
-        <button type="button" onClick={() => void signOut(auth)} className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar dari akun siswa</button>
+        <button type="button" onClick={() => { localStorage.removeItem('simpatik_student_identity'); setStudent(null); setStudentSession(false); void signOut(auth); }} className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar dari akun siswa</button>
       </div>
     </main>
   );
