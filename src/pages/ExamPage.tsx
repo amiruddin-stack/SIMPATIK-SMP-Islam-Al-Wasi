@@ -138,6 +138,14 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
         }
         setOfflineReady(Boolean(cachedQuestions?.length && cachedExams?.length));
         await auth.authStateReady();
+        if (studentMode && session?.exam && session.ownerUid !== auth.currentUser?.uid) {
+          setActiveExam(null);
+          setSection('student');
+          setAttemptId('');
+          setAnswers({});
+          setOwnerUid('');
+          setMessage('');
+        }
         let studentClassForQuery = '';
         let studentClassNameForQuery = '';
         if (studentMode) {
