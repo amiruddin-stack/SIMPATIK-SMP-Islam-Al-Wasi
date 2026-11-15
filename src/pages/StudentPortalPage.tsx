@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db, auth } from '../firebase/config';
 import { RegistrationPage } from './MasterDataPage';
-import { auth } from '../firebase/config';
 import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
