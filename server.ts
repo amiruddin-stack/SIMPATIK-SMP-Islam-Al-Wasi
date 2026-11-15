@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { cert, getApps, initializeApp, applicationDefault, type ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { Pool } from 'pg';
+import { createHash } from 'node:crypto';
 import { gradeExamAttemptWithAdmin } from './server/examGradingService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -85,6 +87,13 @@ function getAdminServices() {
   };
 }
 
+const studentPool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_URL.includes('localhost') ? undefined : { rejectUnauthorized: false }, max: 5 }) : null;
+let studentSchemaReady: Promise<void> | null = null;
+async function ensureStudentSchema() {
+  if (!studentPool) throw new Error('DATABASE_URL belum dikonfigurasi pada server SIMPATIK.');
+  if (!studentSchemaReady) studentSchemaReady = studentPool.query('CREATE TABLE IF NOT EXISTS simpatik_students (id TEXT PRIMARY KEY, nisn CHAR(10) NOT NULL UNIQUE, name VARCHAR(100) NOT NULL, class_name VARCHAR(40) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT \'menunggu\', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())').then(() => undefined);
+  await studentSchemaReady;
+}
 async function startServer() {
   const app = express();
   const port = Number(process.env.PORT || 3000);
@@ -105,32 +114,53 @@ async function startServer() {
   });
   app.use(express.json({ limit: '256kb' }));
   const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+  app.post('/api/student-register', async (req, res) => {
+    try {
+      await ensureStudentSchema();
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim().replace(/\s+/g, ' ').toLocaleUpperCase('id-ID') : '';
+      const className = typeof req.body?.className === 'string' ? req.body.className.trim() : '';
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\D/g, '') : '';
+      if (name.length < 3 || name.length > 100 || !/^\d{10}$/.test(nisn) || !/^(VII|VIII|IX)\b/i.test(className)) { res.status(400).json({ success: false, message: 'Nama, kelas, atau NISN tidak valid.' }); return; }
+      const services = getAdminServices();
+      if (!services) { res.status(503).json({ success: false, message: 'Sinkronisasi Firestore belum dikonfigurasi.' }); return; }
+      const id = 'std-' + createHash('sha256').update(nisn).digest('hex');
+      const saved = await studentPool!.query('INSERT INTO simpatik_students (id, nisn, name, class_name, status) VALUES ($1,$2,$3,$4,\'menunggu\') ON CONFLICT (nisn) DO UPDATE SET name = CASE WHEN simpatik_students.status = \'menunggu\' THEN EXCLUDED.name ELSE simpatik_students.name END, class_name = CASE WHEN simpatik_students.status = \'menunggu\' THEN EXCLUDED.class_name ELSE simpatik_students.class_name END, updated_at = NOW() RETURNING id, nisn, name, class_name, status', [id, nisn, name, className]);
+      const student = saved.rows[0];
+      await services.adminDb.collection('students').doc(student.id).set({ id: student.id, nis: '', nisn: student.nisn, name: student.name, gender: '', className: student.class_name, status: student.status, registeredAt: new Date().toISOString(), registrationSource: 'student_portal' }, { merge: true });
+      res.json({ success: true, message: 'Pendaftaran tersimpan di SIMPATIK dan Firestore.', student: { id: student.id, name: student.name, className: student.class_name, status: student.status } });
+    } catch (error: any) { if (error?.code === '23505') { res.status(409).json({ success: false, message: 'NISN sudah terdaftar.' }); return; } console.error('Pendaftaran siswa gagal:', error); res.status(500).json({ success: false, message: error instanceof Error ? error.message : 'Pendaftaran belum dapat diproses.' }); }
+  });
   app.post('/api/student-login', async (req, res) => {
     try {
-      const services = getAdminServices();
-      if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi. Hubungi admin SIMPATIK.' }); return; }
+      await ensureStudentSchema(); const services = getAdminServices();
+      if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi.' }); return; }
       const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\D/g, '') : '';
       if (!/^\d{10}$/.test(nisn)) { res.status(400).json({ success: false, message: 'Masukkan NISN yang terdiri dari 10 angka.' }); return; }
-      const ip = req.ip || req.socket.remoteAddress || 'unknown';
-      const now = Date.now();
-      const bucket = loginAttempts.get(ip);
+      const ip = req.ip || req.socket.remoteAddress || 'unknown'; const now = Date.now(); const bucket = loginAttempts.get(ip);
       if (bucket && bucket.resetAt > now && bucket.count >= 12) { res.status(429).json({ success: false, message: 'Terlalu banyak percobaan. Coba kembali beberapa menit lagi.' }); return; }
-      if (!bucket || bucket.resetAt <= now) loginAttempts.set(ip, { count: 1, resetAt: now + 600000 });
-      else bucket.count += 1;
-      const snapshot = await services.adminDb.collection('students').where('nisn', '==', nisn).limit(2).get();
-      const matches = snapshot.docs.filter(item => String(item.get('status') || '').trim().toLowerCase() === 'aktif');
-      if (matches.length !== 1) { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
-      const studentDoc = matches[0];
-      const data = studentDoc.data();
-      const className = String(data.className || '');
-      const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
-      if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid. Hubungi admin sekolah.' }); return; }
-      const token = await services.adminAuth.createCustomToken('student_' + studentDoc.id, { role: 'student', studentId: studentDoc.id, className, classLevel });
-      res.json({ success: true, token, student: { id: studentDoc.id, name: String(data.name || ''), className: String(data.className || '') } });
-    } catch (error) {
-      console.error('Login siswa gagal:', error);
-      res.status(500).json({ success: false, message: 'Login belum dapat diproses. Silakan coba kembali.' });
-    }
+      if (!bucket || bucket.resetAt <= now) loginAttempts.set(ip, { count: 1, resetAt: now + 600000 }); else bucket.count += 1;
+      const found = await studentPool!.query('SELECT id, name, class_name, status FROM simpatik_students WHERE nisn = $1 LIMIT 1', [nisn]);
+      if (found.rowCount !== 1 || String(found.rows[0].status).toLowerCase() !== 'aktif') { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
+      const student = found.rows[0]; const className = String(student.class_name || ''); const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
+      if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid.' }); return; }
+      const token = await services.adminAuth.createCustomToken('student_' + student.id, { role: 'student', studentId: student.id, className, classLevel });
+      res.json({ success: true, token, student: { id: student.id, name: String(student.name || ''), className } });
+    } catch (error) { console.error('Login siswa gagal:', error); res.status(500).json({ success: false, message: 'Login belum dapat diproses. Pastikan database SIMPATIK tersedia.' }); }
+  });
+  app.post('/api/student-status', async (req, res) => {
+    try {
+      await ensureStudentSchema(); const services = getAdminServices();
+      if (!services) { res.status(503).json({ success: false, message: 'Firebase Admin belum dikonfigurasi.' }); return; }
+      const authorization = String(req.headers.authorization || ''); const idToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
+      if (!idToken) { res.status(401).json({ success: false, message: 'Token admin tidak ditemukan.' }); return; }
+      const decoded = await services.adminAuth.verifyIdToken(idToken);
+      if (String(decoded.email || '').toLowerCase() !== 'amiruddin@smpialwasi-maros.sch.id') { res.status(403).json({ success: false, message: 'Hanya admin sekolah yang dapat mengubah status siswa.' }); return; }
+      const id = typeof req.body?.id === 'string' ? req.body.id : ''; const status = typeof req.body?.status === 'string' ? req.body.status.toLowerCase() : '';
+      if (!id || !['aktif','menunggu','ditolak'].includes(status)) { res.status(400).json({ success: false, message: 'Data status siswa tidak valid.' }); return; }
+      const changed = await studentPool!.query('UPDATE simpatik_students SET status=$1, updated_at=NOW() WHERE id=$2 RETURNING id', [status,id]);
+      if (!changed.rowCount) { res.status(404).json({ success: false, message: 'Data siswa tidak ditemukan di database SIMPATIK.' }); return; }
+      res.json({ success: true, message: 'Status siswa diperbarui di database SIMPATIK.' });
+    } catch (error) { console.error('Perubahan status siswa gagal:', error); res.status(500).json({ success: false, message: 'Status siswa belum dapat diperbarui di SIMPATIK.' }); }
   });
 
 
@@ -140,6 +170,7 @@ async function startServer() {
       ok: true,
       service: 'SIMPATIK_BACKEND',
       adminGradingConfigured: Boolean(services),
+      studentDatabaseConfigured: Boolean(studentPool),
     });
   });
 
