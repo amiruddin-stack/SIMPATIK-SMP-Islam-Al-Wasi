@@ -31,7 +31,7 @@ export const RegistrationPage:React.FC<{type:'guru'|'siswa';studentPortal?:boole
    const name=form.name.trim().replace(/\s+/g,' ').toLocaleUpperCase('id-ID');
    const nis=form.nis.trim();
    if(name.length<3){setMessage('Masukkan nama lengkap dengan benar.');return;}
-   if(!/^\d{10}$/.test(nisn)){setMessage('NIS harus diisi dengan benar.');return;}
+   if(!nis || nis.length>30){setMessage('Masukkan NIS yang valid.');return;}
    setSaving(true);setMessage('');
    try{
     if(!auth.currentUser) await signInAnonymously(auth);
