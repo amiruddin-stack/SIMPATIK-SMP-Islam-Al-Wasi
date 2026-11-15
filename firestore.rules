@@ -115,6 +115,18 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /studentLoginLookup/{lookupId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['studentId', 'nis', 'name', 'className', 'gender', 'status'])
+        && request.resource.data.studentId is string
+        && request.resource.data.name is string
+        && request.resource.data.className in ['VII (Tujuh)', 'VIII (Delapan)', 'IX (Sembilan)']
+        && request.resource.data.status == 'Aktif';
+      allow delete: if isAdmin();
+    }
+
     match /students/{studentId} {
       // Siswa hanya boleh membaca dokumen miliknya berdasarkan klaim token server.
       allow get: if isGuruOrAdmin()
