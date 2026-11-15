@@ -114,9 +114,12 @@ async function reconcileStudentExamDirectory(students: Student[], isAdmin: boole
   if (!isAdmin) return;
   const active = students.filter(s => s.status === 'Aktif' && s.name?.trim() && s.className?.trim());
   const directory = collection(db, 'studentExamDirectory');
-  const existing = await getDocs(directory);
+  const lookup = collection(db, 'studentLoginLookup');
+  const [existing, existingLookups] = await Promise.all([getDocs(directory), getDocs(lookup)]);
   const activeIds = new Set(active.map(s => s.id));
+  const activeLookupIds = new Set(await Promise.all(active.filter(s => s.nisn?.trim()).map(s => studentNisnHash(s.nisn.trim()))));
   await Promise.all(existing.docs.filter(item => !activeIds.has(item.id)).map(item => deleteDoc(item.ref)));
+  await Promise.all(existingLookups.docs.filter(item => !activeLookupIds.has(item.id)).map(item => deleteDoc(item.ref)));
   await Promise.all(active.map(student => syncStudentExamDirectoryRecord(student, student.id, true)));
 }
 
