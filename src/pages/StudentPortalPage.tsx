@@ -60,6 +60,7 @@ export const StudentPortalPage: React.FC = () => {
         gender: String(data.gender || ''),
       };
       if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa belum lengkap. Hubungi admin sekolah.');
+      if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
       if (!auth.currentUser) await signInAnonymously(auth);
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
