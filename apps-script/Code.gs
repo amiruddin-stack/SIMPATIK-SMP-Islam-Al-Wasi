@@ -4,8 +4,56 @@ const CONFIG = {
   apiKey: 'AIzaSyC7Xq-asMHPPi_a-Rwn4ID0mPWi0oTzJWw'
 };
 
-function doGet() {
-  return output_({ success: true, service: 'SIMPATIK_AUTO_GRADING', version: 2 });
+function doGet(e) {
+  const action = String(e && e.parameter && e.parameter.action || '');
+  if (action === 'studentDirectory') {
+    try {
+      return output_(listStudentDirectory_());
+    } catch (error) {
+      return output_({ success: false, message: error && error.message ? error.message : String(error) });
+    }
+  }
+  return output_({ success: true, service: 'SIMPATIK_AUTO_GRADING', version: 3 });
+}
+
+function listStudentDirectory_() {
+  const base = 'https://firestore.googleapis.com/v1/projects/' +
+    encodeURIComponent(CONFIG.projectId) + '/databases/' +
+    encodeURIComponent(CONFIG.databaseId) + '/documents/students';
+  let pageToken = '';
+  const students = [];
+  do {
+    const url = base + '?pageSize=1000' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
+    const response = UrlFetchApp.fetch(url, {
+      method: 'get',
+      headers: { Authorization: 'Bearer ' + getFirestoreAccessToken_() },
+      muteHttpExceptions: true
+    });
+    if (response.getResponseCode() !== 200) {
+      throw new Error('Gagal menyinkronkan data siswa: ' + response.getContentText());
+    }
+    const result = JSON.parse(response.getContentText() || '{}');
+    (result.documents || []).forEach(function(document) {
+      const item = decodeFields_(document.fields || {});
+      const nisn = String(item.nisn || '').replace(/\\D/g, '');
+      if (item.status !== 'Aktif' || !/^\\d{10}$/.test(nisn) || !item.name || !item.className) return;
+      const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, nisn, Utilities.Charset.UTF_8);
+      const hash = digest.map(function(byte) {
+        const value = (byte + 256) % 256;
+        return ('0' + value.toString(16)).slice(-2);
+      }).join('');
+      students.push({
+        id: String(item.id || document.name.split('/').pop()),
+        nisnHash: hash,
+        name: String(item.name),
+        className: String(item.className),
+        nis: String(item.nis || ''),
+        gender: String(item.gender || '')
+      });
+    });
+    pageToken = result.nextPageToken || '';
+  } while (pageToken);
+  return { success: true, updatedAt: new Date().toISOString(), students: students };
 }
 
 function normalizeKeyIndex_(rawAnswer) {
