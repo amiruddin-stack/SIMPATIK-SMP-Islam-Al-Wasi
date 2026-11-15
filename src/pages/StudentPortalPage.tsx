@@ -4,15 +4,20 @@ import {
   GraduationCap, KeyRound, LogOut, Menu, ShieldCheck, UserRound,
   UserSquare2, X
 } from 'lucide-react';
-import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWithCustomToken, signOut } from 'firebase/auth';
-import { auth } from '../firebase/config';
-import { normalizeStudentNisn } from '../lib/studentLookup';
-import { simpatikApi } from '../lib/backendApi';
+import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInAnonymously, signInWithCustomToken, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
+import { normalizeStudentNisn, studentNisnHash } from '../lib/studentLookup';
+import {
+  buildVerifiedStudentProfileFromDirectory,
+  validateStoredStudentSession,
+  type StudentProfile,
+} from '../lib/studentAuth';
+import { SIMPATIK_API_BASE_URL, simpatikApi } from '../lib/backendApi';
 import { RegistrationPage } from './MasterDataPage';
 import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
-type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
 type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'keamanan';
 
 const menuGroups = [
@@ -44,21 +49,36 @@ export const StudentPortalPage: React.FC = () => {
     let alive = true;
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (!alive) return;
-      if (!user || user.isAnonymous) { setStudentSession(false); setStudent(null); return; }
+      if (!user) { setStudentSession(false); setStudent(null); return; }
       try {
-        const [saved, tokenResult] = await Promise.all([
-          Promise.resolve(localStorage.getItem('simpatik_student_identity')),
-          user.getIdTokenResult()
-        ]);
+        const saved = localStorage.getItem('simpatik_student_identity');
+        const tokenResult = user.isAnonymous ? undefined : await user.getIdTokenResult();
         if (!alive) return;
-        if (!saved || tokenResult.claims.role !== 'student' || typeof tokenResult.claims.studentId !== 'string') {
+        const profile = validateStoredStudentSession({
+          rawJson: saved,
+          uid: user.uid,
+          isAnonymous: user.isAnonymous,
+          claims: tokenResult?.claims,
+        });
+        if (!profile) {
           setStudentSession(false);
           setStudent(null);
           return;
         }
-        const profile = JSON.parse(saved) as StudentProfile;
-        if (!profile.id || profile.id !== tokenResult.claims.studentId || !profile.name || !profile.className) {
-          throw new Error('Identitas sesi siswa tidak cocok.');
+        if (profile.authMode === 'firebase_directory' && typeof navigator !== 'undefined' && navigator.onLine) {
+          try {
+            const directorySnap = await getDoc(doc(db, 'studentExamDirectory', profile.id));
+            if (!alive) return;
+            const directoryData = directorySnap.exists() ? directorySnap.data() : undefined;
+            if (!directoryData || String(directoryData.status || '').toLowerCase() !== 'aktif') {
+              localStorage.removeItem('simpatik_student_identity');
+              setStudentSession(false);
+              setStudent(null);
+              return;
+            }
+          } catch (verifyError) {
+            console.warn('Verifikasi direktori sesi siswa dilewati:', verifyError);
+          }
         }
         setStudent(profile);
         setStudentSession(true);
@@ -82,26 +102,70 @@ export const StudentPortalPage: React.FC = () => {
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch(simpatikApi('/api/student-login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nisn: normalizedNisn })
-      });
-      const result = await response.json();
-      if (!response.ok || !result.success || !result.token || !result.student?.id || !result.student?.name || !result.student?.className) {
-        throw new Error(result.message || 'Login siswa belum dapat diproses.');
+      const canTryBackend = Boolean(SIMPATIK_API_BASE_URL) || (typeof window !== 'undefined' && window.location.protocol.startsWith('http'));
+      if (canTryBackend) {
+        try {
+          let backendReady = Boolean(SIMPATIK_API_BASE_URL);
+          if (!backendReady) {
+            const healthResponse = await fetch(simpatikApi('/api/health'));
+            const healthType = healthResponse.headers.get('content-type') || '';
+            const healthData = healthType.includes('application/json') ? await healthResponse.json().catch(() => null) : null;
+            backendReady = Boolean(healthResponse.ok && healthData?.studentFirestoreConfigured);
+          }
+          if (backendReady) {
+            const response = await fetch(simpatikApi('/api/student-login'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ nisn: normalizedNisn })
+            });
+            const contentType = response.headers.get('content-type') || '';
+            const result = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
+            if (response.ok && result?.success && result?.token && result?.student?.id && result?.student?.name && result?.student?.className) {
+              if (auth.currentUser) await signOut(auth);
+              await setPersistence(auth, browserLocalPersistence);
+              const credential = await signInWithCustomToken(auth, result.token);
+              const profile: StudentProfile = {
+                id: String(result.student.id),
+                name: String(result.student.name),
+                className: String(result.student.className),
+                nis: String(result.student.nis || ''),
+                nisn: normalizedNisn,
+                gender: String(result.student.gender || ''),
+                authMode: 'custom_token',
+                ownerUid: credential.user.uid,
+              };
+              localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
+              setStudent(profile);
+              setStudentSession(true);
+              setActiveMenu('dashboard');
+              return;
+            }
+            if (result && response.status !== 404 && response.status !== 405 && !result.fallback) {
+              throw new Error(result.message || 'Login siswa belum dapat diproses.');
+            }
+          }
+        } catch (backendError) {
+          if (backendError instanceof Error && backendError.message && !/fetch|network|json|abort/i.test(backendError.message)) {
+            throw backendError;
+          }
+        }
       }
-      if (auth.currentUser) await signOut(auth);
+
+      if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
       await setPersistence(auth, browserLocalPersistence);
-      await signInWithCustomToken(auth, result.token);
-      const profile: StudentProfile = {
-        id: String(result.student.id),
-        name: String(result.student.name),
-        className: String(result.student.className),
-        nis: String(result.student.nis || ''),
-        nisn: normalizedNisn,
-        gender: String(result.student.gender || '')
-      };
+      const currentUser = auth.currentUser ?? (await signInAnonymously(auth)).user;
+      const lookupId = await studentNisnHash(normalizedNisn);
+      const lookupSnap = await getDoc(doc(db, 'studentLoginLookup', lookupId));
+      const lookupData = lookupSnap.exists() ? lookupSnap.data() : undefined;
+      const directoryId = typeof lookupData?.studentId === 'string' ? lookupData.studentId : '';
+      const directorySnap = directoryId ? await getDoc(doc(db, 'studentExamDirectory', directoryId)) : null;
+      const profile = buildVerifiedStudentProfileFromDirectory({
+        normalizedNisn,
+        ownerUid: currentUser.uid,
+        lookupData,
+        directoryData: directorySnap?.exists() ? directorySnap.data() : undefined,
+        directoryId,
+      });
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
       setStudentSession(true);

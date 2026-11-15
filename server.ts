@@ -138,7 +138,7 @@ async function startServer() {
   app.post('/api/student-login', async (req, res) => {
     try {
       const services = getAdminServices();
-      if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi.' }); return; }
+      if (!services) { res.status(503).json({ success: false, fallback: true, message: 'Layanan login siswa server belum dikonfigurasi.' }); return; }
       const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
       if (!nisn || nisn.length > 30) { res.status(400).json({ success: false, message: 'Masukkan NISN yang valid (maksimal 30 karakter).' }); return; }
       const ip = req.ip || req.socket.remoteAddress || 'unknown'; const now = Date.now(); const bucket = loginAttempts.get(ip);
