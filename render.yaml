@@ -11,7 +11,5 @@ services:
         value: production
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
-      - key: DATABASE_URL
-        sync: false
       - key: ALLOWED_ORIGINS
         value: https://amiruddin-stack.github.io
