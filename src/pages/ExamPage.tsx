@@ -149,17 +149,14 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
         let studentClassForQuery = '';
         let studentClassNameForQuery = '';
         if (studentMode) {
-          const currentStudentUser = auth.currentUser;
-          if (!currentStudentUser || currentStudentUser.isAnonymous) { setRosterLoadState('error'); setMessage('Sesi siswa belum aktif. Silakan masuk kembali menggunakan NISN.'); return; }
-          const tokenResult = await currentStudentUser.getIdTokenResult();
-          const studentDocId = typeof tokenResult.claims.studentId === 'string' ? tokenResult.claims.studentId : '';
-          if (tokenResult.claims.role !== 'student' || !studentDocId) { setRosterLoadState('error'); setMessage('Akun siswa belum terverifikasi. Silakan masuk kembali.'); return; }
-          const studentSnapshot = await getDoc(doc(db, 'students', studentDocId));
-          if (!studentSnapshot.exists() || String(studentSnapshot.data().status || '').toLowerCase() !== 'aktif') { setRosterLoadState('error'); setMessage('Akun siswa belum disetujui atau sudah tidak aktif. Hubungi admin sekolah.'); return; }
-          const studentData = studentSnapshot.data();
-          studentClassForQuery = String(tokenResult.claims.classLevel || classLevel(String(studentData.className || '')));
-          studentClassNameForQuery = String(tokenResult.claims.className || studentData.className || '');
-          const verifiedStudent = { id: studentSnapshot.id, name: String(studentData.name || ''), className: String(studentData.className || ''), status: 'Aktif' };
+          if (!auth.currentUser) await signInAnonymously(auth);
+          const savedIdentity = localStorage.getItem('simpatik_student_identity');
+          if (!savedIdentity) { setRosterLoadState('error'); setMessage('Sesi siswa tidak ditemukan. Silakan masuk kembali menggunakan NISN.'); return; }
+          const identity = JSON.parse(savedIdentity) as { id: string; name: string; className: string };
+          if (!identity.id || !identity.name || !identity.className) { setRosterLoadState('error'); setMessage('Identitas siswa tidak valid. Silakan masuk kembali.'); return; }
+          studentClassForQuery = classLevel(identity.className);
+          studentClassNameForQuery = identity.className;
+          const verifiedStudent = { id: identity.id, name: identity.name, className: identity.className, status: 'Aktif' };
           setExamStudents([verifiedStudent]); setStudentId(verifiedStudent.id); setSelectedRosterStudentId(verifiedStudent.id);
           setStudentClass(verifiedStudent.className); setVerifiedStudentName(verifiedStudent.name); setRosterLoadState('ready');
         }
