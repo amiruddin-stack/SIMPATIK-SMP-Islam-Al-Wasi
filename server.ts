@@ -109,8 +109,8 @@ async function startServer() {
     try {
       const services = getAdminServices();
       if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi. Hubungi admin SIMPATIK.' }); return; }
-      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\\D/g, '') : '';
-      if (!/^\\d{10}$/.test(nisn)) { res.status(400).json({ success: false, message: 'Masukkan NISN yang terdiri dari 10 angka.' }); return; }
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\D/g, '') : '';
+      if (!/^\d{10}$/.test(nisn)) { res.status(400).json({ success: false, message: 'Masukkan NISN yang terdiri dari 10 angka.' }); return; }
       const ip = req.ip || req.socket.remoteAddress || 'unknown';
       const now = Date.now();
       const bucket = loginAttempts.get(ip);
@@ -122,7 +122,10 @@ async function startServer() {
       if (matches.length !== 1) { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
       const studentDoc = matches[0];
       const data = studentDoc.data();
-      const token = await services.adminAuth.createCustomToken('student_' + studentDoc.id, { role: 'student', studentId: studentDoc.id, className: String(data.className || '') });
+      const className = String(data.className || '');
+      const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\\s(-])/i)?.[1]?.toUpperCase() || '';
+      if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid. Hubungi admin sekolah.' }); return; }
+      const token = await services.adminAuth.createCustomToken('student_' + studentDoc.id, { role: 'student', studentId: studentDoc.id, className, classLevel });
       res.json({ success: true, token, student: { id: studentDoc.id, name: String(data.name || ''), className: String(data.className || '') } });
     } catch (error) {
       console.error('Login siswa gagal:', error);
