@@ -123,7 +123,7 @@ async function startServer() {
       const studentDoc = matches[0];
       const data = studentDoc.data();
       const className = String(data.className || '');
-      const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\\s(-])/i)?.[1]?.toUpperCase() || '';
+      const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
       if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid. Hubungi admin sekolah.' }); return; }
       const token = await services.adminAuth.createCustomToken('student_' + studentDoc.id, { role: 'student', studentId: studentDoc.id, className, classLevel });
       res.json({ success: true, token, student: { id: studentDoc.id, name: String(data.name || ''), className: String(data.className || '') } });
