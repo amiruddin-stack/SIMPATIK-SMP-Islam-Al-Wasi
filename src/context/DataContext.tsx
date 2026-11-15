@@ -105,8 +105,7 @@ async function syncStudentExamDirectoryRecord(student: Student | null, studentId
   }
   await setDoc(ref, { id: studentId, name: student.name.trim().toLocaleUpperCase('id-ID'), className: student.className.trim(), status: 'Aktif' });
   if (student.nisn?.trim()) await setDoc(doc(lookup, await studentNisnHash(student.nisn.trim())), {
-    studentId, nis: String(student.nis || ''), name: student.name.trim().toLocaleUpperCase('id-ID'),
-    className: student.className.trim(), gender: student.gender || '', status: 'Aktif'
+    studentId, nisn: student.nisn.trim()
   });
 }
 
