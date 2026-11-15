@@ -42,8 +42,8 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    const normalizedNisn = nisn.replace(/\\D/g, '');
-    if (!/^\\d{10}$/.test(normalizedNisn)) {
+    const normalizedNisn = nisn.replace(/\D/g, '');
+    if (!/^\d{10}$/.test(normalizedNisn)) {
       setMessage('NISN harus terdiri dari 10 angka.');
       return;
     }
