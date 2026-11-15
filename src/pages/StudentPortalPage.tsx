@@ -4,6 +4,7 @@ import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInWith
 import { doc, getDoc } from 'firebase/firestore';
 import { RegistrationPage } from './MasterDataPage';
 import { auth, db } from '../firebase/config';
+import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
 type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
@@ -23,7 +24,11 @@ export const StudentPortalPage: React.FC = () => {
       if (!user || user.isAnonymous) { setStudentSession(null); setStudent(null); return; }
       try {
         const claims = (await user.getIdTokenResult()).claims;
-        if (claims.role !== 'student' || typeof claims.studentId !== 'string') return;
+        if (claims.role !== 'student' || typeof claims.studentId !== 'string') {
+          await signOut(auth);
+          setMessage('Akun ini bukan akun siswa SIMPATIK. Silakan masuk menggunakan NISN.');
+          return;
+        }
         const snap = await getDoc(doc(db, 'students', claims.studentId));
         if (!alive) return;
         if (!snap.exists() || String(snap.data().status || '').trim().toLowerCase() !== 'aktif') {
@@ -51,7 +56,7 @@ export const StudentPortalPage: React.FC = () => {
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!/^\\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
+    if (!/^\d{10}$/.test(nisn)) { setMessage('NISN harus terdiri dari 10 angka.'); return; }
     setBusy(true);
     setMessage('');
     try {
@@ -81,32 +86,32 @@ export const StudentPortalPage: React.FC = () => {
   );
 
   if (studentSession && student) return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] px-4 py-8">
-      <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-[#D9EEE2] bg-white shadow-xl">
-        <header className="bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-6 py-7 text-center text-white">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><GraduationCap size={30}/></div>
-          <p className="text-xs font-bold uppercase tracking-widest text-white/80">SIMPATIK for Student</p>
-          <h1 className="mt-2 text-xl font-black">Assalamu’alaikum</h1>
-          <p className="mt-1 font-semibold">{student.name}</p>
-          <p className="text-sm text-white/85">Kelas {student.className}</p>
+    <main className="min-h-screen bg-[#F7FBF8] px-3 py-5 sm:px-6">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <header className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-6 py-7 text-white shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><GraduationCap size={30}/></div>
+            <div><p className="text-xs font-bold uppercase tracking-widest text-white/80">SIMPATIK for Student</p><h1 className="mt-1 text-xl font-black">Assalamu’alaikum</h1></div>
+          </div>
+          <p className="mt-4 text-lg font-extrabold">{student.name}</p>
+          <p className="text-sm text-white/85">Kelas {student.className} · Akun Aktif</p>
         </header>
-        <div className="grid gap-3 p-5">
-          <section className="rounded-2xl border border-[#D9EEE2] p-4">
-            <h2 className="font-bold text-slate-800">Profil Siswa</h2>
-            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div><dt className="text-xs text-slate-500">NIS</dt><dd className="font-semibold text-slate-800">{student.nis || '—'}</dd></div>
-              <div><dt className="text-xs text-slate-500">NISN</dt><dd className="font-semibold text-slate-800">{student.nisn || '—'}</dd></div>
-              <div><dt className="text-xs text-slate-500">Jenis kelamin</dt><dd className="font-semibold text-slate-800">{student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '—'}</dd></div>
-              <div><dt className="text-xs text-slate-500">Status</dt><dd className="font-semibold text-[#0B8F4D]">Aktif</dd></div>
-            </dl>
-          </section>
-          <button type="button" onClick={() => setMessage('Menu ujian sedang disambungkan ke mesin ujian SIMPATIK. Akun siswa Anda sudah berhasil diverifikasi.')} className="rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:bg-[#F5FCF7]">
-            <span className="block font-bold text-slate-800">Ujian</span><span className="mt-1 block text-xs text-slate-500">Lihat ujian aktif sesuai kelas dan kerjakan ujian.</span>
-          </button>
-          {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
-          <button type="button" onClick={() => void signOut(auth)} className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar</button>
-        </div>
-      </section>
+        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between"><h2 className="font-bold text-slate-800">Profil Saya</h2><span className="rounded-full bg-[#E3F7EC] px-3 py-1 text-xs font-bold text-[#0B8F4D]">Disetujui</span></div>
+          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <div><dt className="text-xs text-slate-500">NIS</dt><dd className="font-semibold text-slate-800">{student.nis || '—'}</dd></div>
+            <div><dt className="text-xs text-slate-500">NISN</dt><dd className="font-semibold text-slate-800">{student.nisn || '—'}</dd></div>
+            <div><dt className="text-xs text-slate-500">Jenis kelamin</dt><dd className="font-semibold text-slate-800">{student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '—'}</dd></div>
+            <div><dt className="text-xs text-slate-500">Kelas</dt><dd className="font-semibold text-slate-800">{student.className}</dd></div>
+          </dl>
+        </section>
+        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm sm:p-5">
+          <div className="mb-3"><h2 className="text-lg font-extrabold text-slate-800">Ujian Saya</h2><p className="text-xs text-slate-500">Ujian yang diaktifkan guru untuk kelas {student.className} akan muncul otomatis di sini.</p></div>
+          <ExamPage studentMode />
+        </section>
+        {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
+        <button type="button" onClick={() => void signOut(auth)} className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar dari akun siswa</button>
+      </div>
     </main>
   );
 
@@ -134,7 +139,7 @@ export const StudentPortalPage: React.FC = () => {
         {view === 'login' && <div className="border-t border-[#E7F1EA] px-5 py-5 sm:px-6">
           <div className="mb-3"><h2 className="font-bold text-slate-800">Masuk SIMPATIK for Student</h2><p className="mt-1 text-xs leading-5 text-slate-500">Masukkan NISN. Perangkat akan diingat setelah login berhasil.</p></div>
           <form onSubmit={loginStudent} className="grid gap-3">
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.replace(/\\D/g,'').slice(0,10))} inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required placeholder="Masukkan 10 digit NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.replace(/\D/g,'').slice(0,10))} inputMode="numeric" pattern="[0-9]{10}" maxLength={10} required placeholder="Masukkan 10 digit NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
             {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
             <button type="submit" disabled={busy} className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640] disabled:opacity-60">{busy ? 'Memeriksa NISN…' : 'Masuk'}</button>
           </form>
