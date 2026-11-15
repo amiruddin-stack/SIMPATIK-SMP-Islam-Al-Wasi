@@ -39,7 +39,7 @@ function classDisplayName(value: string) {
   const labels: Record<string, string> = { VII: 'VII (Tujuh)', VIII: 'VIII (Delapan)', IX: 'IX (Sembilan)' };
   return labels[level] || value.trim();
 }
-export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> = ({ onBack, studentMode = false }) => {
   const { classes, settings } = useData();
   const { firebaseUser, currentUser } = useAuth();
   const isVerifiedExamAdmin = firebaseUser?.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id';
@@ -50,7 +50,7 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [section, setSection] = useState<'home' | 'student' | 'create' | 'manage' | 'share' | 'results' | 'take' | 'archive'>('home');
+  const [section, setSection] = useState<'home' | 'student' | 'create' | 'manage' | 'share' | 'results' | 'take' | 'archive'>(studentMode ? 'student' : 'home');
   const [level, setLevel] = useState('VII');
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
@@ -138,7 +138,22 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }
         setOfflineReady(Boolean(cachedQuestions?.length && cachedExams?.length));
         await auth.authStateReady();
-        if (cachedIdentity && auth.currentUser?.uid === cachedIdentity.ownerUid) {
+        let studentClassForQuery = '';
+        if (studentMode) {
+          const currentStudentUser = auth.currentUser;
+          if (!currentStudentUser || currentStudentUser.isAnonymous) { setRosterLoadState('error'); setMessage('Sesi siswa belum aktif. Silakan masuk kembali menggunakan NISN.'); return; }
+          const tokenResult = await currentStudentUser.getIdTokenResult();
+          const studentDocId = typeof tokenResult.claims.studentId === 'string' ? tokenResult.claims.studentId : '';
+          if (tokenResult.claims.role !== 'student' || !studentDocId) { setRosterLoadState('error'); setMessage('Akun siswa belum terverifikasi. Silakan masuk kembali.'); return; }
+          const studentSnapshot = await getDoc(doc(db, 'students', studentDocId));
+          if (!studentSnapshot.exists() || String(studentSnapshot.data().status || '').toLowerCase() !== 'aktif') { setRosterLoadState('error'); setMessage('Akun siswa belum disetujui atau sudah tidak aktif. Hubungi admin sekolah.'); return; }
+          const studentData = studentSnapshot.data();
+          studentClassForQuery = String(tokenResult.claims.classLevel || classLevel(String(studentData.className || '')));
+          const verifiedStudent = { id: studentSnapshot.id, name: String(studentData.name || ''), className: String(studentData.className || ''), status: 'Aktif' };
+          setExamStudents([verifiedStudent]); setStudentId(verifiedStudent.id); setSelectedRosterStudentId(verifiedStudent.id);
+          setStudentClass(verifiedStudent.className); setVerifiedStudentName(verifiedStudent.name); setRosterLoadState('ready');
+        }
+        if (cachedIdentity && !studentMode && auth.currentUser?.uid === cachedIdentity.ownerUid) {
           setStudentId(cachedIdentity.studentId || '');
           setSelectedRosterStudentId(cachedIdentity.studentId || '');
           setStudentClass(cachedIdentity.className || '');
@@ -146,26 +161,30 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }
         if (!navigator.onLine) { setRosterLoadState('error'); setMessage('Daftar siswa belum tersedia saat offline. Hubungkan internet dan hubungi admin sekolah.'); return; }
 
-        if (!isVerifiedExamAdmin && !auth.currentUser) await signInAnonymously(auth);
+        if (!studentMode && !isVerifiedExamAdmin && !auth.currentUser) await signInAnonymously(auth);
         if (!active || !auth.currentUser) return;
 
         if (!active) return;
 
-        unS = onSnapshot(collection(db, 'studentExamDirectory'), snap => {
-          const rows = snap.docs.map(d => ({ ...d.data(), id: d.id } as ExamStudent));
-          const validRows = rows.filter(s => s.name && s.className && s.status === 'Aktif');
-          setExamStudents(validRows);
-          setRosterLoadState(validRows.length ? 'ready' : 'empty');
-          if (!validRows.length) setMessage('Daftar siswa belum tersedia. Hubungi admin sekolah.');
-          else setMessage('');
-        }, e => {
-          console.error('Gagal memuat direktori siswa:', e);
-          setExamStudents([]);
-          setRosterLoadState('error');
-          setMessage('Daftar siswa belum tersedia. Hubungi admin sekolah.');
-        });
+        if (!studentMode) {
+          unS = onSnapshot(collection(db, 'studentExamDirectory'), snap => {
+            const rows = snap.docs.map(d => ({ ...d.data(), id: d.id } as ExamStudent));
+            const validRows = rows.filter(s => s.name && s.className && s.status === 'Aktif');
+            setExamStudents(validRows);
+            setRosterLoadState(validRows.length ? 'ready' : 'empty');
+            if (!validRows.length) setMessage('Daftar siswa belum tersedia. Hubungi admin sekolah.');
+            else setMessage('');
+          }, e => {
+            console.error('Gagal memuat direktori siswa:', e);
+            setExamStudents([]);
+            setRosterLoadState('error');
+            setMessage('Daftar siswa belum tersedia. Hubungi admin sekolah.');
+          });
+  
+        }
         
-        unQ = onSnapshot(collection(db, 'examPublicQuestions'), snap => {
+        const questionsSource = studentMode ? query(collection(db, 'examPublicQuestions'), where('className', '==', studentClassForQuery)) : collection(db, 'examPublicQuestions');
+        unQ = onSnapshot(questionsSource, snap => {
           const rows = snap.docs.map(d => ({ ...d.data(), id: d.id, answer: undefined } as Question));
           setQuestions(rows);
           setOfflineReady(true);
@@ -174,7 +193,9 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         const examsSource = canManageExamQuestions
           ? collection(db, 'exams')
-          : query(collection(db, 'exams'), where('status', '==', 'Aktif'));
+          : studentMode
+            ? query(collection(db, 'exams'), where('status', '==', 'Aktif'), where('className', '==', studentClassForQuery))
+            : query(collection(db, 'exams'), where('status', '==', 'Aktif'));
         unE = onSnapshot(examsSource, snap => {
           const rows = snap.docs.map(d => ({ ...d.data(), id: d.id } as Exam));
           setExams(rows);
@@ -203,7 +224,7 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       unA();
       unS();
     };
-  }, [isVerifiedExamAdmin, canManageExamQuestions]);
+  }, [isVerifiedExamAdmin, canManageExamQuestions, studentMode]);
 
 
 
@@ -870,11 +891,11 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     .filter(s => classLevel(s.className || '') === classLevel(studentClass))
     .sort((a,b)=>a.name.localeCompare(b.name,'id'));
   const studentEntry = () => <div className="mx-auto max-w-xl space-y-4">
-    <div className="text-center"><div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#16B364]"><BookOpen size={30}/></div><h2 className="text-2xl font-black text-slate-800">Ruang Ujian Siswa</h2><p className="mt-1 text-sm text-slate-500">Masuk sebagai tamu. Tidak perlu login Google atau membuat akun.</p></div>
+    <div className="text-center"><div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#16B364]"><BookOpen size={30}/></div><h2 className="text-2xl font-black text-slate-800">Ruang Ujian Siswa</h2><p className="mt-1 text-sm text-slate-500">{studentMode ? 'Akun siswa terverifikasi. Ujian aktif sesuai kelas Anda.' : 'Masuk sebagai tamu. Tidak perlu login Google atau membuat akun.'}</p></div>
     <div className={panel+' space-y-3'}>
       <div className="rounded-xl border border-[#B7E8CD] bg-[#F7FCF9] px-4 py-3"><p className="text-xs font-bold text-[#0B8F4D]">KELAS UJIAN</p><p className="mt-1 text-lg font-black text-slate-800">{studentClass ? classDisplayName(studentClass) : 'Memuat kelas ujian…'}</p></div>
-      <div><label className="mb-1 block text-xs font-bold text-slate-600">Nama siswa</label><select className={field} value={selectedRosterStudentId} onChange={e=>{const found=examStudents.find(s=>s.id===e.target.value);setSelectedRosterStudentId(e.target.value);setVerifiedStudentName(found?.name||'')}} disabled={Boolean(studentId)||!studentClass}><option value="">Pilih nama siswa</option>{rosterNames.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
-      {studentId?<div className="rounded-xl border border-[#B7E8CD] bg-[#F7FCF9] p-3"><p className="text-xs font-bold text-[#0B8F4D]">IDENTITAS SISWA TERVERIFIKASI DARI DATA SIMPATIK</p><p className="mt-1 font-extrabold">{verifiedStudentName}</p><p className="text-sm text-slate-500">{studentClass}</p><button className="mt-3 text-xs font-bold text-rose-600" onClick={()=>{setStudentId('');setSelectedRosterStudentId('');setVerifiedStudentName('');void deleteOfflineRecord('student:identity');}}>Ganti identitas</button></div>:<button className={btn+' w-full'} disabled={!selectedRosterStudentId||!studentClass||!examStudents.length} onClick={()=>void enterGuestMode()}>Lanjutkan sebagai siswa</button>}
+      {!studentMode && <div><label className="mb-1 block text-xs font-bold text-slate-600">Nama siswa</label><select className={field} value={selectedRosterStudentId} onChange={e=>{const found=examStudents.find(s=>s.id===e.target.value);setSelectedRosterStudentId(e.target.value);setVerifiedStudentName(found?.name||'')}} disabled={Boolean(studentId)||!studentClass}><option value="">Pilih nama siswa</option>{rosterNames.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></div>}
+      {studentId?<div className="rounded-xl border border-[#B7E8CD] bg-[#F7FCF9] p-3"><p className="text-xs font-bold text-[#0B8F4D]">IDENTITAS SISWA TERVERIFIKASI DARI DATA SIMPATIK</p><p className="mt-1 font-extrabold">{verifiedStudentName}</p><p className="text-sm text-slate-500">{studentClass}</p>{!studentMode && <button className="mt-3 text-xs font-bold text-rose-600" onClick={()=>{setStudentId('');setSelectedRosterStudentId('');setVerifiedStudentName('');void deleteOfflineRecord('student:identity');}}>Ganti identitas</button>}</div>:<button className={btn+' w-full'} disabled={!selectedRosterStudentId||!studentClass||!examStudents.length} onClick={()=>void enterGuestMode()}>Lanjutkan sebagai siswa</button>}
       {rosterLoadState === 'loading' && <p role="status" className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">Memuat daftar siswa…</p>}
       {(rosterLoadState === 'empty' || rosterLoadState === 'error') && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Daftar siswa belum tersedia, hubungi admin sekolah.</p>}
     </div>
@@ -915,7 +936,7 @@ export const ExamPage: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     {offlineReady&&<div className="flex items-center gap-2 rounded-xl bg-[#E3F7EC] px-3 py-2 text-xs font-semibold text-[#0B8F4D]"><Save size={14}/> Soal dan data ujian tersimpan di perangkat untuk akses tanpa internet.</div>}
     {message&&<div className="rounded-xl bg-[#E3F7EC] p-3 text-sm text-[#076B3A]">{message}</div>}
     {completedExamNotice&&<div role="dialog" aria-modal="true" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600"><CheckCircle2 size={26}/></div><h3 className="mt-3 text-center text-lg font-black text-slate-800">Anda sudah mengikuti ujian</h3><p className="mt-2 text-center text-sm leading-6 text-slate-600">Anda sudah menyelesaikan ujian "{completedExamNotice}". Satu siswa hanya dapat mengikuti ujian yang sama satu kali.</p><button className={btn+' mt-4 w-full'} onClick={()=>setCompletedExamNotice(null)}>Mengerti</button></div></div>}
-    {section==='student'&&<div>{!linkedExamId&&<button className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500" onClick={()=>setSection('home')}><ArrowLeft size={16}/> Kembali</button>}{studentEntry()}</div>}
+    {section==='student'&&<div>{!linkedExamId&&!studentMode&&<button className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-500" onClick={()=>setSection('home')}><ArrowLeft size={16}/> Kembali</button>}{studentEntry()}</div>}
     {section==='home'&&<div className="space-y-2">
       <button className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#16B364] hover:bg-[#F7FCF9]" onClick={()=>setSection('create')}><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#0B8F4D]"><Plus size={22}/></span><span className="min-w-0 flex-1"><strong className="block font-extrabold">Buat Ujian</strong><span className="mt-1 block text-xs text-slate-500">Susun ujian dari paket soal di Bank Soal Mapel.</span></span><ChevronRight className="shrink-0 text-slate-400" size={20}/></button>
       <button className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#16B364] hover:bg-[#F7FCF9]" onClick={()=>setSection('manage')}><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#0B8F4D]"><ClipboardList size={22}/></span><span className="min-w-0 flex-1"><strong className="block font-extrabold">Kelola Ujian</strong><span className="mt-1 block text-xs text-slate-500">Atur status ujian dan bagikan tautan pengerjaan.</span></span><ChevronRight className="shrink-0 text-slate-400" size={20}/></button>
