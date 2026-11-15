@@ -8,6 +8,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase/config';
+import { studentNisnHash } from '../lib/studentLookup';
 import { useAuth } from './AuthContext';
 import {
   initialAssessments,
@@ -92,18 +93,20 @@ function saveLocal<T>(key: string, data: T) {
 }
 
 
-async function syncStudentExamDirectoryRecord(student: Student | null, studentId: string, isAdmin: boolean) {
+async function syncStudentExamDirectoryRecord(student: Student | null, studentId: string, isAdmin: boolean, previousNisn?: string) {
   if (!isAdmin) return;
   const ref = doc(db, 'studentExamDirectory', studentId);
+  const lookup = collection(db, 'studentLoginLookup');
+  if (previousNisn && previousNisn !== student?.nisn) await deleteDoc(doc(lookup, await studentNisnHash(previousNisn)));
   if (!student || student.status !== 'Aktif' || !student.name?.trim() || !student.className?.trim()) {
     await deleteDoc(ref);
+    if (student?.nisn) await deleteDoc(doc(lookup, await studentNisnHash(student.nisn)));
     return;
   }
-  await setDoc(ref, {
-    id: studentId,
-    name: student.name.trim().toLocaleUpperCase('id-ID'),
-    className: student.className.trim(),
-    status: 'Aktif',
+  await setDoc(ref, { id: studentId, name: student.name.trim().toLocaleUpperCase('id-ID'), className: student.className.trim(), status: 'Aktif' });
+  if (student.nisn?.trim()) await setDoc(doc(lookup, await studentNisnHash(student.nisn.trim())), {
+    studentId, nis: String(student.nis || ''), name: student.name.trim().toLocaleUpperCase('id-ID'),
+    className: student.className.trim(), gender: student.gender || '', status: 'Aktif'
   });
 }
 
@@ -501,7 +504,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const current = students.find(s => s.id === id);
     const updatedStudent = { ...(current || { id, name: '', className: '', status: 'menunggu' }), ...partial, id } as Student;
     await setDoc(doc(db, 'students', id), partial, { merge: true });
-    await syncStudentExamDirectoryRecord(updatedStudent, id, currentUser?.role === 'super_admin' && firebaseUser?.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id');
+    await syncStudentExamDirectoryRecord(updatedStudent, id, currentUser?.role === 'super_admin' && firebaseUser?.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id', current?.nisn);
     setStudents((prev) => {
       const updated = prev.map((s) => (s.id === id ? updatedStudent : s));
       saveLocal('students', updated);
