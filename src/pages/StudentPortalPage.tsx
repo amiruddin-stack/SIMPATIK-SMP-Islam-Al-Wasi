@@ -30,6 +30,7 @@ export const StudentPortalPage: React.FC = () => {
   const [studentSession, setStudentSession] = useState(false);
 
   useEffect(() => {
+    void syncStudentDirectory().catch(error => console.warn('Sinkronisasi direktori siswa:', error));
     let alive = true;
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (!alive) return;
