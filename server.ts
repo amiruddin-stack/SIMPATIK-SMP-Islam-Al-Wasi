@@ -148,7 +148,7 @@ async function startServer() {
       if (found.empty) { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
       const student = found.docs[0].data();
       if (String(student.status || '').toLowerCase() !== 'aktif') { res.status(401).json({ success: false, message: 'NISN belum terdaftar atau belum disetujui admin.' }); return; }
-      const className = String(student.className || ''); const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\\s(-])/i)?.[1]?.toUpperCase() || '';
+      const className = String(student.className || ''); const classLevel = className.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
       if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid.' }); return; }
       const studentId = String(student.id || found.docs[0].id);
       const token = await services.adminAuth.createCustomToken('student_' + studentId, { role: 'student', studentId, className, classLevel });
