@@ -3,6 +3,8 @@ services:
     name: simpatik-backend
     runtime: node
     plan: free
+    rootDir: .
+    autoDeploy: true
     buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
