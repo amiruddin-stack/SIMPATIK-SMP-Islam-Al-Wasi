@@ -139,8 +139,8 @@ async function startServer() {
     try {
       const services = getAdminServices();
       if (!services) { res.status(503).json({ success: false, message: 'Layanan login siswa belum dikonfigurasi.' }); return; }
-      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.replace(/\\D/g, '') : '';
-      if (!/^\\d{10}$/.test(nisn)) { res.status(400).json({ success: false, message: 'Masukkan NISN yang terdiri dari 10 angka.' }); return; }
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
+      if (!nisn || nisn.length > 30) { res.status(400).json({ success: false, message: 'Masukkan NISN yang valid (maksimal 30 karakter).' }); return; }
       const ip = req.ip || req.socket.remoteAddress || 'unknown'; const now = Date.now(); const bucket = loginAttempts.get(ip);
       if (bucket && bucket.resetAt > now && bucket.count >= 12) { res.status(429).json({ success: false, message: 'Terlalu banyak percobaan. Coba kembali beberapa menit lagi.' }); return; }
       if (!bucket || bucket.resetAt <= now) loginAttempts.set(ip, { count: 1, resetAt: now + 600000 }); else bucket.count += 1;
@@ -152,7 +152,7 @@ async function startServer() {
       if (!classLevel) { res.status(400).json({ success: false, message: 'Kelas siswa belum valid.' }); return; }
       const studentId = String(student.id || found.docs[0].id);
       const token = await services.adminAuth.createCustomToken('student_' + studentId, { role: 'student', studentId, className, classLevel });
-      res.json({ success: true, token, student: { id: studentId, name: String(student.name || ''), className } });
+      res.json({ success: true, token, student: { id: studentId, name: String(student.name || ''), className, nis: String(student.nis || ''), gender: String(student.gender || '') } });
     } catch (error) { console.error('Login siswa gagal:', error); res.status(500).json({ success: false, message: 'Login belum dapat diproses. Periksa konfigurasi Firebase server.' }); }
   });
 
