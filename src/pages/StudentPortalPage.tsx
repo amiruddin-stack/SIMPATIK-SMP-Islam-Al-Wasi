@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, ClipboardCheck,
+  GraduationCap, KeyRound, LogOut, Menu, ShieldCheck, UserRound,
+  UserSquare2, X
+} from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
@@ -9,7 +13,20 @@ import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
 type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
+type StudentMenu = 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'keamanan';
 
+const menuGroups = [
+  { title: 'Akun', items: [{ id: 'profil', label: 'Profil', icon: UserRound }, { id: 'biodata', label: 'Biodata Siswa', icon: UserSquare2 }] },
+  { title: 'Islamic Life Skill', items: [{ id: 'tahsin', label: 'Tahsin', icon: BookOpen, soon: true }, { id: 'bacaan-sholat', label: 'Bacaan Sholat', icon: BookOpen, soon: true }] },
+  { title: 'Asesmen', items: [{ id: 'ujian-semester', label: 'Ujian Semester', icon: CalendarDays }, { id: 'ujian-sekolah', label: 'Ujian Sekolah', icon: ClipboardCheck }] },
+  { title: 'Pengaturan', items: [{ id: 'keamanan', label: 'Keamanan', icon: ShieldCheck }] },
+] as const;
+
+const menuTitles: Record<StudentMenu, string> = {
+  profil: 'Profil', biodata: 'Biodata Siswa', tahsin: 'Tahsin',
+  'bacaan-sholat': 'Bacaan Sholat', 'ujian-semester': 'Ujian Semester',
+  'ujian-sekolah': 'Ujian Sekolah', keamanan: 'Keamanan'
+};
 
 export const StudentPortalPage: React.FC = () => {
   const [view, setView] = useState<StudentView>('home');
@@ -18,6 +35,8 @@ export const StudentPortalPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [studentSession, setStudentSession] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<StudentMenu>('profil');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -53,41 +72,29 @@ export const StudentPortalPage: React.FC = () => {
     try {
       const lookupId = await studentNisnHash(normalizedNisn);
       const lookupSnapshot = await getDoc(doc(db, 'studentLoginLookup', lookupId));
-      if (!lookupSnapshot.exists()) {
-        throw new Error('NISN tidak ditemukan. Pastikan pendaftaran sudah disetujui admin.');
-      }
-
+      if (!lookupSnapshot.exists()) throw new Error('NISN tidak ditemukan. Pastikan pendaftaran sudah disetujui admin.');
       const lookup = lookupSnapshot.data();
-      if (String(lookup.nisn || '') !== normalizedNisn || !lookup.studentId) {
-        throw new Error('Data NISN tidak cocok. Silakan hubungi admin sekolah.');
-      }
-
+      if (String(lookup.nisn || '') !== normalizedNisn || !lookup.studentId) throw new Error('Data NISN tidak cocok. Silakan hubungi admin sekolah.');
       if (auth.currentUser) await signOut(auth);
       await signInAnonymously(auth);
-
       const directorySnapshot = await getDoc(doc(db, 'studentExamDirectory', String(lookup.studentId)));
       if (!directorySnapshot.exists()) {
         await signOut(auth);
         throw new Error('Akun siswa belum aktif atau belum disinkronkan admin.');
       }
-
       const directory = directorySnapshot.data();
       if (directory.status !== 'Aktif' || !directory.name || !directory.className) {
         await signOut(auth);
         throw new Error('Akun siswa belum aktif. Silakan hubungi admin sekolah.');
       }
-
       const profile: StudentProfile = {
-        id: String(directory.id || lookup.studentId),
-        name: String(directory.name),
-        className: String(directory.className),
-        nis: '',
-        nisn: normalizedNisn,
-        gender: ''
+        id: String(directory.id || lookup.studentId), name: String(directory.name),
+        className: String(directory.className), nis: '', nisn: normalizedNisn, gender: ''
       };
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
       setStudent(profile);
       setStudentSession(true);
+      setActiveMenu('profil');
     } catch (error) {
       console.error('Login siswa gagal:', error);
       setMessage(error instanceof Error ? error.message : 'Tidak dapat masuk. Periksa koneksi internet lalu coba lagi.');
@@ -96,44 +103,118 @@ export const StudentPortalPage: React.FC = () => {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem('simpatik_student_identity');
+    setStudent(null);
+    setStudentSession(false);
+    void signOut(auth);
+  };
+
   if (view === 'register') return (
     <div className="min-h-screen bg-[#F7FBF8] px-3 py-5 sm:px-6">
       <div className="mx-auto max-w-2xl">
-        <button type="button" onClick={() => setView('home')} className="mb-4 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-[#087F49] hover:bg-[#E3F7EC]"><ArrowLeft size={17}/> Kembali</button>
+        <button type="button" onClick={() => setView('home')} aria-label="Kembali" className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#0B8F4D] to-[#087640] text-white shadow"><ArrowLeft size={20}/></button>
         <RegistrationPage type="siswa" studentPortal />
       </div>
     </div>
   );
 
-  if (studentSession && student) return (
-    <main className="min-h-screen bg-[#F7FBF8] px-3 py-5 sm:px-6">
-      <div className="mx-auto max-w-5xl space-y-4">
-        <header className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-6 py-7 text-white shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><GraduationCap size={30}/></div>
-            <div><p className="text-xs font-bold uppercase tracking-widest text-white/80">SIMPATIK for Student</p><h1 className="mt-1 text-xl font-black">Assalamu’alaikum</h1></div>
-          </div>
-          <p className="mt-4 text-lg font-extrabold">{student.name}</p>
-          <p className="text-sm text-white/85">Kelas {student.className} · Akun Aktif</p>
-        </header>
-        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between"><h2 className="font-bold text-slate-800">Profil Saya</h2><span className="rounded-full bg-[#E3F7EC] px-3 py-1 text-xs font-bold text-[#0B8F4D]">Disetujui</span></div>
-          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div><dt className="text-xs text-slate-500">NIS</dt><dd className="font-semibold text-slate-800">{student.nis || '—'}</dd></div>
-            <div><dt className="text-xs text-slate-500">NISN</dt><dd className="font-semibold text-slate-800">{student.nisn || '—'}</dd></div>
-            <div><dt className="text-xs text-slate-500">Jenis kelamin</dt><dd className="font-semibold text-slate-800">{student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '—'}</dd></div>
-            <div><dt className="text-xs text-slate-500">Kelas</dt><dd className="font-semibold text-slate-800">{student.className}</dd></div>
+  if (studentSession && student) {
+    const selectMenu = (id: StudentMenu) => { setActiveMenu(id); setSidebarOpen(false); };
+    const activeLabel = menuTitles[activeMenu];
+    const renderContent = () => {
+      if (activeMenu === 'profil') return (
+        <div className="grid gap-4">
+          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-5 shadow-sm">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><UserRound size={38}/></div>
+              <h2 className="mt-3 text-xl font-black text-slate-800">{student.name}</h2>
+              <p className="mt-1 text-sm font-semibold text-[#087F49]">Kelas {student.className}</p>
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#E3F7EC] px-3 py-1.5 text-xs font-bold text-[#087F49]"><span className="h-1.5 w-1.5 rounded-full bg-[#0B8F4D]"/> Akun Aktif</span>
+            </div>
+          </section>
+          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm">
+            <h3 className="font-extrabold text-slate-800">Ringkasan Akun</h3>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-[#F5FBF7] p-3"><p className="text-xs text-slate-500">Status</p><p className="mt-1 font-bold text-[#087F49]">Aktif</p></div>
+              <div className="rounded-xl bg-[#F5FBF7] p-3"><p className="text-xs text-slate-500">Kelas</p><p className="mt-1 font-bold text-slate-800">{student.className}</p></div>
+            </div>
+          </section>
+        </div>
+      );
+      if (activeMenu === 'biodata') return (
+        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm sm:p-5">
+          <h2 className="mb-4 font-extrabold text-slate-800">Identitas Siswa</h2>
+          <dl className="divide-y divide-[#E7F1EA]">
+            {[['Nama Lengkap', student.name], ['Kelas', student.className], ['NIS', student.nis || '—'], ['NISN', student.nisn || '—'], ['Jenis Kelamin', student.gender === 'L' ? 'Laki-laki' : student.gender === 'P' ? 'Perempuan' : '—'], ['Status Akun', 'Aktif']].map(([label, value]) => <div key={label} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="text-sm font-bold text-slate-800">{value}</dd></div>)}
           </dl>
+          <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Jika ada biodata yang perlu diperbaiki, silakan hubungi admin sekolah.</p>
         </section>
+      );
+      if (activeMenu === 'tahsin' || activeMenu === 'bacaan-sholat') return (
+        <section className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-[#D9EEE2] bg-white p-6 text-center shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#087F49]"><BookOpen size={30}/></div>
+          <h2 className="mt-4 text-lg font-black text-slate-800">{activeLabel}</h2>
+          <span className="mt-3 rounded-full bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700">Coming Soon</span>
+          <p className="mt-2 max-w-sm text-sm text-slate-500">Materi {activeLabel.toLowerCase()} sedang disiapkan.</p>
+        </section>
+      );
+      if (activeMenu === 'ujian-semester' || activeMenu === 'ujian-sekolah') return (
         <section className="rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm sm:p-5">
-          <div className="mb-3"><h2 className="text-lg font-extrabold text-slate-800">Ujian Saya</h2><p className="text-xs text-slate-500">Ujian yang diaktifkan guru untuk kelas {student.className} akan muncul otomatis di sini.</p></div>
+          <div className="mb-4"><h2 className="font-extrabold text-slate-800">{activeLabel}</h2><p className="mt-1 text-xs text-slate-500">Pilih ujian yang tersedia untuk kelas {student.className}.</p></div>
           <ExamPage studentMode />
         </section>
-        {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
-        <button type="button" onClick={() => { localStorage.removeItem('simpatik_student_identity'); setStudent(null); setStudentSession(false); void signOut(auth); }} className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-600">Keluar dari akun siswa</button>
-      </div>
-    </main>
-  );
+      );
+      return (
+        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><ShieldCheck size={25}/></div><div><h2 className="font-extrabold text-slate-800">Keamanan Akun</h2><p className="text-xs text-slate-500">Kelola sesi masuk pada perangkat ini.</p></div></div>
+          <div className="mt-5 rounded-xl bg-[#F5FBF7] p-4"><p className="text-sm font-bold text-slate-800">Masuk menggunakan NISN</p><p className="mt-1 text-xs leading-5 text-slate-500">Sesi akun tersimpan pada perangkat ini agar siswa tidak perlu masuk berulang kali. Jangan gunakan perangkat bersama tanpa keluar dari akun.</p></div>
+          <button type="button" onClick={logout} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-50"><LogOut size={17}/> Keluar dari akun siswa</button>
+        </section>
+      );
+    };
+
+    return (
+      <main className="min-h-screen bg-[#F7FBF8]">
+        <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
+          <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0B8F4D] via-[#087F49] to-[#06663A] px-5 py-6 text-white shadow-lg sm:px-7 sm:py-7">
+            <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full border-[24px] border-white/10"/>
+            <div className="pointer-events-none absolute -bottom-24 right-24 h-44 w-44 rounded-full bg-white/5"/>
+            <div className="relative z-10">
+              <h1 className="text-lg font-black leading-tight tracking-wide sm:text-2xl">SIMPATIK FOR STUDENTS</h1>
+              <p className="mt-1 text-sm font-bold text-white/90 sm:text-base">SMP Islam Al-Wasi'</p>
+              <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0"><p className="text-xs font-medium text-white/80">Selamat datang,</p><p className="mt-1 truncate text-lg font-extrabold sm:text-xl">{student.name}</p><p className="mt-0.5 text-sm font-semibold text-white/90">Kelas {student.className}</p></div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3 py-2 text-xs font-bold"><Bell size={15}/> Akun aktif</div>
+              </div>
+            </div>
+          </header>
+
+          <div className="mt-4 flex items-center justify-between md:hidden">
+            <button type="button" onClick={() => setSidebarOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-[#D9EEE2] bg-white px-4 py-2.5 text-sm font-bold text-[#087F49] shadow-sm"><Menu size={18}/> Menu</button>
+            <span className="text-xs font-semibold text-slate-500">{activeLabel}</span>
+          </div>
+
+          <div className="mt-4 grid items-start gap-4 md:grid-cols-[250px_minmax(0,1fr)]">
+            <aside className="hidden rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm md:block">
+              <p className="px-3 pb-3 pt-2 text-[11px] font-black uppercase tracking-wider text-slate-400">Menu Siswa</p>
+              {menuGroups.map(group => <div key={group.title} className="mb-3 last:mb-0"><p className="px-3 py-2 text-xs font-extrabold text-[#087F49]">{group.title}</p><div className="space-y-1">{group.items.map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className={'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-600 hover:bg-[#F5FBF7]')}><Icon size={18}/><span className="min-w-0 flex-1">{item.label}</span>{'soon' in item && item.soon && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700">Soon</span>}</button>; })}</div></div>)}
+            </aside>
+
+            <section className="min-w-0">
+              <header className="mb-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
+                <button type="button" onClick={() => setActiveMenu('profil')} aria-label="Kembali ke profil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
+                <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
+              </header>
+              {renderContent()}
+            </section>
+          </div>
+        </div>
+
+        {sidebarOpen && <div className="fixed inset-0 z-[200] md:hidden"><button type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)} className="absolute inset-0 bg-slate-950/40"/><aside className="absolute inset-y-0 left-0 w-[min(86vw,320px)] overflow-y-auto bg-white p-4 shadow-2xl"><div className="mb-4 flex items-center justify-between"><p className="font-black text-[#087F49]">Menu Siswa</p><button type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><X size={20}/></button></div>{menuGroups.map(group => <div key={group.title} className="mb-4"><p className="px-3 py-2 text-xs font-extrabold text-[#087F49]">{group.title}</p><div className="space-y-1">{group.items.map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className={'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-600')}><Icon size={18}/><span className="flex-1">{item.label}</span>{'soon' in item && item.soon && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700">Soon</span>}</button>; })}</div></div>)}</aside></div>}
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] px-4 py-8">
@@ -146,24 +227,15 @@ export const StudentPortalPage: React.FC = () => {
         </header>
         <div className="grid gap-3 p-5 sm:p-6">
           <button type="button" onClick={() => { setMessage(''); setView('register'); }} className="group flex w-full items-center gap-4 rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7]">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><UserPlus size={23}/></span>
-            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Mendaftar</span><span className="mt-1 block text-xs leading-5 text-slate-500">Isi NISN, nama lengkap, dan pilih kelas. Tunggu persetujuan admin.</span></span>
-            <ArrowRight className="text-[#087F49]" size={19}/>
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><UserRound size={23}/></span>
+            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Mendaftar</span><span className="mt-1 block text-xs leading-5 text-slate-500">Isi NISN, nama lengkap, dan pilih kelas. Tunggu persetujuan admin.</span></span><ArrowRight className="text-[#087F49]" size={19}/>
           </button>
           <button type="button" onClick={() => { setMessage(''); setView('login'); }} className="group flex w-full items-center gap-4 rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7]">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><KeyRound size={23}/></span>
-            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Masuk</span><span className="mt-1 block text-xs leading-5 text-slate-500">Untuk siswa yang sudah disetujui admin. Masuk menggunakan NISN.</span></span>
-            <ArrowRight className="text-[#087F49]" size={19}/>
+            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Masuk</span><span className="mt-1 block text-xs leading-5 text-slate-500">Untuk siswa yang sudah disetujui admin. Masuk menggunakan NISN.</span></span><ArrowRight className="text-[#087F49]" size={19}/>
           </button>
         </div>
-        {view === 'login' && <div className="border-t border-[#E7F1EA] px-5 py-5 sm:px-6">
-          <div className="mb-3"><h2 className="font-bold text-slate-800">Masuk SIMPATIK for Student</h2><p className="mt-1 text-xs leading-5 text-slate-500">Masukkan NISN. Perangkat akan diingat setelah login berhasil.</p></div>
-          <form onSubmit={loginStudent} className="grid gap-3">
-            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.slice(0,30))} maxLength={30} required placeholder="Masukkan NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>
-            {message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}
-            <button type="submit" disabled={busy} className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640] disabled:opacity-60">{busy ? 'Memeriksa NISN…' : 'Masuk'}</button>
-          </form>
-        </div>}
+        {view === 'login' && <div className="border-t border-[#E7F1EA] px-5 py-5 sm:px-6"><div className="mb-3"><h2 className="font-bold text-slate-800">Masuk SIMPATIK for Student</h2><p className="mt-1 text-xs leading-5 text-slate-500">Masukkan NISN. Perangkat akan diingat setelah login berhasil.</p></div><form onSubmit={loginStudent} className="grid gap-3"><label className="grid gap-1.5 text-sm font-semibold text-slate-700">NISN<input value={nisn} onChange={e => setNisn(e.target.value.slice(0,30))} maxLength={30} required placeholder="Masukkan NISN" className="rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-[#16A34A] focus:ring-2 focus:ring-[#E3F7EC]"/></label>{message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">{message}</p>}<button type="submit" disabled={busy} className="rounded-xl bg-[#0B8F4D] px-4 py-3 font-bold text-white transition hover:bg-[#087640] disabled:opacity-60">{busy ? 'Memeriksa NISN…' : 'Masuk'}</button></form></div>}
         <footer className="border-t border-[#E7F1EA] px-5 py-4 text-center text-[11px] text-slate-400">Qurani, Ramah Anak dan Berkarakter · SIMPATIK</footer>
       </section>
     </main>
