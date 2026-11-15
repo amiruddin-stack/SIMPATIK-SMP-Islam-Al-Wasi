@@ -50,16 +50,19 @@ export const StudentPortalPage: React.FC = () => {
       const lookup = await getDoc(doc(db, 'studentLoginLookup', lookupId));
       if (!lookup.exists()) throw new Error('NISN tidak ditemukan. Pastikan sudah terdaftar dan disetujui admin.');
       const data = lookup.data();
-      if (String(data.status || '').toLowerCase() !== 'aktif') throw new Error('Pendaftaran belum disetujui admin.');
+      if (String(data.nisn || '') !== nisn || !data.studentId) throw new Error('NISN tidak cocok dengan data SIMPATIK.');
+      const directory = await getDoc(doc(db, 'studentExamDirectory', String(data.studentId)));
+      if (!directory.exists() || String(directory.data().status || '') !== 'Aktif') throw new Error('Siswa belum disetujui admin atau statusnya tidak aktif.');
+      const studentData = directory.data();
       const profile: StudentProfile = {
-        id: String(data.studentId || ''),
-        name: String(data.name || ''),
-        className: String(data.className || ''),
-        nis: String(data.nis || ''),
+        id: String(data.studentId),
+        name: String(studentData.name || ''),
+        className: String(studentData.className || ''),
+        nis: '',
         nisn,
-        gender: String(data.gender || ''),
+        gender: '',
       };
-      if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa belum lengkap. Hubungi admin sekolah.');
+      if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa SIMPATIK belum lengkap. Hubungi admin sekolah.');
       if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
       if (!auth.currentUser) await signInAnonymously(auth);
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
