@@ -1,25 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
-import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
-import { studentNisnHash } from '../lib/studentLookup';
-import { STUDENT_SYNC_URL } from '../lib/studentSyncConfig';
+import { onAuthStateChanged, signInWithCustomToken, signOut } from 'firebase/auth';
+import { simpatikApi } from '../lib/backendApi';
 import { RegistrationPage } from './MasterDataPage';
-import { auth, db } from '../firebase/config';
+import { auth } from '../firebase/config';
 import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
 type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
-type SyncedStudent = StudentProfile & { nisnHash: string };
-const STUDENT_CACHE_KEY = 'simpatik_student_directory';
 
-async function syncStudentDirectory() {
-  if (!STUDENT_SYNC_URL) return;
-  const response = await fetch(STUDENT_SYNC_URL + (STUDENT_SYNC_URL.includes('?') ? '&' : '?') + 'action=studentDirectory', { cache: 'no-store' });
-  if (!response.ok) throw new Error('Sinkronisasi data siswa gagal.');
-  const result = await response.json();
-  if (!result.success || !Array.isArray(result.students)) throw new Error(result.message || 'Data sinkronisasi tidak valid.');
-  localStorage.setItem(STUDENT_CACHE_KEY, JSON.stringify(result.students));
-}
 
 export const StudentPortalPage: React.FC = () => {
   const [view, setView] = useState<StudentView>('home');
@@ -30,11 +19,10 @@ export const StudentPortalPage: React.FC = () => {
   const [studentSession, setStudentSession] = useState(false);
 
   useEffect(() => {
-    void syncStudentDirectory().catch(error => console.warn('Sinkronisasi direktori siswa:', error));
     let alive = true;
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (!alive) return;
-      if (!user || !user.isAnonymous) { setStudentSession(false); setStudent(null); return; }
+      if (!user) { setStudentSession(false); setStudent(null); return; }
       try {
         const saved = localStorage.getItem('simpatik_student_identity');
         if (!saved) { setStudentSession(false); setStudent(null); return; }
@@ -58,27 +46,15 @@ export const StudentPortalPage: React.FC = () => {
     setBusy(true);
     setMessage('');
     try {
-      const lookupId = await studentNisnHash(nisn);
-      const cached = JSON.parse(localStorage.getItem(STUDENT_CACHE_KEY) || '[]') as SyncedStudent[];
-      const studentData = cached.find(item => item.nisnHash === lookupId);
-      if (!studentData) throw new Error('NISN tidak ditemukan pada data SIMPATIK yang tersinkron. Hubungkan internet dan coba lagi, atau hubungi admin sekolah.');
-      const profile: StudentProfile = {
-        id: String(studentData.id || ''),
-        name: String(studentData.name || ''),
-        className: String(studentData.className || ''),
-        nis: String(studentData.nis || ''),
-        nisn,
-        gender: String(studentData.gender || ''),
-      };
+      const response = await fetch(simpatikApi('/api/student-login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nisn }) });
+      const result = await response.json();
+      if (!response.ok || !result.success || !result.token || !result.student) throw new Error(result.message || 'NISN belum terdaftar atau belum disetujui admin.');
+      if (auth.currentUser) await signOut(auth);
+      await signInWithCustomToken(auth, result.token);
+      const profile: StudentProfile = { id: String(result.student.id || ''), name: String(result.student.name || ''), className: String(result.student.className || ''), nis: '', nisn, gender: '' };
       if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa SIMPATIK belum lengkap. Hubungi admin sekolah.');
-      if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
-      if (!auth.currentUser) await signInAnonymously(auth);
       localStorage.setItem('simpatik_student_identity', JSON.stringify(profile));
-      setStudent(profile);
-      setStudentSession(true);
-    } catch (error) {
-      console.error('Login siswa SIMPATIK:', error);
-      setMessage(error instanceof Error ? error.message : 'Login gagal. Periksa koneksi internet.');
+      setStudent(profile); setStudentSession(true);
     } finally {
       setBusy(false);
     }
