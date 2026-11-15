@@ -35,8 +35,8 @@ function listStudentDirectory_() {
     const result = JSON.parse(response.getContentText() || '{}');
     (result.documents || []).forEach(function(document) {
       const item = decodeFields_(document.fields || {});
-      const nisn = String(item.nisn || '').replace(/\\D/g, '');
-      if (item.status !== 'Aktif' || !/^\\d{10}$/.test(nisn) || !item.name || !item.className) return;
+      const nisn = String(item.nisn || '').replace(/\D/g, '');
+      if (item.status !== 'Aktif' || !/^\d{10}$/.test(nisn) || !item.name || !item.className) return;
       const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, nisn, Utilities.Charset.UTF_8);
       const hash = digest.map(function(byte) {
         const value = (byte + 256) % 256;
