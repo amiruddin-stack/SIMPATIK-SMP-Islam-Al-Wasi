@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, GraduationCap, KeyRound, UserPlus } from 'lucide-react';
 import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { studentNisnHash } from '../lib/studentLookup';
+import { STUDENT_SYNC_URL } from '../lib/studentSyncConfig';
 import { RegistrationPage } from './MasterDataPage';
 import { auth, db } from '../firebase/config';
 import { ExamPage } from './ExamPage';
 
 type StudentView = 'home' | 'register' | 'login';
 type StudentProfile = { id: string; name: string; className: string; nis: string; nisn: string; gender: string };
+type SyncedStudent = StudentProfile & { nisnHash: string };
+const STUDENT_CACHE_KEY = 'simpatik_student_directory';
+
+async function syncStudentDirectory() {
+  if (!STUDENT_SYNC_URL) return;
+  const response = await fetch(STUDENT_SYNC_URL + (STUDENT_SYNC_URL.includes('?') ? '&' : '?') + 'action=studentDirectory', { cache: 'no-store' });
+  if (!response.ok) throw new Error('Sinkronisasi data siswa gagal.');
+  const result = await response.json();
+  if (!result.success || !Array.isArray(result.students)) throw new Error(result.message || 'Data sinkronisasi tidak valid.');
+  localStorage.setItem(STUDENT_CACHE_KEY, JSON.stringify(result.students));
+}
 
 export const StudentPortalPage: React.FC = () => {
   const [view, setView] = useState<StudentView>('home');
@@ -47,20 +58,16 @@ export const StudentPortalPage: React.FC = () => {
     setMessage('');
     try {
       const lookupId = await studentNisnHash(nisn);
-      const lookup = await getDoc(doc(db, 'studentLoginLookup', lookupId));
-      if (!lookup.exists()) throw new Error('NISN tidak ditemukan. Pastikan sudah terdaftar dan disetujui admin.');
-      const data = lookup.data();
-      if (String(data.nisn || '') !== nisn || !data.studentId) throw new Error('NISN tidak cocok dengan data SIMPATIK.');
-      const directory = await getDoc(doc(db, 'studentExamDirectory', String(data.studentId)));
-      if (!directory.exists() || String(directory.data().status || '') !== 'Aktif') throw new Error('Siswa belum disetujui admin atau statusnya tidak aktif.');
-      const studentData = directory.data();
+      const cached = JSON.parse(localStorage.getItem(STUDENT_CACHE_KEY) || '[]') as SyncedStudent[];
+      const studentData = cached.find(item => item.nisnHash === lookupId);
+      if (!studentData) throw new Error('NISN tidak ditemukan pada data SIMPATIK yang tersinkron. Hubungkan internet dan coba lagi, atau hubungi admin sekolah.');
       const profile: StudentProfile = {
-        id: String(data.studentId),
+        id: String(studentData.id || ''),
         name: String(studentData.name || ''),
         className: String(studentData.className || ''),
-        nis: '',
+        nis: String(studentData.nis || ''),
         nisn,
-        gender: '',
+        gender: String(studentData.gender || ''),
       };
       if (!profile.id || !profile.name || !profile.className) throw new Error('Data siswa SIMPATIK belum lengkap. Hubungi admin sekolah.');
       if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
@@ -127,7 +134,7 @@ export const StudentPortalPage: React.FC = () => {
         <div className="grid gap-3 p-5 sm:p-6">
           <button type="button" onClick={() => { setMessage(''); setView('register'); }} className="group flex w-full items-center gap-4 rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7]">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><UserPlus size={23}/></span>
-            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Mendaftar</span><span className="mt-1 block text-xs leading-5 text-slate-500">Isi NIS, nama lengkap, dan pilih kelas. Tunggu persetujuan admin.</span></span>
+            <span className="min-w-0 flex-1"><span className="block font-bold text-slate-800">Mendaftar</span><span className="mt-1 block text-xs leading-5 text-slate-500">Isi NISN, nama lengkap, dan pilih kelas. Tunggu persetujuan admin.</span></span>
             <ArrowRight className="text-[#087F49]" size={19}/>
           </button>
           <button type="button" onClick={() => { setMessage(''); setView('login'); }} className="group flex w-full items-center gap-4 rounded-2xl border border-[#D9EEE2] p-4 text-left transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7]">
