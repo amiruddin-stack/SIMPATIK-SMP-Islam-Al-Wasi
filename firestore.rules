@@ -124,6 +124,365 @@ service cloud.firestore {
         && request.resource.data.studentId is string
         && request.resource.data.nisn is string
         && request.resource.data.nisn.matches('^[0-9]{10}
+    }
+
+    match /students/{studentId} {
+      // Siswa hanya boleh membaca dokumen miliknya berdasarkan klaim token server.
+      allow get: if isGuruOrAdmin()
+        || (signedIn() && request.auth.token.role == 'student' && request.auth.token.studentId == studentId);
+      allow list: if isGuruOrAdmin();
+      // Impor Excel memakai setDoc(..., {merge:true}); admin perlu create dan update.
+      allow create: if isAdmin() || validStudentRegistration(studentId);
+      allow update, delete: if isAdmin();
+    }
+
+    match /attendance/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /attendance_history/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /journals/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /behaviors/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /counseling/{id} {
+      allow read, write: if isAdmin()
+        || (userProfileExists() && userRole() == 'guru_bk');
+    }
+    match /assessments/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /settings/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /teachers/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /master_classes/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /master_subjects/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /extracurriculars/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+
+    match /examQuestions/{questionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /examPublicQuestions/{questionId} {
+      // Koleksi ini khusus konten soal publik; kunci jawaban harus disimpan terpisah.
+      allow read: if isGuruOrAdmin()
+        || (((signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous') || isStudent())
+          && resource.data.keys().hasOnly([
+            'title', 'subject', 'className', 'academicYear', 'semester',
+            'prompt', 'options', 'points', 'createdAt'
+          ])
+          && (!isStudent() || resource.data.className == request.auth.token.className));
+      allow create, update: if isGuruOrAdmin()
+        && request.resource.data.keys().hasOnly([
+          'title', 'subject', 'className', 'academicYear', 'semester',
+          'prompt', 'options', 'points', 'createdAt'
+        ]);
+      allow delete: if isGuruOrAdmin();
+    }
+
+    match /examAnswerKeys/{questionId} {
+      // Kunci dapat dibaca oleh sesi siswa anonim untuk pemeriksaan lokal saat ujian.
+      // Ini berarti kunci tidak dapat dijamin rahasia dari siswa yang membongkar data aplikasi.
+      allow read: if isGuruOrAdmin()
+        || (signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
+        || (isStudent()
+          && exists(/databases/$(database)/documents/examPublicQuestions/$(questionId))
+          && get(/databases/$(database)/documents/examPublicQuestions/$(questionId)).data.className == request.auth.token.className);
+      allow create, update, delete: if isGuruOrAdmin();
+    }
+
+    match /exams/{examId} {
+      allow read: if isGuruOrAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.status == 'Aktif')
+        || (isStudent()
+          && resource.data.status == 'Aktif'
+          && resource.data.className == request.auth.token.classLevel);
+      allow create, update, delete: if isGuruOrAdmin();
+    }
+
+    match /examStudentCodes/{code} {
+      allow get: if isAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.active == true
+          && (!('ownerUid' in resource.data) || resource.data.ownerUid == null || resource.data.ownerUid == request.auth.uid));
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.active == true
+          && (!('ownerUid' in resource.data) || resource.data.ownerUid == null)
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid']));
+    }
+
+    match /examAttempts/{attemptId} {
+      allow read: if isGuruOrAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.ownerUid == request.auth.uid)
+        || (isStudent()
+          && resource.data.studentId == request.auth.token.studentId);
+
+      allow create: if signedIn()
+        && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
+        && request.resource.data.keys().hasOnly([
+          'examId', 'examTitle', 'studentId', 'studentName', 'className',
+          'answers', 'ownerUid', 'status', 'startedAt'
+        ])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.examId is string
+        && request.resource.data.examId.size() <= 128
+        && request.resource.data.studentId is string
+        && request.resource.data.studentId.size() <= 128
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() <= 100
+        && request.resource.data.className is string
+        && request.resource.data.className.size() <= 30
+        && request.resource.data.answers is map
+        && request.resource.data.status == 'Mengerjakan'
+        && request.resource.data.startedAt is string
+        && exists(/databases/$(database)/documents/exams/$(request.resource.data.examId))
+        && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.status == 'Aktif'
+        && (!isStudent() || (
+          request.resource.data.studentId == request.auth.token.studentId
+          && request.resource.data.className == request.auth.token.className
+          && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.className == request.auth.token.classLevel
+        ));
+
+      allow update: if isGuruOrAdmin()
+        || (signedIn()
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && (!isStudent() || resource.data.studentId == request.auth.token.studentId)
+          && resource.data.status == 'Mengerjakan'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'answers', 'status', 'submittedAt', 'autoSubmitted', 'lastSavedAt',
+            'score', 'total', 'percent', 'gradingIssue', 'gradedAt'
+          ])
+          && request.resource.data.answers is map
+          && request.resource.data.status in ['Mengerjakan', 'Selesai']
+          && (!('submittedAt' in request.resource.data)
+            || request.resource.data.submittedAt is string)
+          && (!('autoSubmitted' in request.resource.data)
+            || request.resource.data.autoSubmitted is bool)
+          && (!('lastSavedAt' in request.resource.data)
+            || request.resource.data.lastSavedAt is string)
+          && (!('score' in request.resource.data) || request.resource.data.score is number)
+          && (!('total' in request.resource.data) || request.resource.data.total is number)
+          && (!('percent' in request.resource.data) || request.resource.data.percent is number)
+          && (!('gradingIssue' in request.resource.data) || request.resource.data.gradingIssue is string)
+          && (!('gradedAt' in request.resource.data) || request.resource.data.gradedAt is string));
+      allow delete: if isAdmin();
+    }
+
+    // Default deny: semua koleksi/dokumen lain tertutup kecuali diizinkan eksplisit di atas.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+);
+      allow delete: if isAdmin();
+    }
+
+    match /students/{studentId} {
+      // Siswa hanya boleh membaca dokumen miliknya berdasarkan klaim token server.
+      allow get: if isGuruOrAdmin()
+        || (signedIn() && request.auth.token.role == 'student' && request.auth.token.studentId == studentId);
+      allow list: if isGuruOrAdmin();
+      // Impor Excel memakai setDoc(..., {merge:true}); admin perlu create dan update.
+      allow create: if isAdmin() || validStudentRegistration(studentId);
+      allow update, delete: if isAdmin();
+    }
+
+    match /attendance/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /attendance_history/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /journals/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /behaviors/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /counseling/{id} {
+      allow read, write: if isAdmin()
+        || (userProfileExists() && userRole() == 'guru_bk');
+    }
+    match /assessments/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+    match /settings/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /teachers/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /master_classes/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /master_subjects/{id} {
+      allow read: if isGuruOrAdmin();
+      allow write: if isAdmin();
+    }
+    match /extracurriculars/{id} {
+      allow read, write: if isGuruOrAdmin();
+    }
+
+    match /examQuestions/{questionId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /examPublicQuestions/{questionId} {
+      // Koleksi ini khusus konten soal publik; kunci jawaban harus disimpan terpisah.
+      allow read: if isGuruOrAdmin()
+        || (((signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous') || isStudent())
+          && resource.data.keys().hasOnly([
+            'title', 'subject', 'className', 'academicYear', 'semester',
+            'prompt', 'options', 'points', 'createdAt'
+          ])
+          && (!isStudent() || resource.data.className == request.auth.token.className));
+      allow create, update: if isGuruOrAdmin()
+        && request.resource.data.keys().hasOnly([
+          'title', 'subject', 'className', 'academicYear', 'semester',
+          'prompt', 'options', 'points', 'createdAt'
+        ]);
+      allow delete: if isGuruOrAdmin();
+    }
+
+    match /examAnswerKeys/{questionId} {
+      // Kunci dapat dibaca oleh sesi siswa anonim untuk pemeriksaan lokal saat ujian.
+      // Ini berarti kunci tidak dapat dijamin rahasia dari siswa yang membongkar data aplikasi.
+      allow read: if isGuruOrAdmin()
+        || (signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
+        || (isStudent()
+          && exists(/databases/$(database)/documents/examPublicQuestions/$(questionId))
+          && get(/databases/$(database)/documents/examPublicQuestions/$(questionId)).data.className == request.auth.token.className);
+      allow create, update, delete: if isGuruOrAdmin();
+    }
+
+    match /exams/{examId} {
+      allow read: if isGuruOrAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.status == 'Aktif')
+        || (isStudent()
+          && resource.data.status == 'Aktif'
+          && resource.data.className == request.auth.token.classLevel);
+      allow create, update, delete: if isGuruOrAdmin();
+    }
+
+    match /examStudentCodes/{code} {
+      allow get: if isAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.active == true
+          && (!('ownerUid' in resource.data) || resource.data.ownerUid == null || resource.data.ownerUid == request.auth.uid));
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.active == true
+          && (!('ownerUid' in resource.data) || resource.data.ownerUid == null)
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid']));
+    }
+
+    match /examAttempts/{attemptId} {
+      allow read: if isGuruOrAdmin()
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.ownerUid == request.auth.uid)
+        || (isStudent()
+          && resource.data.studentId == request.auth.token.studentId);
+
+      allow create: if signedIn()
+        && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
+        && request.resource.data.keys().hasOnly([
+          'examId', 'examTitle', 'studentId', 'studentName', 'className',
+          'answers', 'ownerUid', 'status', 'startedAt'
+        ])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.examId is string
+        && request.resource.data.examId.size() <= 128
+        && request.resource.data.studentId is string
+        && request.resource.data.studentId.size() <= 128
+        && request.resource.data.studentName is string
+        && request.resource.data.studentName.size() <= 100
+        && request.resource.data.className is string
+        && request.resource.data.className.size() <= 30
+        && request.resource.data.answers is map
+        && request.resource.data.status == 'Mengerjakan'
+        && request.resource.data.startedAt is string
+        && exists(/databases/$(database)/documents/exams/$(request.resource.data.examId))
+        && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.status == 'Aktif'
+        && (!isStudent() || (
+          request.resource.data.studentId == request.auth.token.studentId
+          && request.resource.data.className == request.auth.token.className
+          && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.className == request.auth.token.classLevel
+        ));
+
+      allow update: if isGuruOrAdmin()
+        || (signedIn()
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && (!isStudent() || resource.data.studentId == request.auth.token.studentId)
+          && resource.data.status == 'Mengerjakan'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'answers', 'status', 'submittedAt', 'autoSubmitted', 'lastSavedAt',
+            'score', 'total', 'percent', 'gradingIssue', 'gradedAt'
+          ])
+          && request.resource.data.answers is map
+          && request.resource.data.status in ['Mengerjakan', 'Selesai']
+          && (!('submittedAt' in request.resource.data)
+            || request.resource.data.submittedAt is string)
+          && (!('autoSubmitted' in request.resource.data)
+            || request.resource.data.autoSubmitted is bool)
+          && (!('lastSavedAt' in request.resource.data)
+            || request.resource.data.lastSavedAt is string)
+          && (!('score' in request.resource.data) || request.resource.data.score is number)
+          && (!('total' in request.resource.data) || request.resource.data.total is number)
+          && (!('percent' in request.resource.data) || request.resource.data.percent is number)
+          && (!('gradingIssue' in request.resource.data) || request.resource.data.gradingIssue is string)
+          && (!('gradedAt' in request.resource.data) || request.resource.data.gradedAt is string));
+      allow delete: if isAdmin();
+    }
+
+    // Default deny: semua koleksi/dokumen lain tertutup kecuali diizinkan eksplisit di atas.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+);
       allow delete: if isAdmin();
     }
 
