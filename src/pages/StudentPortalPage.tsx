@@ -228,10 +228,6 @@ export const StudentPortalPage: React.FC = () => {
             </aside>
 
             <section className="min-w-0">
-              {activeMenu === 'dashboard' && (<header className="mb-4 flex min-h-[82px] items-center gap-3 rounded-2xl bg-gradient-to-r from-[#0B8F4D] to-[#087640] px-4 py-4 text-white shadow-md sm:px-5">
-                <button type="button" onClick={() => setActiveMenu('dashboard')} aria-label="Kembali ke dashboard" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white transition hover:bg-white hover:text-[#087640]"><ArrowLeft size={20}/></button>
-                <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
-              </header>)}
               {renderContent()}
             </section>
           </div>
