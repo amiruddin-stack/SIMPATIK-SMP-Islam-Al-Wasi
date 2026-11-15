@@ -117,7 +117,7 @@ service cloud.firestore {
 
     match /studentLoginLookup/{lookupId} {
       allow get: if true;
-      allow list: if false;
+      allow list: if isAdmin();
       allow create, update: if isAdmin()
         && request.resource.data.keys().hasOnly(['studentId', 'nisn'])
         && request.resource.data.keys().hasAll(['studentId', 'nisn'])
