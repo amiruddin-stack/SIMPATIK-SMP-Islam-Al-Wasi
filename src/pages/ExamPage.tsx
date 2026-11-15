@@ -638,7 +638,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
       if (navigator.onLine && !auth.currentUser) await signInAnonymously(auth);
       const sessionOwnerUid = auth.currentUser?.uid || '';
       const priorAttemptsQuery = studentMode
-        ? query(collection(db, 'examAttempts'), where('ownerUid', '==', sessionOwnerUid), where('studentId', '==', studentId))
+        ? query(collection(db, 'examAttempts'), where('studentId', '==', studentId))
         : query(collection(db, 'examAttempts'), where('ownerUid', '==', sessionOwnerUid));
       const priorAttempts = await getDocs(priorAttemptsQuery);
       const finishedDoc = priorAttempts.docs.find(snapshot => {
