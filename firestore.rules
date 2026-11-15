@@ -34,6 +34,13 @@ service cloud.firestore {
         && userRole() in ['super_admin', 'guru', 'kepala_sekolah', 'operator', 'wali_kelas', 'guru_bk'];
     }
 
+    function isStudent() {
+      return signedIn()
+        && request.auth.token.role == 'student'
+        && request.auth.token.studentId is string
+        && request.auth.token.classLevel in ['VII', 'VIII', 'IX'];
+    }
+
     function validProfile(userId) {
       return isSchoolIdentity()
         && request.auth.uid == userId
@@ -163,13 +170,13 @@ service cloud.firestore {
 
     match /examPublicQuestions/{questionId} {
       // Koleksi ini khusus konten soal publik; kunci jawaban harus disimpan terpisah.
-      allow read: if (signedIn()
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+      allow read: if isGuruOrAdmin()
+        || (((signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous') || isStudent())
           && resource.data.keys().hasOnly([
             'title', 'subject', 'className', 'academicYear', 'semester',
             'prompt', 'options', 'points', 'createdAt'
-          ]))
-        || isGuruOrAdmin();
+          ])
+          && (!isStudent() || resource.data.className == request.auth.token.classLevel));
       allow create, update: if isGuruOrAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'subject', 'className', 'academicYear', 'semester',
@@ -182,7 +189,10 @@ service cloud.firestore {
       // Kunci dapat dibaca oleh sesi siswa anonim untuk pemeriksaan lokal saat ujian.
       // Ini berarti kunci tidak dapat dijamin rahasia dari siswa yang membongkar data aplikasi.
       allow read: if isGuruOrAdmin()
-        || (signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous');
+        || (signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
+        || (isStudent()
+          && exists(/databases/$(database)/documents/examPublicQuestions/$(questionId))
+          && get(/databases/$(database)/documents/examPublicQuestions/$(questionId)).data.className == request.auth.token.classLevel);
       allow create, update, delete: if isGuruOrAdmin();
     }
 
@@ -190,7 +200,10 @@ service cloud.firestore {
       allow read: if isGuruOrAdmin()
         || (signedIn()
           && request.auth.token.firebase.sign_in_provider == 'anonymous'
-          && resource.data.status == 'Aktif');
+          && resource.data.status == 'Aktif')
+        || (isStudent()
+          && resource.data.status == 'Aktif'
+          && resource.data.className == request.auth.token.classLevel);
       allow create, update, delete: if isGuruOrAdmin();
     }
 
@@ -215,10 +228,13 @@ service cloud.firestore {
       allow read: if isGuruOrAdmin()
         || (signedIn()
           && request.auth.token.firebase.sign_in_provider == 'anonymous'
-          && resource.data.ownerUid == request.auth.uid);
+          && resource.data.ownerUid == request.auth.uid)
+        || (isStudent()
+          && resource.data.ownerUid == request.auth.uid
+          && resource.data.studentId == request.auth.token.studentId);
 
       allow create: if signedIn()
-        && request.auth.token.firebase.sign_in_provider == 'anonymous'
+        && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
         && request.resource.data.keys().hasOnly([
           'examId', 'examTitle', 'studentId', 'studentName', 'className',
           'answers', 'ownerUid', 'status', 'startedAt'
@@ -236,13 +252,19 @@ service cloud.firestore {
         && request.resource.data.status == 'Mengerjakan'
         && request.resource.data.startedAt is string
         && exists(/databases/$(database)/documents/exams/$(request.resource.data.examId))
-        && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.status == 'Aktif';
+        && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.status == 'Aktif'
+        && (!isStudent() || (
+          request.resource.data.studentId == request.auth.token.studentId
+          && request.resource.data.className == request.auth.token.className
+          && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.className == request.auth.token.classLevel
+        ));
 
       allow update: if isGuruOrAdmin()
         || (signedIn()
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous' || isStudent())
           && resource.data.ownerUid == request.auth.uid
           && request.resource.data.ownerUid == request.auth.uid
+          && (!isStudent() || resource.data.studentId == request.auth.token.studentId)
           && resource.data.status == 'Mengerjakan'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'answers', 'status', 'submittedAt', 'autoSubmitted', 'lastSavedAt',
