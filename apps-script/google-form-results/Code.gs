@@ -16,6 +16,33 @@ function installGoogleFormSubmitTrigger() {
   Logger.log('Trigger hasil Google Form berhasil dipasang untuk: ' + form.getTitle());
 }
 
+function generateSimpNisnPrefillUrl() {
+  const formId = PropertiesService.getScriptProperties().getProperty('GOOGLE_FORM_ID');
+  if (!formId) throw new Error('Isi Script Property GOOGLE_FORM_ID terlebih dahulu.');
+
+  const form = FormApp.openById(formId);
+  const nisnItem = form.getItems().find(item =>
+    String(item.getTitle() || '').trim() === 'NISN'
+  );
+  if (!nisnItem) throw new Error('Tambahkan pertanyaan Jawaban singkat dengan judul persis NISN.');
+
+  let itemResponse;
+  if (nisnItem.getType() === FormApp.ItemType.TEXT) {
+    itemResponse = nisnItem.asTextItem().createResponse('SIMPATIK_NISN_PREFILL');
+  } else if (nisnItem.getType() === FormApp.ItemType.PARAGRAPH_TEXT) {
+    itemResponse = nisnItem.asParagraphTextItem().createResponse('SIMPATIK_NISN_PREFILL');
+  } else {
+    throw new Error('Pertanyaan NISN harus menggunakan jenis Jawaban singkat.');
+  }
+
+  const prefilledUrl = form.createResponse()
+    .withItemResponse(itemResponse)
+    .toPrefilledUrl();
+  Logger.log('Salin tautan praisi ini ke kolom Link Google Form di SIMPATIK:');
+  Logger.log(prefilledUrl);
+  return prefilledUrl;
+}
+
 function onSimpFormSubmit(event) {
   if (!event || !event.response) throw new Error('Event respons Google Form tidak ditemukan.');
 
