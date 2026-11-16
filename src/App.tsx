@@ -17,6 +17,7 @@ import { MasterDataPage, RegistrationPage } from './pages/MasterDataPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ExamPage } from './pages/ExamPage';
+import { GoogleFormExamPage } from './pages/GoogleFormExamPage';
 import { LoginPage } from './pages/LoginPage';
 import { MorePage } from './pages/MorePage';
 import { StudentPortalPage } from './pages/StudentPortalPage';
@@ -95,6 +96,7 @@ function AppContent() {
       case 'reports': return <ReportsPage />;
       case 'settings': return <SettingsPage />;
       case 'exams': return <ExamPage onBack={() => setActiveTab('dashboard')} />;
+      case 'google-form-exams': return <GoogleFormExamPage />;
       case 'ils': return <ComingSoonPage title="ILS" description="Informasi dan layanan ILS sedang dalam tahap persiapan." />;
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
       case 'schedule': return <ComingSoonPage title="Jadwal" description="Informasi jadwal kegiatan dan pembelajaran sedang dalam tahap persiapan." />;
