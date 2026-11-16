@@ -5,8 +5,8 @@ Folder ini berisi Apps Script untuk mengirim nilai kuis Google Forms ke backend 
 ## Persyaratan formulir
 1. Aktifkan **Jadikan ini sebagai kuis**.
 2. Beri kunci jawaban dan poin pada soal objektif.
-3. Tambahkan pertanyaan **Jawaban singkat** berjudul persis **NISN**, lalu aktifkan **Wajib diisi**.
-4. Tambahkan pertanyaan **Jawaban singkat** berjudul persis **KODE PESERTA**, lalu aktifkan **Wajib diisi**.
+3. Tambahkan empat pertanyaan **Jawaban singkat** dengan judul persis **NAMA**, **NISN**, **KODE PESERTA**, dan **KELAS**. Aktifkan **Wajib diisi** pada semuanya.
+4. Letakkan keempat pertanyaan identitas pada **Bagian 1**. Buat **Bagian 2** untuk seluruh soal ujian.
 5. Gunakan satu Google Form untuk satu ujian yang terdaftar di menu Ujian Form.
 
 ## Membuat tautan praisi otomatis
@@ -17,7 +17,7 @@ Folder ini berisi Apps Script untuk mengirim nilai kuis Google Forms ke backend 
 5. Di editor Apps Script, pilih fungsi `generateSimpNisnPrefillUrl`, lalu klik **Jalankan**.
 6. Buka **Execution log / Log eksekusi**, lalu salin tautan praisi yang dicetak.
 7. Tempel tautan tersebut ke kolom **Link Google Form** saat membuat atau mengubah ujian di SIMPATIK. Jangan menghapus parameter `entry....=SIMPATIK_NISN_PREFILL` dan `entry....=SIMPATIK_CODE_PREFILL`.
-8. Saat siswa membuka ujian dari akun SIMPATIK for Students, aplikasi meminta kode peserta unik ke backend, lalu mengisi NISN dan kode peserta secara otomatis. Siswa tidak perlu mengetik identitas tersebut.
+8. Saat siswa membuka ujian dari akun SIMPATIK for Students, aplikasi meminta kode peserta unik ke backend. Server mengembalikan nama, NISN, dan kelas dari data siswa yang telah diverifikasi; aplikasi mengisi keempat identitas (nama, NISN, kode peserta, kelas) otomatis melalui tautan praisi. Siswa tidak perlu mengetik identitas tersebut.
 
 Jika generator gagal, periksa bahwa kedua pertanyaan ada, judulnya tepat, dan jenisnya **Jawaban singkat**.
 
@@ -34,9 +34,9 @@ Jika generator gagal, periksa bahwa kedua pertanyaan ada, judulnya tepat, dan je
 - SIMPATIK for Students mengambil NISN dan ID siswa dari profil sesi yang sudah aktif.
 - Backend memverifikasi token Firebase, kecocokan NISN dengan data siswa, status aktif, kelas, serta jadwal ujian.
 - Backend membuat kode peserta acak yang terikat pada satu siswa dan satu ujian; yang disimpan di Firestore hanya hash kode.
-- Google Form menerima NISN dan kode peserta melalui parameter praisi.
-- Trigger membaca NISN, kode peserta, response ID, skor otomatis, total poin, dan waktu pengiriman.
-- Backend memeriksa kode peserta, Form ID, NISN, kelas, status dan jadwal ujian. Kode peserta hanya dapat digunakan untuk satu pengiriman final.
+- Google Form Bagian 1 menerima nama, NISN, kode peserta, dan kelas melalui parameter praisi; Bagian 2 berisi soal.
+- Trigger membaca nama, NISN, kode peserta, kelas, response ID, skor otomatis, total poin, dan waktu pengiriman.
+- Backend memeriksa kode peserta, Form ID, NISN, nama, kelas, status dan jadwal ujian; nama dan kelas yang dikirim harus sama dengan data akun yang diverifikasi. Kode peserta hanya dapat digunakan untuk satu pengiriman final.
 - Hasil disimpan satu kali per siswa per ujian di koleksi `googleFormResults`. Pengiriman ulang respons yang sama tidak membuat nilai ganda.
 
 ## Batasan yang harus diketahui
