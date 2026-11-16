@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 import { Assessment, AssessmentType, StudentScore } from '../types';
 
 export const AssessmentPage: React.FC = () => {
   const { currentUser, canInputGrades } = useAuth();
   const { students, classes, subjects, assessments, saveAssessment, settings } = useData();
 
-  const [selectedClass, setSelectedClass] = useState<string>('VII-A');
+  const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
   const [selectedSubject, setSelectedSubject] = useState<string>(
     currentUser?.subject || subjects[0] || 'Pendidikan Agama Islam (PAI)'
   );
@@ -31,13 +32,13 @@ export const AssessmentPage: React.FC = () => {
 
   // Students in selected class
   const classStudents = students.filter(
-    (s) => s.className === selectedClass && s.status === 'Aktif'
+    (s) => getClassLevel(s.className) === getClassLevel(selectedClass) && s.status === 'Aktif'
   );
 
   // Existing assessment match
   const existingAssessment = assessments.find(
     (a) =>
-      a.className === selectedClass &&
+      getClassLevel(a.className) === getClassLevel(selectedClass) &&
       a.subject === selectedSubject &&
       a.assessmentType === selectedType
   );
