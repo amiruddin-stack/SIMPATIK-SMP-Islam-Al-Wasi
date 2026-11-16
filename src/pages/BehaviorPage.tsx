@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { BehaviorCategory, BehaviorRecord } from '../types';
+import { getClassDisplayName, getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
 export const BehaviorPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -17,7 +18,7 @@ export const BehaviorPage: React.FC = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     studentName: '',
-    className: 'VII-A',
+    className: SCHOOL_CLASSES[0],
     date: new Date().toISOString().split('T')[0],
     category: 'Perilaku Positif' as BehaviorCategory,
     description: '',
@@ -41,7 +42,7 @@ export const BehaviorPage: React.FC = () => {
     setFormData({
       studentId: firstStudent ? firstStudent.id : '',
       studentName: firstStudent ? firstStudent.name : '',
-      className: firstStudent ? firstStudent.className : 'VII-A',
+      className: firstStudent ? (getClassDisplayName(firstStudent.className) || SCHOOL_CLASSES[0]) : SCHOOL_CLASSES[0],
       date: new Date().toISOString().split('T')[0],
       category: 'Perilaku Positif',
       description: '',
@@ -59,7 +60,7 @@ export const BehaviorPage: React.FC = () => {
         ...prev,
         studentId: std.id,
         studentName: std.name,
-        className: std.className,
+        className: getClassDisplayName(std.className) || SCHOOL_CLASSES[0],
       }));
     }
   };
@@ -94,7 +95,7 @@ export const BehaviorPage: React.FC = () => {
   // Filter
   const filteredRecords = behaviors.filter((b) => {
     const matchCategory = selectedCategory === 'Semua' || b.category === selectedCategory;
-    const matchClass = selectedClass === 'Semua' || b.className === selectedClass;
+    const matchClass = selectedClass === 'Semua' || getClassLevel(b.className) === getClassLevel(selectedClass);
     const matchSearch =
       searchQuery === '' ||
       b.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
