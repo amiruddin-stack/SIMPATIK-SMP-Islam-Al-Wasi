@@ -363,6 +363,10 @@ async function startServer() {
       }
       const examDoc = exams.docs[0];
       const exam = examDoc.data();
+      if (String(participant.examId || '') !== examDoc.id || String(participant.classLevel || '') !== String(exam.classLevel || '')) {
+        res.status(403).json({ success: false, message: 'Kode peserta tidak terikat pada ujian dan kelas yang sedang dikirim.' });
+        return;
+      }
       if (exam.status !== 'Aktif') {
         res.status(409).json({ success: false, message: 'Ujian tidak berstatus aktif.' });
         return;
