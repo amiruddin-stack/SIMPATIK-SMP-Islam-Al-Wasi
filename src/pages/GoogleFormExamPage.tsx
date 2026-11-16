@@ -10,6 +10,8 @@ type FormExam = {
   title: string;
   subject: string;
   className: string;
+  classLevel: string;
+  formId: string;
   formUrl: string;
   startAt: string;
   endAt: string;
@@ -44,7 +46,7 @@ function getGoogleFormUrl(value: string) {
   }
 }
 
-function getEmbedUrl(value: string) {
+function getFormId(value: string) {\n  const url = getGoogleFormUrl(value);\n  if (!url) return '';\n  return new URL(url).pathname.match(/\\/forms\\/(?:d\\/e\\/|d\\/)([a-zA-Z0-9_-]+)/)?.[1] || '';\n}\n\nfunction getEmbedUrl(value: string) {
   const url = getGoogleFormUrl(value);
   if (!url) return '';
   const parsed = new URL(url);
@@ -112,8 +114,7 @@ export const GoogleFormExamPage: React.FC = () => {
       title: draft.title.trim(),
       subject: draft.subject,
       className: draft.className,
-      classLevel: draft.className.trim().toUpperCase().match(/^(VIII|VII|IX)/)?.[1] || draft.className.trim().toUpperCase(),
-      formUrl: validFormUrl,
+      classLevel: draft.className.trim().toUpperCase().match(/^(VIII|VII|IX)/)?.[1] || draft.className.trim().toUpperCase(),\n      formId: getFormId(validFormUrl),\n      formUrl: validFormUrl,
       startAt: draft.startAt,
       endAt: draft.endAt,
       duration: Math.max(1, Math.min(300, Number(draft.duration) || 60)),
