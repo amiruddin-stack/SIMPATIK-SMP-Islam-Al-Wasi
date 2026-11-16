@@ -153,7 +153,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
           if (!savedIdentity) { setRosterLoadState('error'); setMessage('Sesi siswa tidak ditemukan. Silakan masuk kembali menggunakan NISN.'); return; }
           const identity = JSON.parse(savedIdentity) as { id: string; name: string; className: string };
           if (!identity.id || !identity.name || !identity.className) { setRosterLoadState('error'); setMessage('Identitas siswa tidak valid. Silakan masuk kembali.'); return; }
-          studentClassForQuery = classLevel(identity.className);
+          studentClassForQuery = identity.className.trim();
           studentClassNameForQuery = identity.className;
           const verifiedStudent = { id: identity.id, name: identity.name, className: identity.className, status: 'Aktif' };
           setExamStudents([verifiedStudent]); setStudentId(verifiedStudent.id); setSelectedRosterStudentId(verifiedStudent.id);
