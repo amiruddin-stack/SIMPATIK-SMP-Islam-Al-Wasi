@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Journal } from '../types';
+import { getClassDisplayName, getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
 export const JournalPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -17,7 +18,7 @@ export const JournalPage: React.FC = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     subject: subjects[0] || 'Pendidikan Agama Islam (PAI)',
-    className: 'VII-A',
+    className: SCHOOL_CLASSES[0],
     lessonHours: 'Jam 1-2 (07:30 - 09:00)',
     topic: '',
     activity: '',
@@ -30,7 +31,7 @@ export const JournalPage: React.FC = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       subject: currentUser?.subject || subjects[0] || 'Pendidikan Agama Islam (PAI)',
-      className: currentUser?.assignedClass || 'VII-A',
+      className: getClassDisplayName(currentUser?.assignedClass) || SCHOOL_CLASSES[0],
       lessonHours: 'Jam 1-2 (07:30 - 09:00)',
       topic: '',
       activity: '',
@@ -45,7 +46,7 @@ export const JournalPage: React.FC = () => {
     setFormData({
       date: journal.date,
       subject: journal.subject,
-      className: journal.className,
+      className: getClassDisplayName(journal.className) || SCHOOL_CLASSES[0],
       lessonHours: journal.lessonHours,
       topic: journal.topic,
       activity: journal.activity,
@@ -85,7 +86,7 @@ export const JournalPage: React.FC = () => {
 
   // Filter & Search
   const filteredJournals = journals.filter((j) => {
-    const matchClass = filterClass === 'Semua' || j.className === filterClass;
+    const matchClass = filterClass === 'Semua' || getClassLevel(j.className) === getClassLevel(filterClass);
     const matchSubject = filterSubject === 'Semua' || j.subject === filterSubject;
     const matchSearch =
       searchQuery === '' ||
