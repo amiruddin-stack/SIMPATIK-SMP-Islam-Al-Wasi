@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
+import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
 export const GradeSummaryPage: React.FC = () => {
   const { students, classes, subjects, assessments, settings } = useData();
 
-  const [selectedClass, setSelectedClass] = useState<string>('VII-A');
+  const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const classStudents = students.filter(
-    (s) => s.className === selectedClass && s.status === 'Aktif'
+    (s) => getClassLevel(s.className) === getClassLevel(selectedClass) && s.status === 'Aktif'
   );
 
   // Relevant assessments for selected class
   const classAssessments = assessments.filter((a) => {
-    const matchClass = a.className === selectedClass;
+    const matchClass = getClassLevel(a.className) === getClassLevel(selectedClass);
     const matchSubject = selectedSubject === 'Semua' || a.subject === selectedSubject;
     return matchClass && matchSubject;
   });

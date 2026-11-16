@@ -8,6 +8,7 @@ import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInAnon
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { normalizeStudentNisn, studentNisnHash } from '../lib/studentLookup';
+import { getClassDisplayName } from '../lib/classes';
 import {
   buildVerifiedStudentProfileFromDirectory,
   validateStoredStudentSession,
@@ -224,7 +225,7 @@ export const StudentPortalPage: React.FC = () => {
             <div className="flex flex-col items-center text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><UserRound size={38}/></div>
               <h2 className="mt-3 text-xl font-black text-slate-800">{student.name}</h2>
-              <p className="mt-1 text-sm font-semibold text-[#087F49]">Kelas {student.className}</p>
+              <p className="mt-1 text-sm font-semibold text-[#087F49]">Kelas {getClassDisplayName(student.className) || student.className}</p>
               <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#E3F7EC] px-3 py-1.5 text-xs font-bold text-[#087F49]"><span className="h-1.5 w-1.5 rounded-full bg-[#0B8F4D]"/> Akun Aktif</span>
             </div>
           </section>

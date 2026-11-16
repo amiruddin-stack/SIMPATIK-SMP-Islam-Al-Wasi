@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { CounselingRecord, CounselingServiceType } from '../types';
+import { getClassDisplayName, SCHOOL_CLASSES } from '../lib/classes';
 
 export const CounselingPage: React.FC = () => {
   const { currentUser, canAccessBK } = useAuth();
@@ -16,7 +17,7 @@ export const CounselingPage: React.FC = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     studentName: '',
-    className: 'VII-A',
+    className: SCHOOL_CLASSES[0] as string,
     date: new Date().toISOString().split('T')[0],
     serviceType: 'Pribadi' as CounselingServiceType,
     issueSummary: '',
@@ -55,7 +56,7 @@ export const CounselingPage: React.FC = () => {
     setFormData({
       studentId: firstStudent ? firstStudent.id : '',
       studentName: firstStudent ? firstStudent.name : '',
-      className: firstStudent ? firstStudent.className : 'VII-A',
+      className: firstStudent ? (getClassDisplayName(firstStudent.className) || SCHOOL_CLASSES[0]) : SCHOOL_CLASSES[0],
       date: new Date().toISOString().split('T')[0],
       serviceType: 'Pribadi',
       issueSummary: '',
@@ -73,7 +74,7 @@ export const CounselingPage: React.FC = () => {
         ...prev,
         studentId: std.id,
         studentName: std.name,
-        className: std.className,
+        className: getClassDisplayName(std.className) || SCHOOL_CLASSES[0],
       }));
     }
   };
@@ -224,7 +225,7 @@ export const CounselingPage: React.FC = () => {
                       setFormData({
                         studentId: item.studentId,
                         studentName: item.studentName,
-                        className: item.className,
+                        className: getClassDisplayName(item.className) || SCHOOL_CLASSES[0],
                         date: item.date,
                         serviceType: item.serviceType,
                         issueSummary: item.issueSummary,

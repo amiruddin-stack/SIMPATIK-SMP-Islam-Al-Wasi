@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
 export const ReportsPage: React.FC = () => {
   const { canAccessBK } = useAuth();
@@ -18,10 +19,10 @@ export const ReportsPage: React.FC = () => {
   type ReportCategory = 'attendance' | 'journal' | 'behavior' | 'counseling' | 'grades';
 
   const [reportType, setReportType] = useState<ReportCategory>('attendance');
-  const [selectedClass, setSelectedClass] = useState<string>('VII-A');
+  const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
 
   const classStudents = students.filter(
-    (s) => s.className === selectedClass && s.status === 'Aktif'
+    (s) => getClassLevel(s.className) === getClassLevel(selectedClass) && s.status === 'Aktif'
   );
 
   const handlePrint = () => {
@@ -38,7 +39,7 @@ export const ReportsPage: React.FC = () => {
       rows = classStudents.map((std, idx) => {
         let h = 0, total = 0;
         attendances
-          .filter((a) => a.className === selectedClass)
+          .filter((a) => getClassLevel(a.className) === getClassLevel(selectedClass))
           .forEach((att) => {
             total++;
             if (att.records[std.id] === 'Hadir') h++;
@@ -49,19 +50,19 @@ export const ReportsPage: React.FC = () => {
     } else if (reportType === 'journal') {
       headers = ['No', 'Tanggal', 'Guru', 'Mata Pelajaran', 'Kelas', 'Topik/Materi', 'Status'];
       rows = journals
-        .filter((j) => j.className === selectedClass)
+        .filter((j) => getClassLevel(j.className) === getClassLevel(selectedClass))
         .map((j, idx) => [idx + 1, j.date, `"${j.teacherName}"`, `"${j.subject}"`, j.className, `"${j.topic}"`, j.status]);
     } else if (reportType === 'behavior') {
       headers = ['No', 'Tanggal', 'Siswa', 'Kelas', 'Kategori', 'Kejadian', 'Pembinaan', 'Status'];
       rows = behaviors
-        .filter((b) => b.className === selectedClass)
+        .filter((b) => getClassLevel(b.className) === getClassLevel(selectedClass))
         .map((b, idx) => [idx + 1, b.date, `"${b.studentName}"`, b.className, `"${b.category}"`, `"${b.description}"`, `"${b.coachingAction}"`, b.status]);
     } else if (reportType === 'grades') {
       headers = ['No', 'NIS', 'Nama Siswa', 'Kelas', 'Rata-Rata Nilai', 'Predikat'];
       rows = classStudents.map((std, idx) => {
         const scores: number[] = [];
         assessments
-          .filter((a) => a.className === selectedClass)
+          .filter((a) => getClassLevel(a.className) === getClassLevel(selectedClass))
           .forEach((a) => {
             if (a.scores[std.id]) scores.push(a.scores[std.id].score);
           });
