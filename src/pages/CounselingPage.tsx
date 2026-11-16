@@ -225,7 +225,7 @@ export const CounselingPage: React.FC = () => {
                       setFormData({
                         studentId: item.studentId,
                         studentName: item.studentName,
-                        className: item.className,
+                        className: getClassDisplayName(item.className) || SCHOOL_CLASSES[0],
                         date: item.date,
                         serviceType: item.serviceType,
                         issueSummary: item.issueSummary,
