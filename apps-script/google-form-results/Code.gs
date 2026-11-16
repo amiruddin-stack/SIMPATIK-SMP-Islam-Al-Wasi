@@ -22,8 +22,10 @@ function generateSimpNisnPrefillUrl() {
 
   const form = FormApp.openById(formId);
   const questions = [
+    { title: 'NAMA', marker: 'SIMPATIK_NAME_PREFILL' },
     { title: 'NISN', marker: 'SIMPATIK_NISN_PREFILL' },
-    { title: 'KODE PESERTA', marker: 'SIMPATIK_CODE_PREFILL' }
+    { title: 'KODE PESERTA', marker: 'SIMPATIK_CODE_PREFILL' },
+    { title: 'KELAS', marker: 'SIMPATIK_CLASS_PREFILL' }
   ];
   const response = form.createResponse();
 
@@ -66,6 +68,10 @@ function onSimpFormSubmit(event) {
 
   const nisn = String(answers.NISN || answers.nisn || '').trim();
   const participantCode = String(answers['KODE PESERTA'] || answers['Kode Peserta'] || '').trim();
+  const studentName = String(answers.NAMA || answers.Nama || '').trim();
+  const className = String(answers.KELAS || answers.Kelas || '').trim();
+  if (!studentName) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: NAMA.');
+  if (!className) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: KELAS.');
   if (!nisn) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: NISN.');
   if (!participantCode) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: KODE PESERTA.');
 
@@ -86,6 +92,8 @@ function onSimpFormSubmit(event) {
     responseId: response.getId(),
     nisn: nisn,
     participantCode: participantCode,
+    studentName: studentName,
+    className: className,
     score: score,
     total: total,
     submittedAt: response.getTimestamp().toISOString()
