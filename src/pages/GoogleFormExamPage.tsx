@@ -42,7 +42,11 @@ function getGoogleFormUrl(value: string) {
     if (url.hostname !== 'docs.google.com' || !url.pathname.includes('/forms/')) return null;
     const match = url.pathname.match(/\/forms\/(?:d\/e\/|d\/)([a-zA-Z0-9_-]+)/);
     if (!match?.[1]) return null;
-    return 'https://docs.google.com/forms/d/e/' + match[1] + '/viewform';
+    const responderUrl = new URL('https://docs.google.com/forms/d/e/' + match[1] + '/viewform');
+    url.searchParams.forEach((value, key) => {
+      if (/^entry\\.\\d+$/.test(key)) responderUrl.searchParams.set(key, value);
+    });
+    return responderUrl.toString();
   } catch {
     return null;
   }
