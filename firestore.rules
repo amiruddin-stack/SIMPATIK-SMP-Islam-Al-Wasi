@@ -225,7 +225,7 @@ service cloud.firestore {
           && resource.data.classLevel == request.auth.token.classLevel);
       allow create: if isGuruOrAdmin()
         && request.resource.data.keys().hasOnly([
-          'title', 'subject', 'className', 'classLevel', 'formUrl', 'startAt', 'endAt',
+          'title', 'subject', 'className', 'classLevel', 'formId', 'formUrl', 'startAt', 'endAt',
           'duration', 'status', 'createdAt', 'createdBy', 'teacherName',
           'updatedAt', 'updatedBy'
         ])
@@ -235,6 +235,9 @@ service cloud.firestore {
         && request.resource.data.subject is string
         && request.resource.data.className is string
         && request.resource.data.classLevel in ['VII', 'VIII', 'IX']
+        && request.resource.data.formId is string
+        && request.resource.data.formId.size() > 10
+        && request.resource.data.formId.size() <= 200
         && request.resource.data.formUrl is string
         && request.resource.data.formUrl.matches('^https://(docs\\.google\\.com/forms/.*|forms\\.google\\.com/forms/.*|forms\\.gle/.*)')
         && request.resource.data.duration is number
@@ -247,6 +250,7 @@ service cloud.firestore {
           'duration', 'status', 'updatedAt', 'updatedBy'
         ])
         && request.resource.data.title is string
+        && request.resource.data.formId is string
         && request.resource.data.formUrl is string
         && request.resource.data.status in ['Draft', 'Aktif', 'Arsip'];
       allow delete: if isAdmin();
