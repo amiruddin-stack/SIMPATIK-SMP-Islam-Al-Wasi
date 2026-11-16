@@ -37,10 +37,10 @@ const emptyForm: FormExamDraft = {
 function getGoogleFormUrl(value: string) {
   try {
     const url = new URL(value.trim());
-    if (url.hostname === 'forms.gle') return url.toString();
-    if (!['docs.google.com', 'forms.google.com'].includes(url.hostname)) return null;
-    if (!url.pathname.includes('/forms/')) return null;
-    return url.toString();
+    if (url.hostname !== 'docs.google.com' || !url.pathname.includes('/forms/')) return null;
+    const match = url.pathname.match(/\\/forms\\/(?:d\\/e\\/|d\\/)([a-zA-Z0-9_-]+)/);
+    if (!match?.[1]) return null;
+    return 'https://docs.google.com/forms/d/' + match[1] + '/viewform';
   } catch {
     return null;
   }
