@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { NavTab } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
+import { getClassLevel } from '../lib/classes';
 import {
   Users,
   BookOpen,
@@ -60,7 +61,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, active
     record.academicYear === settings.activeAcademicYear &&
     record.semester === settings.activeSemester &&
     record.date >= periodStartStr && record.date <= todayStr &&
-    (attendanceClass === 'Semua Kelas' || record.className === attendanceClass)
+    (attendanceClass === 'Semua Kelas' || getClassLevel(record.className) === getClassLevel(attendanceClass))
   );
   const attendanceDate = relevantAttendances.reduce((latest, record) => record.date > latest ? record.date : latest, '');
   const realTotals = { Hadir: 0, Izin: 0, Sakit: 0, Alpa: 0 };
