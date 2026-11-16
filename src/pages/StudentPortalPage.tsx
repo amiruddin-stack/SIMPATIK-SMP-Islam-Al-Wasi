@@ -315,7 +315,7 @@ export const StudentPortalPage: React.FC = () => {
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#E7F8EF] via-[#F9FCFA] to-[#EAF5EF] px-4 py-8">
       <section className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_24px_75px_rgba(8,127,73,0.14)]">
         <header className="bg-gradient-to-br from-[#087640] via-[#0B8F4D] to-[#20A968] px-6 py-9 text-center text-white">
-          <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-[1.6rem] border border-white/70 bg-white p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.18)]"><img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain"/></div>
+          <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center"><img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain"/></div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-white/85">SMP Islam Al-Wasi’</p>
           <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">SIMPATIK for Student</h1>
           <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-white/90">Selamat datang siswa-siswi terbaik SMP Islam Al-Wasi’</p>
