@@ -268,7 +268,7 @@ service cloud.firestore {
           && resource.data.status == 'Aktif')
         || (isStudent()
           && resource.data.status == 'Aktif'
-          && resource.data.className == request.auth.token.classLevel);
+          && resource.data.className == request.auth.token.className);
       allow create, update, delete: if isGuruOrAdmin();
     }
 
@@ -320,7 +320,7 @@ service cloud.firestore {
         && (!isStudent() || (
           request.resource.data.studentId == request.auth.token.studentId
           && request.resource.data.className == request.auth.token.className
-          && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.className == request.auth.token.classLevel
+          && get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.className == request.auth.token.className
         ));
 
       allow update: if isGuruOrAdmin()
