@@ -109,6 +109,7 @@ export const GoogleFormExamPage: React.FC = () => {
       title: draft.title.trim(),
       subject: draft.subject,
       className: draft.className,
+      classLevel: draft.className.trim().toUpperCase().match(/^(VIII|VII|IX)/)?.[1] || draft.className.trim().toUpperCase(),
       formUrl: validFormUrl,
       startAt: draft.startAt,
       endAt: draft.endAt,
