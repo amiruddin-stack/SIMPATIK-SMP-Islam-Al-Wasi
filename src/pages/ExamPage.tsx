@@ -31,9 +31,7 @@ const field = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 te
 const btn = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#16B364] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#0B8F4D] disabled:cursor-not-allowed disabled:opacity-50';
 
 function classLevel(value: string) {
-  const normalized = value.trim().toUpperCase().replace(/^KELAS\s+/, '');
-  const match = normalized.match(/^(VIII|VII|IX)(?=$|[\s(-])/);
-  return match ? match[1] : normalized.replace(/[^A-Z]/g, '');
+  return getClassLevel(value);
 }
 function classDisplayName(value: string) {
   const level = classLevel(value);
