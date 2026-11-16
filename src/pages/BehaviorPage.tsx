@@ -253,7 +253,7 @@ export const BehaviorPage: React.FC = () => {
                         setFormData({
                           studentId: item.studentId,
                           studentName: item.studentName,
-                          className: item.className,
+                          className: getClassDisplayName(item.className) || SCHOOL_CLASSES[0],
                           date: item.date,
                           category: item.category,
                           description: item.description,
