@@ -23,7 +23,7 @@ function embedUrl(value: string, nisn: string) {
     const url = new URL(value);
     if (!['docs.google.com', 'forms.google.com'].includes(url.hostname) || !url.pathname.includes('/forms/')) return '';
     const nisnEntry = Array.from(url.searchParams.keys()).find(key =>
-      /^entry\\.\\d+$/.test(key) && url.searchParams.get(key) === NISN_PREFILL_MARKER
+      /^entry\.\d+$/.test(key) && url.searchParams.get(key) === NISN_PREFILL_MARKER
     );
     if (!nisnEntry || !nisn.trim()) return '';
     url.searchParams.set(nisnEntry, nisn.trim());
