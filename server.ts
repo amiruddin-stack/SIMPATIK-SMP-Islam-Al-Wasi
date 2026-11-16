@@ -264,6 +264,11 @@ async function startServer() {
         res.status(409).json({ success: false, message: 'Ujian tidak berstatus aktif.' });
         return;
       }
+      const now = Date.now();
+      if ((exam.startAt && new Date(exam.startAt).getTime() > now) || (exam.endAt && new Date(exam.endAt).getTime() < now)) {
+        res.status(409).json({ success: false, message: 'Pengiriman berada di luar jadwal ujian SIMPATIK.' });
+        return;
+      }
       const students = await services.adminDb.collection('students').where('nisn', '==', nisn).limit(1).get();
       if (students.empty) {
         res.status(404).json({ success: false, message: 'NISN tidak ditemukan pada data siswa SIMPATIK.' });
@@ -278,7 +283,7 @@ async function startServer() {
         return;
       }
 
-      const resultId = createHash('sha256').update(formId + ':' + responseId).digest('hex');
+      const resultId = createHash('sha256').update(examDoc.id + ':' + studentDoc.id).digest('hex');
       const resultRef = services.adminDb.collection('googleFormResults').doc(resultId);
       const resultData = {
         id: resultId,
@@ -303,7 +308,11 @@ async function startServer() {
       } catch (error) {
         const existing = await resultRef.get();
         if (existing.exists) {
-          res.json({ success: true, duplicate: true, message: 'Hasil ujian ini sudah pernah diterima.' });
+          if (String(existing.data()?.responseId || '') === responseId) {
+            res.json({ success: true, duplicate: true, message: 'Hasil ujian ini sudah pernah diterima.' });
+            return;
+          }
+          res.status(409).json({ success: false, message: 'Siswa sudah memiliki hasil untuk ujian ini. Pengiriman kedua ditolak.' });
           return;
         }
         throw error;
