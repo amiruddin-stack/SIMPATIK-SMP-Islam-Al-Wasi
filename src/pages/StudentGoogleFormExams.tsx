@@ -3,6 +3,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { CalendarClock, ExternalLink, FileText } from 'lucide-react';
 import { auth, db } from '../firebase/config';
 import { simpatikApi } from '../lib/backendApi';
+import { getClassLevel } from '../lib/classes';
 
 type StudentFormExam = {
   id: string;
@@ -48,7 +49,7 @@ function embedUrl(value: string, nisn: string, participantCode: string, studentN
 }
 
 export const StudentGoogleFormExams: React.FC<{ className: string; nisn: string; studentId: string }> = ({ className, nisn, studentId }) => {
-  const classLevel = className.trim().toUpperCase().match(/^(VIII|VII|IX)/)?.[1] || '';
+  const classLevel = getClassLevel(className);
   const [exams, setExams] = useState<StudentFormExam[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
