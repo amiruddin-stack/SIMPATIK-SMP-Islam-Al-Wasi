@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 import { AttendanceRecord, AttendanceStatus } from '../types';
 
 export const AttendancePage: React.FC = () => {
   const { currentUser, canInputAttendance } = useAuth();
   const { students, classes, attendances, saveAttendance, settings } = useData();
 
-  const [selectedClass, setSelectedClass] = useState<string>('VII-A');
+  const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -16,12 +17,12 @@ export const AttendancePage: React.FC = () => {
 
   // Filter students for selected class
   const classStudents = students.filter(
-    (s) => s.className === selectedClass && s.status === 'Aktif'
+    (s) => getClassLevel(s.className) === getClassLevel(selectedClass) && s.status === 'Aktif'
   );
 
   // Existing attendance record for selected class & date
   const existingRecord = attendances.find(
-    (a) => a.className === selectedClass && a.date === selectedDate
+    (a) => getClassLevel(a.className) === getClassLevel(selectedClass) && a.date === selectedDate
   );
 
   // Attendance state in local draft
@@ -424,7 +425,7 @@ export const AttendancePage: React.FC = () => {
                   let s = 0;
                   let i = 0;
                   let a = 0;
-                  const relevantAtts = attendances.filter((att) => att.className === selectedClass);
+                  const relevantAtts = attendances.filter((att) => getClassLevel(att.className) === getClassLevel(selectedClass));
                   relevantAtts.forEach((att) => {
                     const st = att.records[std.id];
                     if (st === 'Hadir') h++;
