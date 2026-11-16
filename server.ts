@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { cert, getApps, initializeApp, applicationDefault, type ServiceAccount } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { gradeExamAttemptWithAdmin } from './server/examGradingService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -221,6 +221,90 @@ async function startServer() {
   });
 
 
+  app.post('/api/google-form-participant-token', async (req, res) => {
+    try {
+      const services = getAdminServices();
+      if (!services) { res.status(503).json({ success: false, message: 'Firebase Admin belum dikonfigurasi.' }); return; }
+
+      const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken : '';
+      const examId = typeof req.body?.examId === 'string' ? req.body.examId.trim() : '';
+      const studentId = typeof req.body?.studentId === 'string' ? req.body.studentId.trim() : '';
+      const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
+      if (!idToken || !examId || !studentId || !nisn || nisn.length > 30) {
+        res.status(400).json({ success: false, message: 'Sesi siswa atau identitas ujian tidak lengkap.' });
+        return;
+      }
+
+      const decoded = await services.adminAuth.verifyIdToken(idToken);
+      const studentRef = services.adminDb.collection('students').doc(studentId);
+      const studentSnap = await studentRef.get();
+      if (!studentSnap.exists) {
+        res.status(404).json({ success: false, message: 'Data siswa tidak ditemukan.' });
+        return;
+      }
+      const student = studentSnap.data() || {};
+      const studentNisn = String(student.nisn || '').trim();
+      const studentClass = String(student.className || '');
+      const classLevel = studentClass.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
+      if (String(student.status || '').toLowerCase() !== 'aktif' || studentNisn !== nisn || String(student.id || studentSnap.id) !== studentId) {
+        res.status(403).json({ success: false, message: 'NISN tidak cocok dengan data akun siswa yang aktif.' });
+        return;
+      }
+
+      const isCustomStudent = decoded.role === 'student' && decoded.studentId === studentId;
+      const isDirectorySession = decoded.firebase?.sign_in_provider === 'anonymous';
+      if (!isCustomStudent && !isDirectorySession) {
+        res.status(403).json({ success: false, message: 'Token bukan berasal dari sesi SIMPATIK for Students.' });
+        return;
+      }
+      if (isDirectorySession) {
+        const lookupId = createHash('sha256').update(nisn).digest('hex');
+        const lookupSnap = await services.adminDb.collection('studentLoginLookup').doc(lookupId).get();
+        const lookup = lookupSnap.data() || {};
+        if (!lookupSnap.exists || String(lookup.studentId || '') !== studentId || String(lookup.nisn || '').trim() !== nisn) {
+          res.status(403).json({ success: false, message: 'Sesi siswa tidak cocok dengan data NISN pada direktori SIMPATIK.' });
+          return;
+        }
+      }
+      if (!classLevel) {
+        res.status(403).json({ success: false, message: 'Kelas siswa belum valid.' });
+        return;
+      }
+
+      const examRef = services.adminDb.collection('googleFormExams').doc(examId);
+      const examSnap = await examRef.get();
+      if (!examSnap.exists) { res.status(404).json({ success: false, message: 'Ujian tidak ditemukan.' }); return; }
+      const exam = examSnap.data() || {};
+      const now = Date.now();
+      if (exam.status !== 'Aktif' || String(exam.classLevel || '') !== classLevel ||
+          (exam.startAt && new Date(exam.startAt).getTime() > now) ||
+          (exam.endAt && new Date(exam.endAt).getTime() < now)) {
+        res.status(403).json({ success: false, message: 'Ujian tidak aktif, di luar jadwal, atau bukan untuk kelas akun ini.' });
+        return;
+      }
+
+      const participantCode = randomBytes(32).toString('hex');
+      const codeHash = createHash('sha256').update(participantCode).digest('hex');
+      const expiresAt = new Date(now + 12 * 60 * 60 * 1000).toISOString();
+      await services.adminDb.collection('googleFormParticipantTokens').doc(codeHash).create({
+        examId,
+        formId: String(exam.formId || ''),
+        studentId,
+        nisn,
+        classLevel,
+        ownerUid: decoded.uid,
+        expiresAt,
+        createdAt: new Date(now).toISOString(),
+        usedAt: null,
+        responseId: null,
+      });
+      res.json({ success: true, participantCode, expiresAt });
+    } catch (error) {
+      console.error('Gagal membuat kode peserta Google Form:', error);
+      res.status(401).json({ success: false, message: 'Sesi siswa tidak dapat diverifikasi untuk ujian ini.' });
+    }
+  });
+
   app.post('/api/google-form-result', async (req, res) => {
     try {
       const expectedSecret = process.env.GOOGLE_FORM_WEBHOOK_SECRET || '';
@@ -245,11 +329,30 @@ async function startServer() {
       const formId = typeof req.body?.formId === 'string' ? req.body.formId.trim() : '';
       const responseId = typeof req.body?.responseId === 'string' ? req.body.responseId.trim() : '';
       const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
+      const participantCode = typeof req.body?.participantCode === 'string' ? req.body.participantCode.trim() : '';
       const score = Number(req.body?.score);
       const total = Number(req.body?.total);
       const submittedAt = typeof req.body?.submittedAt === 'string' ? req.body.submittedAt : new Date().toISOString();
-      if (!formId || !responseId || !nisn || nisn.length > 30 || !Number.isFinite(score) || !Number.isFinite(total) || total <= 0 || score < 0 || score > total) {
+      if (!formId || !responseId || !nisn || nisn.length > 30 || !participantCode || participantCode.length > 200 || !Number.isFinite(score) || !Number.isFinite(total) || total <= 0 || score < 0 || score > total) {
         res.status(400).json({ success: false, message: 'Data hasil Google Form tidak lengkap atau tidak valid.' });
+        return;
+      }
+
+      const participantHash = createHash('sha256').update(participantCode).digest('hex');
+      const participantRef = services.adminDb.collection('googleFormParticipantTokens').doc(participantHash);
+      const participantSnap = await participantRef.get();
+      if (!participantSnap.exists) {
+        res.status(403).json({ success: false, message: 'Kode peserta tidak valid atau sudah kedaluwarsa.' });
+        return;
+      }
+      const participant = participantSnap.data() || {};
+      if (String(participant.formId || '') !== formId || String(participant.nisn || '') !== nisn ||
+          new Date(String(participant.expiresAt || '')).getTime() < Date.now()) {
+        res.status(403).json({ success: false, message: 'Kode peserta tidak cocok dengan NISN atau formulir ujian ini.' });
+        return;
+      }
+      if (participant.usedAt && String(participant.responseId || '') !== responseId) {
+        res.status(409).json({ success: false, message: 'Kode peserta ini sudah digunakan untuk mengirim ujian.' });
         return;
       }
 
@@ -276,6 +379,10 @@ async function startServer() {
       }
       const studentDoc = students.docs[0];
       const student = studentDoc.data();
+      if (String(participant.studentId || '') !== String(student.id || studentDoc.id)) {
+        res.status(403).json({ success: false, message: 'Kode peserta tidak terikat pada akun siswa yang sesuai.' });
+        return;
+      }
       const studentClass = String(student.className || '');
       const classLevel = studentClass.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
       if (String(student.status || '').toLowerCase() !== 'aktif' || classLevel !== String(exam.classLevel || '')) {
@@ -309,6 +416,7 @@ async function startServer() {
         const existing = await resultRef.get();
         if (existing.exists) {
           if (String(existing.data()?.responseId || '') === responseId) {
+            await participantRef.set({ usedAt: new Date().toISOString(), responseId }, { merge: true });
             res.json({ success: true, duplicate: true, message: 'Hasil ujian ini sudah pernah diterima.' });
             return;
           }
@@ -317,6 +425,7 @@ async function startServer() {
         }
         throw error;
       }
+      await participantRef.set({ usedAt: new Date().toISOString(), responseId }, { merge: true });
       res.json({ success: true, duplicate: false, message: 'Nilai Google Form berhasil disimpan ke SIMPATIK.', resultId });
     } catch (error) {
       console.error('Gagal menerima hasil Google Form:', error);
