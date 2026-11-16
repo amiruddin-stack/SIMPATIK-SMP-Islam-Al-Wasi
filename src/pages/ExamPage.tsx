@@ -15,6 +15,7 @@ import { signInAnonymously, signOut } from 'firebase/auth';
 import { BookOpen, Clock3, Plus, ClipboardList, Trophy, ArrowLeft, ChevronRight, CheckCircle2, Link as LinkIcon, Play, Save, Copy, ExternalLink, RefreshCw, FileSpreadsheet, Archive, Trash2, RotateCcw } from 'lucide-react';
 import { db, auth } from '../firebase/config';
 import { useData } from '../context/DataContext';
+import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 import { useAuth } from '../context/AuthContext';
 import { SCHOOL_SUBJECTS } from '../data/subjects';
 
@@ -23,7 +24,7 @@ type Exam = { id: string; title: string; subject: string; className: string; aca
 type ExamStudent = { id: string; name: string; className: string; status?: string };
 type Attempt = { id: string; examId: string; examTitle: string; studentId: string; studentName: string; className: string; answers: Record<string, number>; score?: number; total?: number; percent?: number; gradingIssue?: string; gradedAt?: string; status: 'Mengerjakan' | 'Selesai'; startedAt: string; submittedAt?: string };
 
-const cls = ['VII', 'VIII', 'IX'];
+const cls = [...SCHOOL_CLASSES];
 const makeExamLink = (id: string) => { const url = new URL(window.location.href); url.search = ''; url.searchParams.set('ujian', id); return url.toString(); };
 const panel = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm';
 const field = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#16B364] focus:ring-2 focus:ring-bg-[#E3F7EC]';
@@ -51,7 +52,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
   const [exams, setExams] = useState<Exam[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [section, setSection] = useState<'home' | 'student' | 'create' | 'manage' | 'share' | 'results' | 'take' | 'archive'>(studentMode ? 'student' : 'home');
-  const [level, setLevel] = useState('VII');
+  const [level, setLevel] = useState<string>(SCHOOL_CLASSES[0]);
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
   const [shareLink, setShareLink] = useState('');
@@ -241,8 +242,8 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
     if (linkedExam) setStudentClass(current => current || linkedExam.className);
   }, [linkedExamId, exams, studentId]);
 
-  const selectedClassNames = useMemo(() => classes.filter(c => classLevel(c) === level), [classes, level]);
-  const classQuestions = questions.filter(q => classLevel(q.className) === level && (!subject || q.subject === subject));
+  const selectedClassNames = useMemo(() => classes.filter(c => classLevel(c) === classLevel(level)), [classes, level]);
+  const classQuestions = questions.filter(q => classLevel(q.className) === classLevel(level) && (!subject || q.subject === subject));
   const currentExamQuestions = activeExam ? activeExam.questionIds.map(id => questions.find(q => q.id === id)).filter(Boolean) as Question[] : [];
   const resultExamGroups = useMemo(() => {
     const grouped = new Map<string, { id: string; title: string; subject: string; className: string; attempts: Attempt[] }>();
