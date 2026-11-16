@@ -277,7 +277,7 @@ async function startServer() {
       const studentDoc = students.docs[0];
       const student = studentDoc.data();
       const studentClass = String(student.className || '');
-      const classLevel = studentClass.match(/^(VIII|VII|IX)(?=$|[\\s(-])/i)?.[1]?.toUpperCase() || '';
+      const classLevel = studentClass.match(/^(VIII|VII|IX)(?=$|[\s(-])/i)?.[1]?.toUpperCase() || '';
       if (String(student.status || '').toLowerCase() !== 'aktif' || classLevel !== String(exam.classLevel || '')) {
         res.status(403).json({ success: false, message: 'Siswa tidak terdaftar sebagai peserta ujian kelas ini.' });
         return;
