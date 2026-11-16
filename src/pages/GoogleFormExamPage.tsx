@@ -33,6 +33,7 @@ const emptyForm = {
 function getGoogleFormUrl(value: string) {
   try {
     const url = new URL(value.trim());
+    if (url.hostname === 'forms.gle') return url.toString();
     if (!['docs.google.com', 'forms.google.com'].includes(url.hostname)) return null;
     if (!url.pathname.includes('/forms/')) return null;
     return url.toString();
