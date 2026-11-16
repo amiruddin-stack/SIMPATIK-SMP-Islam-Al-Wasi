@@ -40,7 +40,7 @@ function getGoogleFormUrl(value: string) {
     if (url.hostname !== 'docs.google.com' || !url.pathname.includes('/forms/')) return null;
     const match = url.pathname.match(/\\/forms\\/(?:d\\/e\\/|d\\/)([a-zA-Z0-9_-]+)/);
     if (!match?.[1]) return null;
-    return 'https://docs.google.com/forms/d/' + match[1] + '/viewform';
+    return 'https://docs.google.com/forms/d/e/' + match[1] + '/viewform';
   } catch {
     return null;
   }
