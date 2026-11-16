@@ -21,6 +21,8 @@ type FormExam = {
   createdBy?: string;
 };
 
+type GoogleFormResult = { id: string; examId: string; studentName: string; nisn: string; score: number; total: number; percent: number; submittedAt: string };
+
 type FormExamDraft = { title: string; subject: string; className: string; formUrl: string; startAt: string; endAt: string; duration: number; status: FormExam['status'] };
 
 const emptyForm: FormExamDraft = {
@@ -64,6 +66,7 @@ export const GoogleFormExamPage: React.FC = () => {
   const { currentUser, firebaseUser } = useAuth();
   const { classes, subjects } = useData();
   const [exams, setExams] = useState<FormExam[]>([]);
+  const [results, setResults] = useState<GoogleFormResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -89,6 +92,14 @@ export const GoogleFormExamPage: React.FC = () => {
       setNotice('Data Ujian Form belum dapat dimuat. Periksa koneksi dan aturan akses Firestore.');
       setLoading(false);
     });
+    return stop;
+  }, [canManage]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    const stop = onSnapshot(collection(db, 'googleFormResults'), snapshot => {
+      setResults(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as GoogleFormResult)).sort((a, b) => (b.submittedAt || '').localeCompare(a.submittedAt || '')));
+    }, error => console.error('Gagal memuat hasil Ujian Form:', error));
     return stop;
   }, [canManage]);
 
