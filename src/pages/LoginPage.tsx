@@ -5,18 +5,23 @@ export function LoginPage() {
   const { loginWithGoogle, loading } = useAuth();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#eaf8f0] via-white to-[#f3faf6] px-5 py-10">
-      <section className="w-full max-w-md rounded-[2rem] border border-emerald-100 bg-white p-8 text-center shadow-xl shadow-emerald-900/5 sm:p-10">
-        <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-white p-2 shadow-lg shadow-emerald-900/10"><img src="/logo-alwasi.png" alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain" /></div>
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">SMP Islam Al-Wasi’</p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">SIMPATIK</h1>
-        <p className="mt-2 text-sm font-bold tracking-wide text-[#087F49]">Selamat Datang Guru Hebat</p>
-        <p className="mt-3 text-sm leading-6 text-slate-500">Silakan masuk menggunakan akun Google resmi sekolah untuk melanjutkan ke aplikasi.</p>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#E7F8EF] via-white to-[#EAF5EF] px-5 py-10">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-green-200/40 blur-3xl" />
+      <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/80 bg-white/95 p-7 text-center shadow-[0_24px_80px_rgba(8,127,73,0.13)] sm:p-10">
+        <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-[1.75rem] border border-emerald-100 bg-white p-2.5 shadow-[0_10px_30px_rgba(8,127,73,0.12)]">
+          <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain" />
+        </div>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-700">SMP Islam Al-Wasi’</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">SIMPATIK</h1>
+        <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-emerald-500" />
+        <p className="mt-4 text-sm font-extrabold tracking-wide text-[#087F49]">Selamat Datang Guru Hebat</p>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-slate-500">Silakan masuk menggunakan akun Google resmi sekolah untuk melanjutkan ke aplikasi.</p>
         <button
           type="button"
           onClick={() => void loginWithGoogle()}
           disabled={loading}
-          className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl bg-[#087f45] px-5 py-4 text-sm font-bold text-white shadow-md shadow-emerald-900/15 transition hover:bg-[#066b3a] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-[#087F49] to-[#0B9654] px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
         >
           <svg viewBox="0 0 48 48" aria-hidden="true" className="h-5 w-5 rounded-full bg-white p-0.5">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/>
@@ -26,10 +31,11 @@ export function LoginPage() {
           </svg>
           {loading ? 'SIMPATIK sedang dipersiapkan…' : 'Masuk dengan Google Sekolah'}
         </button>
-        <div className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 text-left">
-          <p className="text-xs font-semibold text-emerald-900">Akun yang diizinkan</p>
-          <p className="mt-1 text-xs text-emerald-800">@smpialwasi-maros.sch.id</p>
+        <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-left">
+          <p className="text-xs font-extrabold text-emerald-950">Akun yang diizinkan</p>
+          <p className="mt-1 text-xs font-medium text-emerald-800">@smpialwasi-maros.sch.id</p>
         </div>
+        <p className="mt-6 text-[10px] font-medium tracking-wide text-slate-400">Qurani, Ramah Anak dan Berkarakter</p>
       </section>
     </main>
   );

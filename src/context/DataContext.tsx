@@ -515,6 +515,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteStudent = async (id: string) => {
+    const current = students.find(s => s.id === id);
     await deleteDoc(doc(db, 'students', id));
     await syncStudentExamDirectoryRecord(null, id, currentUser?.role === 'super_admin' && firebaseUser?.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id', current?.nisn);
     setStudents((prev) => {
