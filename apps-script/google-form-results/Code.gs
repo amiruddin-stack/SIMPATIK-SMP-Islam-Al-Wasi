@@ -21,23 +21,26 @@ function generateSimpNisnPrefillUrl() {
   if (!formId) throw new Error('Isi Script Property GOOGLE_FORM_ID terlebih dahulu.');
 
   const form = FormApp.openById(formId);
-  const nisnItem = form.getItems().find(item =>
-    String(item.getTitle() || '').trim() === 'NISN'
-  );
-  if (!nisnItem) throw new Error('Tambahkan pertanyaan Jawaban singkat dengan judul persis NISN.');
+  const questions = [
+    { title: 'NISN', marker: 'SIMPATIK_NISN_PREFILL' },
+    { title: 'KODE PESERTA', marker: 'SIMPATIK_CODE_PREFILL' }
+  ];
+  const response = form.createResponse();
 
-  let itemResponse;
-  if (nisnItem.getType() === FormApp.ItemType.TEXT) {
-    itemResponse = nisnItem.asTextItem().createResponse('SIMPATIK_NISN_PREFILL');
-  } else if (nisnItem.getType() === FormApp.ItemType.PARAGRAPH_TEXT) {
-    itemResponse = nisnItem.asParagraphTextItem().createResponse('SIMPATIK_NISN_PREFILL');
-  } else {
-    throw new Error('Pertanyaan NISN harus menggunakan jenis Jawaban singkat.');
-  }
+  questions.forEach(question => {
+    const item = form.getItems().find(entry =>
+      String(entry.getTitle() || '').trim() === question.title
+    );
+    if (!item) throw new Error('Tambahkan pertanyaan Jawaban singkat dengan judul persis ' + question.title + '.');
 
-  const prefilledUrl = form.createResponse()
-    .withItemResponse(itemResponse)
-    .toPrefilledUrl();
+    if (item.getType() === FormApp.ItemType.TEXT) {
+      response.withItemResponse(item.asTextItem().createResponse(question.marker));
+    } else {
+      throw new Error('Pertanyaan ' + question.title + ' harus menggunakan jenis Jawaban singkat.');
+    }
+  });
+
+  const prefilledUrl = response.toPrefilledUrl();
   Logger.log('Salin tautan praisi ini ke kolom Link Google Form di SIMPATIK:');
   Logger.log(prefilledUrl);
   return prefilledUrl;
@@ -62,7 +65,9 @@ function onSimpFormSubmit(event) {
   });
 
   const nisn = String(answers.NISN || answers.nisn || '').trim();
+  const participantCode = String(answers['KODE PESERTA'] || answers['Kode Peserta'] || '').trim();
   if (!nisn) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: NISN.');
+  if (!participantCode) throw new Error('Form harus memiliki pertanyaan wajib dengan judul persis: KODE PESERTA.');
 
   const gradable = response.getGradableItemResponses();
   const score = gradable.reduce((sum, itemResponse) => sum + Number(itemResponse.getScore() || 0), 0);
@@ -80,6 +85,7 @@ function onSimpFormSubmit(event) {
     formId: formId,
     responseId: response.getId(),
     nisn: nisn,
+    participantCode: participantCode,
     score: score,
     total: total,
     submittedAt: response.getTimestamp().toISOString()
