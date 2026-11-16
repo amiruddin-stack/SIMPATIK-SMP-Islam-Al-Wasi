@@ -12,11 +12,11 @@ import { ensureGoogleFormsAccess, readGoogleForm, type ImportedGoogleQuestion } 
 import { deleteOfflineRecord, saveOfflineRecord } from '../lib/examOffline';
 import { GOOGLE_FORMS_CLIENT_ID } from '../lib/googleFormsConfig';
 import { SCHOOL_SUBJECTS } from '../data/subjects';
+import { getClassDisplayName } from '../lib/classes';
 import { Users, GraduationCap, School, BookOpen, Trophy, UserRoundCheck, Search, Plus, Trash2, Copy, Check, Clock, XCircle, ArrowLeft, MoreVertical } from 'lucide-react';
 type Section = 'guru'|'siswa'|'kelas'|'mapel'|'ekskul'|'wali';
 type Pending = {id:string;type:'guru'|'siswa';name:string;email:string;phone:string;nis:string;nisn:string;gender:'L'|'P';className:string;nip:string;subject:string};
 const CLASSES=['VII (Tujuh)','VIII (Delapan)','IX (Sembilan)'];
-import { getClassDisplayName } from '../lib/classes';
 const SUBJECTS=SCHOOL_SUBJECTS;
 const classLevel=(value:string)=>{const normalized=String(value||'').trim().toUpperCase().replace(/^KELAS\s+/,'');const match=normalized.match(/^(VIII|VII|IX)(?=$|[\s(-])/);return match?match[1]:normalized.replace(/[^A-Z]/g,'')};
 const groupQuestionPackages=(items:any[])=>{const groups=new Map<string,{key:string;title:string;questions:any[]}>();items.forEach(q=>{const title=q.title||'Paket Soal';const key=[q.subject||'',classLevel(q.className||''),title].join('::');const group: {key:string;title:string;questions:any[]} = groups.get(key)||{key,title,questions:[]};group.questions.push(q);groups.set(key,group)});return Array.from(groups.values())};
