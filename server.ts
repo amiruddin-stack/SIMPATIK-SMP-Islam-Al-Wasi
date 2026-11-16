@@ -291,6 +291,8 @@ async function startServer() {
         formId: String(exam.formId || ''),
         studentId,
         nisn,
+        studentName: String(student.name || '').trim(),
+        studentClass,
         classLevel,
         ownerUid: decoded.uid,
         expiresAt,
@@ -298,7 +300,7 @@ async function startServer() {
         usedAt: null,
         responseId: null,
       });
-      res.json({ success: true, participantCode, expiresAt });
+      res.json({ success: true, participantCode, studentName: String(student.name || '').trim(), className: studentClass, expiresAt });
     } catch (error) {
       console.error('Gagal membuat kode peserta Google Form:', error);
       res.status(401).json({ success: false, message: 'Sesi siswa tidak dapat diverifikasi untuk ujian ini.' });
@@ -330,10 +332,12 @@ async function startServer() {
       const responseId = typeof req.body?.responseId === 'string' ? req.body.responseId.trim() : '';
       const nisn = typeof req.body?.nisn === 'string' ? req.body.nisn.trim() : '';
       const participantCode = typeof req.body?.participantCode === 'string' ? req.body.participantCode.trim() : '';
+      const submittedName = typeof req.body?.studentName === 'string' ? req.body.studentName.trim() : '';
+      const submittedClass = typeof req.body?.className === 'string' ? req.body.className.trim() : '';
       const score = Number(req.body?.score);
       const total = Number(req.body?.total);
       const submittedAt = typeof req.body?.submittedAt === 'string' ? req.body.submittedAt : new Date().toISOString();
-      if (!formId || !responseId || !nisn || nisn.length > 30 || !participantCode || participantCode.length > 200 || !Number.isFinite(score) || !Number.isFinite(total) || total <= 0 || score < 0 || score > total) {
+      if (!formId || !responseId || !nisn || nisn.length > 30 || !participantCode || participantCode.length > 200 || !submittedName || !submittedClass || !Number.isFinite(score) || !Number.isFinite(total) || total <= 0 || score < 0 || score > total) {
         res.status(400).json({ success: false, message: 'Data hasil Google Form tidak lengkap atau tidak valid.' });
         return;
       }
@@ -347,8 +351,9 @@ async function startServer() {
       }
       const participant = participantSnap.data() || {};
       if (String(participant.formId || '') !== formId || String(participant.nisn || '') !== nisn ||
+          String(participant.studentName || '').trim() !== submittedName || String(participant.studentClass || '').trim() !== submittedClass ||
           new Date(String(participant.expiresAt || '')).getTime() < Date.now()) {
-        res.status(403).json({ success: false, message: 'Kode peserta tidak cocok dengan NISN atau formulir ujian ini.' });
+        res.status(403).json({ success: false, message: 'Identitas peserta tidak cocok dengan akun SIMPATIK atau formulir ujian ini.' });
         return;
       }
       if (participant.usedAt && String(participant.responseId || '') !== responseId) {
