@@ -17,7 +17,7 @@ export const CounselingPage: React.FC = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     studentName: '',
-    className: SCHOOL_CLASSES[0],
+    className: SCHOOL_CLASSES[0] as string,
     date: new Date().toISOString().split('T')[0],
     serviceType: 'Pribadi' as CounselingServiceType,
     issueSummary: '',
