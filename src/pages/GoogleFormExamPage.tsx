@@ -38,7 +38,7 @@ function getGoogleFormUrl(value: string) {
   try {
     const url = new URL(value.trim());
     if (url.hostname !== 'docs.google.com' || !url.pathname.includes('/forms/')) return null;
-    const match = url.pathname.match(/\\/forms\\/(?:d\\/e\\/|d\\/)([a-zA-Z0-9_-]+)/);
+    const match = url.pathname.match(/\/forms\/(?:d\/e\/|d\/)([a-zA-Z0-9_-]+)/);
     if (!match?.[1]) return null;
     return 'https://docs.google.com/forms/d/e/' + match[1] + '/viewform';
   } catch {
@@ -49,7 +49,7 @@ function getGoogleFormUrl(value: string) {
 function getFormId(value: string) {
   const url = getGoogleFormUrl(value);
   if (!url) return '';
-  return new URL(url).pathname.match(/\\/forms\\/(?:d\\/e\\/|d\\/)([a-zA-Z0-9_-]+)/)?.[1] || '';
+  return new URL(url).pathname.match(/\/forms\/(?:d\/e\/|d\/)([a-zA-Z0-9_-]+)/)?.[1] || '';
 }
 
 function getEmbedUrl(value: string) {
