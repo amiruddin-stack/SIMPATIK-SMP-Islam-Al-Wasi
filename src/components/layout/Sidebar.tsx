@@ -3,13 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Home, UserRound, GraduationCap, BookOpen, ClipboardList,
   Users, NotebookPen, ClipboardCheck, HeartHandshake, ShieldCheck,
-  FileText, Settings, LogOut, CalendarDays, MoreHorizontal
+  FileText, Settings, LogOut, CalendarDays, MoreHorizontal, ClipboardPenLine
 } from 'lucide-react';
 
 export type NavTab =
   | 'dashboard' | 'attendance' | 'journal' | 'behavior' | 'counseling'
   | 'assessment' | 'exams' | 'grades' | 'master' | 'reports'
-  | 'settings' | 'classes' | 'subjects' | 'ils' | 'homeroom' | 'schedule' | 'more';
+  | 'settings' | 'classes' | 'subjects' | 'ils' | 'homeroom' | 'schedule' | 'more' | 'google-form-exams';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -38,6 +38,7 @@ const academicItems: { tab: NavTab; label: string; icon: React.ElementType }[] =
   { tab: 'assessment', label: 'Input Nilai Kelas', icon: ClipboardList },
   { tab: 'grades', label: 'Rekap Nilai', icon: ClipboardCheck },
   { tab: 'exams', label: 'Ujian', icon: FileText },
+  { tab: 'google-form-exams', label: 'Ujian Form', icon: ClipboardPenLine },
   { tab: 'counseling', label: 'Bimbingan Konseling', icon: HeartHandshake },
   { tab: 'behavior', label: 'Perilaku Siswa', icon: ShieldCheck },
   { tab: 'reports', label: 'Laporan', icon: FileText },

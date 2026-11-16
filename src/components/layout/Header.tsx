@@ -16,6 +16,7 @@ const academicItems: [NavTab, string][] = [
   ['assessment', 'Input Nilai Kelas'],
   ['grades', 'Rekap Nilai'],
   ['exams', 'Ujian'],
+  ['google-form-exams', 'Ujian Form'],
   ['counseling', 'Bimbingan Konseling'],
   ['behavior', 'Perilaku Siswa'],
   ['reports', 'Laporan'],
