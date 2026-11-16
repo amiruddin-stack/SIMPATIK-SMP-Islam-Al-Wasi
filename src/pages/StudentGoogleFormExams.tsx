@@ -19,6 +19,7 @@ type StudentFormExam = {
 function embedUrl(value: string) {
   try {
     const url = new URL(value);
+    if (url.hostname === 'forms.gle') { url.searchParams.set('embedded', 'true'); return url.toString(); }
     if (!['docs.google.com', 'forms.google.com'].includes(url.hostname) || !url.pathname.includes('/forms/')) return '';
     url.searchParams.set('embedded', 'true');
     return url.toString();
