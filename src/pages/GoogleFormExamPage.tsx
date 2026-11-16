@@ -19,7 +19,9 @@ type FormExam = {
   createdBy?: string;
 };
 
-const emptyForm = {
+type FormExamDraft = { title: string; subject: string; className: string; formUrl: string; startAt: string; endAt: string; duration: number; status: FormExam['status'] };
+
+const emptyForm: FormExamDraft = {
   title: '',
   subject: '',
   className: '',
@@ -27,7 +29,7 @@ const emptyForm = {
   startAt: '',
   endAt: '',
   duration: 60,
-  status: 'Draft' as const,
+  status: 'Draft',
 };
 
 function getGoogleFormUrl(value: string) {
@@ -57,7 +59,7 @@ export const GoogleFormExamPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
-  const [draft, setDraft] = useState(emptyForm);
+  const [draft, setDraft] = useState<FormExamDraft>(emptyForm);
   const [editingId, setEditingId] = useState('');
   const [previewId, setPreviewId] = useState('');
 
