@@ -16,10 +16,10 @@ Folder ini berisi Apps Script untuk mengirim nilai kuis Google Forms ke backend 
 4. Pada **Project Settings → Script Properties**, isi `GOOGLE_FORM_ID` dengan ID formulir.
 5. Di editor Apps Script, pilih fungsi `generateSimpNisnPrefillUrl`, lalu klik **Jalankan**.
 6. Buka **Execution log / Log eksekusi**, lalu salin tautan praisi yang dicetak.
-7. Tempel tautan tersebut ke kolom **Link Google Form** saat membuat atau mengubah ujian di SIMPATIK. Jangan menghapus parameter `entry....=SIMPATIK_NISN_PREFILL` dan `entry....=SIMPATIK_CODE_PREFILL`.
+7. Tempel tautan tersebut ke kolom **Link Google Form** saat membuat atau mengubah ujian di SIMPATIK. Jangan menghapus empat parameter `entry....` yang nilainya `SIMPATIK_NAME_PREFILL`, `SIMPATIK_NISN_PREFILL`, `SIMPATIK_CODE_PREFILL`, dan `SIMPATIK_CLASS_PREFILL`.
 8. Saat siswa membuka ujian dari akun SIMPATIK for Students, aplikasi meminta kode peserta unik ke backend. Server mengembalikan nama, NISN, dan kelas dari data siswa yang telah diverifikasi; aplikasi mengisi keempat identitas (nama, NISN, kode peserta, kelas) otomatis melalui tautan praisi. Siswa tidak perlu mengetik identitas tersebut.
 
-Jika generator gagal, periksa bahwa kedua pertanyaan ada, judulnya tepat, dan jenisnya **Jawaban singkat**.
+Jika generator gagal, periksa bahwa keempat pertanyaan ada pada Bagian 1, judulnya tepat, dan jenisnya **Jawaban singkat**.
 
 ## Konfigurasi webhook dan trigger
 1. Di Script Properties, tambahkan:
@@ -40,7 +40,7 @@ Jika generator gagal, periksa bahwa kedua pertanyaan ada, judulnya tepat, dan je
 - Hasil disimpan satu kali per siswa per ujian di koleksi `googleFormResults`. Pengiriman ulang respons yang sama tidak membuat nilai ganda.
 
 ## Batasan yang harus diketahui
-- Google Forms tidak menyediakan kolom praisi yang terkunci. Siswa masih dapat mengubah jawaban NISN atau KODE PESERTA sebelum mengirim.
+- Google Forms tidak menyediakan kolom praisi yang terkunci. Siswa masih dapat mengubah jawaban praisi sebelum mengirim, tetapi backend mencocokkan NAMA, NISN, KODE PESERTA, dan KELAS dengan data akun yang diverifikasi; perubahan identitas akan ditolak.
 - Kode peserta acak sulit ditebak dan diverifikasi oleh backend, tetapi tautan/formulir yang dibagikan ke orang lain dapat membocorkan kode tersebut. Jangan membagikan tautan ujian pribadi.
 - Pada jalur login siswa anonim/direktori yang sudah ada, backend memverifikasi NISN melalui direktori SIMPATIK; jalur ini tidak memiliki klaim studentId bertanda tangan seperti sesi custom-token. Alur login tidak diubah.
 - Nilai yang dikirim adalah nilai soal yang sudah dinilai otomatis Google Forms. Esai yang belum dinilai tidak termasuk.
