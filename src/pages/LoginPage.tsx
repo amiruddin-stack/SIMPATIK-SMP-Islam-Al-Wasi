@@ -9,7 +9,7 @@ export function LoginPage() {
       <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-green-200/40 blur-3xl" />
       <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/80 bg-white/95 p-7 text-center shadow-[0_24px_80px_rgba(8,127,73,0.13)] sm:p-10">
-        <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center rounded-[1.75rem] border border-emerald-100 bg-white p-2.5 shadow-[0_10px_30px_rgba(8,127,73,0.12)]">
+        <div className="mx-auto mb-5 flex h-28 w-28 items-center justify-center">
           <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain" />
         </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-700">SMP Islam Al-Wasi’</p>
