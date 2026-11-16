@@ -246,7 +246,7 @@ service cloud.firestore {
         && request.resource.data.status in ['Draft', 'Aktif'];
       allow update: if isGuruOrAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'title', 'subject', 'className', 'classLevel', 'formUrl', 'startAt', 'endAt',
+          'title', 'subject', 'className', 'classLevel', 'formId', 'formUrl', 'startAt', 'endAt',
           'duration', 'status', 'updatedAt', 'updatedBy'
         ])
         && request.resource.data.title is string
