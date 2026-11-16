@@ -18,7 +18,7 @@ export const BehaviorPage: React.FC = () => {
   const [formData, setFormData] = useState({
     studentId: '',
     studentName: '',
-    className: SCHOOL_CLASSES[0],
+    className: SCHOOL_CLASSES[0] as string,
     date: new Date().toISOString().split('T')[0],
     category: 'Perilaku Positif' as BehaviorCategory,
     description: '',
