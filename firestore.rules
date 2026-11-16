@@ -222,7 +222,11 @@ service cloud.firestore {
       allow read: if isGuruOrAdmin()
         || (isStudent()
           && resource.data.status == 'Aktif'
-          && resource.data.classLevel == request.auth.token.classLevel);
+          && resource.data.classLevel == request.auth.token.classLevel)
+        || (signedIn()
+          && request.auth.token.firebase.sign_in_provider == 'anonymous'
+          && resource.data.status == 'Aktif'
+          && resource.data.classLevel in ['VII', 'VIII', 'IX']);
       allow create: if isGuruOrAdmin()
         && request.resource.data.keys().hasOnly([
           'title', 'subject', 'className', 'classLevel', 'formId', 'formUrl', 'startAt', 'endAt',
