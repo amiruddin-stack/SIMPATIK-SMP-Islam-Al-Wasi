@@ -9,12 +9,12 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase/config';
 import { studentNisnHash } from '../lib/studentLookup';
+import { SCHOOL_CLASSES } from '../lib/classes';
 import { useAuth } from './AuthContext';
 import {
   initialAssessments,
   initialAttendances,
   initialBehaviors,
-  initialClasses,
   initialCounseling,
   initialJournals,
   initialSchoolSetting,
@@ -126,7 +126,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { firebaseUser, currentUser } = useAuth();
   const [students, setStudents] = useState<Student[]>(() => loadLocal('students', initialStudents));
   const [teachers, setTeachers] = useState<Teacher[]>(() => loadLocal('teachers', initialTeachers));
-  const [classes, setClasses] = useState<string[]>(() => loadLocal('classes', initialClasses));
+  const [classes, setClasses] = useState<string[]>([...SCHOOL_CLASSES]);
   const [subjects, setSubjects] = useState<string[]>(() => loadLocal('subjects', initialSubjects));
   const [extracurriculars, setExtracurriculars] = useState<string[]>(() => loadLocal('extracurriculars', ['Pramuka', 'Tahfidz', 'Hadroh', 'Olahraga']));
   const [attendances, setAttendances] = useState<AttendanceRecord[]>(() =>
@@ -236,7 +236,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!snapshot.empty) { const list = snapshot.docs.map((d) => d.data() as Teacher); setTeachers(list); saveLocal('teachers', list); }
     }, (error) => console.warn('Firestore teachers snapshot:', error.message));
     const unsubClasses = onSnapshot(collection(db, 'master_classes'), (snapshot) => {
-      if (!snapshot.empty) { const list = snapshot.docs.map((d) => String(d.data().name)); setClasses(list); saveLocal('classes', list); }
+      setClasses([...SCHOOL_CLASSES]); saveLocal('classes', [...SCHOOL_CLASSES]);
     }, (error) => console.warn('Firestore classes snapshot:', error.message));
     const unsubSubjects = onSnapshot(collection(db, 'master_subjects'), (snapshot) => {
       if (!snapshot.empty) { const list = snapshot.docs.map((d) => String(d.data().name)); setSubjects(list); saveLocal('subjects', list); }
@@ -469,7 +469,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try { await deleteDoc(doc(db, 'teachers', id)); } catch (e) { console.warn('Deleted teacher locally:', e); }
   };
   const saveMasterList = async (key: 'classes' | 'subjects' | 'extracurriculars', values: string[]) => {
-    if (key === 'classes') { setClasses(values); saveLocal(key, values); }
+    if (key === 'classes') { setClasses([...SCHOOL_CLASSES]); saveLocal(key, [...SCHOOL_CLASSES]); return; }
     if (key === 'subjects') { setSubjects(values); saveLocal(key, values); }
     if (key === 'extracurriculars') { setExtracurriculars(values); saveLocal(key, values); }
     const collectionName = key === 'classes' ? 'master_classes' : key === 'subjects' ? 'master_subjects' : 'extracurriculars';
@@ -479,8 +479,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await Promise.all(values.map((name) => setDoc(doc(db, collectionName, encodeURIComponent(name)), { name })));
     } catch (e) { console.warn('Saved master list locally:', e); }
   };
-  const addClass = async (name: string) => { if (name.trim() && !classes.includes(name.trim())) await saveMasterList('classes', [...classes, name.trim()]); };
-  const deleteClass = async (name: string) => { if (students.some((s) => s.className === name)) { alert('Kelas masih digunakan oleh data siswa. Pindahkan siswa terlebih dahulu.'); return; } await saveMasterList('classes', classes.filter((x) => x !== name)); };
+  const addClass = async (_name: string) => { setClasses([...SCHOOL_CLASSES]); };
+  const deleteClass = async (_name: string) => { setClasses([...SCHOOL_CLASSES]); };
   const addSubject = async (name: string) => { if (name.trim() && !subjects.includes(name.trim())) await saveMasterList('subjects', [...subjects, name.trim()]); };
   const deleteSubject = async (name: string) => { await saveMasterList('subjects', subjects.filter((x) => x !== name)); };
   const addExtracurricular = async (name: string) => { if (name.trim() && !extracurriculars.includes(name.trim())) await saveMasterList('extracurriculars', [...extracurriculars, name.trim()]); };
