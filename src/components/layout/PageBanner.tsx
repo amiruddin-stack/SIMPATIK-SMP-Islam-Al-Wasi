@@ -2,7 +2,7 @@ import React from 'react';
 import {
   ArrowLeft, BookOpen, CalendarCheck, ClipboardCheck, ClipboardList,
   FileBarChart, FileText, GraduationCap, HeartHandshake, Home,
-  Library, ShieldCheck, Users, UserRound, School, Sparkles, CalendarDays, MoreHorizontal
+  Library, ShieldCheck, Users, UserRound, School, Sparkles, CalendarDays, MoreHorizontal, ClipboardPenLine
 } from 'lucide-react';
 import { NavTab } from './Sidebar';
 
@@ -16,6 +16,7 @@ const pageDetails: Record<NavTab, { title: string; description: string; icon: Re
   assessment: { title: 'Input Nilai Kelas', description: 'Pengelolaan nilai dan capaian belajar siswa', icon: ClipboardCheck },
   grades: { title: 'Rekap Nilai', description: 'Ringkasan hasil belajar dan nilai siswa', icon: FileBarChart },
   exams: { title: 'Ujian', description: 'Pembuatan, pengelolaan, dan hasil ujian', icon: ClipboardList },
+  'google-form-exams': { title: 'Ujian Form', description: 'Pengelolaan ujian berbasis Google Forms', icon: ClipboardPenLine },
   counseling: { title: 'Bimbingan Konseling', description: 'Pendampingan dan layanan konseling siswa', icon: HeartHandshake },
   behavior: { title: 'Perilaku Siswa', description: 'Pemantauan sikap, karakter, dan perilaku siswa', icon: ShieldCheck },
   reports: { title: 'Laporan', description: 'Ringkasan dan dokumentasi kegiatan sekolah', icon: FileBarChart },
