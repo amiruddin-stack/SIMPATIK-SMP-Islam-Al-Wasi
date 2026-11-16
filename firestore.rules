@@ -236,7 +236,7 @@ service cloud.firestore {
         && request.resource.data.className is string
         && request.resource.data.classLevel in ['VII', 'VIII', 'IX']
         && request.resource.data.formUrl is string
-        && request.resource.data.formUrl.matches('^https://(docs|forms)\\.google\\.com/forms/.*')
+        && request.resource.data.formUrl.matches('^https://(docs\\.google\\.com/forms/.*|forms\\.google\\.com/forms/.*|forms\\.gle/.*)')
         && request.resource.data.duration is number
         && request.resource.data.duration >= 1
         && request.resource.data.duration <= 300
