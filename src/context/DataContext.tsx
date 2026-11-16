@@ -472,7 +472,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (key === 'classes') { setClasses([...SCHOOL_CLASSES]); saveLocal(key, [...SCHOOL_CLASSES]); return; }
     if (key === 'subjects') { setSubjects(values); saveLocal(key, values); }
     if (key === 'extracurriculars') { setExtracurriculars(values); saveLocal(key, values); }
-    const collectionName = key === 'classes' ? 'master_classes' : key === 'subjects' ? 'master_subjects' : 'extracurriculars';
+    const collectionName = key === 'subjects' ? 'master_subjects' : 'extracurriculars';
     try {
       const snap = await import('firebase/firestore').then(({ getDocs }) => getDocs(collection(db, collectionName)));
       await Promise.all(snap.docs.map((item) => deleteDoc(item.ref)));
