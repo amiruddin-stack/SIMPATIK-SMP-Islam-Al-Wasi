@@ -62,7 +62,7 @@ export const ReportsPage: React.FC = () => {
       rows = classStudents.map((std, idx) => {
         const scores: number[] = [];
         assessments
-          .filter((a) => a.className === selectedClass)
+          .filter((a) => getClassLevel(a.className) === getClassLevel(selectedClass))
           .forEach((a) => {
             if (a.scores[std.id]) scores.push(a.scores[std.id].score);
           });
