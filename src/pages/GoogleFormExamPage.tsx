@@ -4,6 +4,7 @@ import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, X } from 'lucide
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { getClassDisplayName, getClassLevel } from '../lib/classes';
 
 type FormExam = {
   id: string;
@@ -134,8 +135,8 @@ export const GoogleFormExamPage: React.FC = () => {
     const payload = {
       title: draft.title.trim(),
       subject: draft.subject,
-      className: draft.className,
-      classLevel: draft.className.trim().toUpperCase().match(/^(VIII|VII|IX)/)?.[1] || draft.className.trim().toUpperCase(),
+      className: getClassDisplayName(draft.className),
+      classLevel: getClassLevel(draft.className),
       formId: getFormId(validFormUrl),
       formUrl: validFormUrl,
       startAt: draft.startAt,
@@ -172,7 +173,7 @@ export const GoogleFormExamPage: React.FC = () => {
     setDraft({
       title: exam.title,
       subject: exam.subject,
-      className: exam.className,
+      className: getClassDisplayName(exam.className) || exam.className,
       formUrl: exam.formUrl,
       startAt: exam.startAt || '',
       endAt: exam.endAt || '',
@@ -227,7 +228,7 @@ export const GoogleFormExamPage: React.FC = () => {
         <div className="flex items-center justify-between"><h3 className="font-extrabold text-slate-800">Daftar Ujian Form</h3><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{exams.length} ujian</span></div>
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">Memuat data ujian…</div> : exams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-7 text-center"><FilePlus2 className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-sm font-bold text-slate-600">Belum ada Ujian Form</p><p className="mt-1 text-xs text-slate-400">Buat ujian pertama melalui formulir di atas.</p></div> : exams.map(exam => (
           <article key={exam.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h4 className="font-extrabold text-slate-800">{exam.title}</h4><p className="mt-1 text-xs text-slate-500">{exam.subject} · Kelas {exam.className} · {exam.duration} menit</p><p className="mt-2 text-[11px] text-slate-400">{exam.startAt ? new Date(exam.startAt).toLocaleString('id-ID') : 'Jadwal belum ditentukan'}{exam.endAt ? ' — ' + new Date(exam.endAt).toLocaleString('id-ID') : ''}</p></div><span className={'rounded-full px-3 py-1 text-[11px] font-extrabold ' + (exam.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : exam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700')}>{exam.status}</span></div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h4 className="font-extrabold text-slate-800">{exam.title}</h4><p className="mt-1 text-xs text-slate-500">{exam.subject} · Kelas {getClassDisplayName(exam.className) || exam.className} · {exam.duration} menit</p><p className="mt-2 text-[11px] text-slate-400">{exam.startAt ? new Date(exam.startAt).toLocaleString('id-ID') : 'Jadwal belum ditentukan'}{exam.endAt ? ' — ' + new Date(exam.endAt).toLocaleString('id-ID') : ''}</p></div><span className={'rounded-full px-3 py-1 text-[11px] font-extrabold ' + (exam.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : exam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700')}>{exam.status}</span></div>
             <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setPreviewId(previewId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button type="button" onClick={() => editExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><Pencil size={14}/> Ubah</button>{exam.status !== 'Arsip' && <button type="button" onClick={() => void changeStatus(exam, 'Arsip')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"><Archive size={14}/> Arsipkan</button>}</div>
             {previewId === exam.id && <div className="mt-4 overflow-hidden rounded-xl border border-slate-200"><iframe title={'Pratinjau ' + exam.title} src={getEmbedUrl(exam.formUrl)} className="h-[620px] w-full bg-slate-50" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/></div>}
             <div className="mt-4 border-t border-slate-100 pt-3">
