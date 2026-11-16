@@ -256,6 +256,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /googleFormResults/{resultId} {
+      allow read: if isGuruOrAdmin();
+      allow write: if false;
+    }
+
     match /exams/{examId} {
       allow read: if isGuruOrAdmin()
         || (signedIn()
