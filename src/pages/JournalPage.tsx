@@ -18,7 +18,7 @@ export const JournalPage: React.FC = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     subject: subjects[0] || 'Pendidikan Agama Islam (PAI)',
-    className: SCHOOL_CLASSES[0],
+    className: SCHOOL_CLASSES[0] as string,
     lessonHours: 'Jam 1-2 (07:30 - 09:00)',
     topic: '',
     activity: '',
