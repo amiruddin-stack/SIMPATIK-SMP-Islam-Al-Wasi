@@ -16,15 +16,16 @@ import {
 import { SIMPATIK_API_BASE_URL, simpatikApi } from '../lib/backendApi';
 import { RegistrationPage } from './MasterDataPage';
 import { ExamPage } from './ExamPage';
+import { StudentGoogleFormExams } from './StudentGoogleFormExams';
 
 type StudentView = 'home' | 'register' | 'login';
-type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'keamanan';
+type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'ujian-form' | 'keamanan';
 
 const menuGroups = [
   { title: 'Utama', items: [{ id: 'dashboard', label: 'Dashboard', icon: GraduationCap }] },
   { title: 'Akun', items: [{ id: 'profil', label: 'Profil', icon: UserRound }, { id: 'biodata', label: 'Biodata Siswa', icon: UserSquare2 }] },
   { title: 'Islamic Life Skill', items: [{ id: 'tahsin', label: 'Tahsin', icon: BookOpen, soon: true }, { id: 'bacaan-sholat', label: 'Bacaan Sholat', icon: BookOpen, soon: true }] },
-  { title: 'Asesmen', items: [{ id: 'ujian-semester', label: 'Ujian Semester', icon: CalendarDays }, { id: 'ujian-sekolah', label: 'Ujian Sekolah', icon: ClipboardCheck }] },
+  { title: 'Asesmen', items: [{ id: 'ujian-semester', label: 'Ujian Semester', icon: CalendarDays }, { id: 'ujian-sekolah', label: 'Ujian Sekolah', icon: ClipboardCheck }, { id: 'ujian-form', label: 'Ujian Form', icon: ClipboardCheck }] },
   { title: 'Pengaturan', items: [{ id: 'keamanan', label: 'Keamanan', icon: ShieldCheck }] },
 ] as const;
 
@@ -32,7 +33,7 @@ const menuTitles: Record<StudentMenu, string> = {
   dashboard: 'Dashboard',
   profil: 'Profil', biodata: 'Biodata Siswa', tahsin: 'Tahsin',
   'bacaan-sholat': 'Bacaan Sholat', 'ujian-semester': 'Ujian Semester',
-  'ujian-sekolah': 'Ujian Sekolah', keamanan: 'Keamanan'
+  'ujian-sekolah': 'Ujian Sekolah', 'ujian-form': 'Ujian Form', keamanan: 'Keamanan'
 };
 
 export const StudentPortalPage: React.FC = () => {
@@ -253,6 +254,7 @@ export const StudentPortalPage: React.FC = () => {
           <p className="mt-2 max-w-sm text-sm text-slate-500">Materi {activeLabel.toLowerCase()} sedang disiapkan.</p>
         </section>
       );
+      if (activeMenu === 'ujian-form') return <StudentGoogleFormExams className={student.className} />;
       if (activeMenu === 'ujian-semester' || activeMenu === 'ujian-sekolah') return (
         <section className="rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm sm:p-5">
           <div className="mb-4"><h2 className="font-extrabold text-slate-800">{activeLabel}</h2><p className="mt-1 text-xs text-slate-500">Pilih ujian yang tersedia untuk kelas {student.className}.</p></div>
