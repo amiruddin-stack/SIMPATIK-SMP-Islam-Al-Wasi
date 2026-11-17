@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Home, Users, NotebookPen, UserRound, CalendarDays } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
-import { Header } from './components/layout/Header';
+import { HomeTopBar } from './components/layout/HomeTopBar';
 import { PageBanner } from './components/layout/PageBanner';
 import { NavTab, DesktopSidebar } from './components/layout/Sidebar';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
@@ -84,7 +84,7 @@ function AppContent() {
 
   const renderCurrentPage = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardPage activeTab={activeTab} onNavigate={(tab) => setActiveTab(tab)} />;
+      case 'dashboard': return <DashboardPage />;
       case 'attendance': return <AttendancePage />;
       case 'journal': return <JournalPage />;
       case 'behavior': return <BehaviorPage />;
@@ -102,7 +102,7 @@ function AppContent() {
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
       case 'schedule': return <ComingSoonPage title="Jadwal" description="Informasi jadwal kegiatan dan pembelajaran sedang dalam tahap persiapan." />;
       case 'more': return <MorePage />;
-      default: return <DashboardPage activeTab={activeTab} onNavigate={(tab) => setActiveTab(tab)} />;
+      default: return <DashboardPage />;
     }
   };
 
@@ -111,7 +111,7 @@ function AppContent() {
       <div className="flex min-h-screen w-full">
         <DesktopSidebar activeTab={activeTab} onNavigate={setActiveTab} />
         <div className="min-w-0 flex-1">
-          {activeTab !== 'dashboard' && <div className="md:hidden"><Header activeTab={activeTab} onNavigate={setActiveTab} /></div>}
+          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} />
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
               {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
