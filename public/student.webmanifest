@@ -1,0 +1,26 @@
+{
+  "id": "./student-app",
+  "name": "SIMPATIK for Students | SMP Islam Al-Wasi’",
+  "short_name": "SIMPATIK Siswa",
+  "description": "Portal siswa SIMPATIK SMP Islam Al-Wasi’.",
+  "theme_color": "#ffffff",
+  "background_color": "#F7FBF8",
+  "display": "standalone",
+  "orientation": "any",
+  "start_url": "./student.html?student=1",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "./pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
