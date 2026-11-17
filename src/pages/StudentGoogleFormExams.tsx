@@ -51,6 +51,23 @@ export const StudentGoogleFormExams: React.FC<{ className: string; nisn: string;
   const [exams, setExams] = useState<StudentFormExam[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
+
+  useEffect(() => {
+    if (!classLevel) { setLoading(false); return; }
+    const q = query(collection(db, 'googleFormExams'), where('classLevel', '==', classLevel), where('status', '==', 'Aktif'));
+    const stop = onSnapshot(q, snapshot => {
+      const now = Date.now();
+      const rows = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as StudentFormExam))
+        .filter(item => (!item.startAt || new Date(item.startAt).getTime() <= now) && (!item.endAt || new Date(item.endAt).getTime() >= now));
+      setExams(rows);
+      setSelectedId(current => rows.some(item => item.id === current) ? current : '');
+      setLoading(false);
+    }, error => {
+      console.error('Gagal memuat daftar Ujian Form siswa:', error);
+      setLoading(false);
+    });
+    return stop;
+  }, [classLevel]);
   const selected = exams.find(item => item.id === selectedId);
   const selectedFormUrl = selected
     ? embedUrl(selected.formUrl, nisn, studentId, studentName, className)
