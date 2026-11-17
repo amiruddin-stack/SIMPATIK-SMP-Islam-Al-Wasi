@@ -22,7 +22,11 @@ const NISN_PREFILL_MARKER = 'SIMPATIK_NISN_PREFILL';
 function embedUrl(value: string, nisn: string, studentId: string, studentName: string, className: string) {
   try {
     const url = new URL(value);
-    if (!['docs.google.com', 'forms.google.com'].includes(url.hostname) || !url.pathname.includes('/forms/')) return '';
+    const isShortGoogleFormLink = url.hostname === 'forms.gle' && url.pathname.length > 1;
+    const isRespondentGoogleFormLink =
+      ['docs.google.com', 'forms.google.com'].includes(url.hostname) &&
+      /^\/forms\/(?:d\/e\/[^/]+|d\/[^/]+)\/viewform\/?$/.test(url.pathname);
+    if (!isShortGoogleFormLink && !isRespondentGoogleFormLink) return '';
     const nisnEntry = Array.from(url.searchParams.keys()).find(key =>
       /^entry\.\d+$/.test(key) && url.searchParams.get(key) === NISN_PREFILL_MARKER
     );
