@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { CalendarClock, CheckCircle2, FileText, ShieldAlert, Timer } from 'lucide-react';
 import { db } from '../firebase/config';
@@ -95,6 +95,8 @@ export const StudentGoogleFormExams: React.FC<{
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [now, setNow] = useState(Date.now());
   const [openError, setOpenError] = useState('');
+  const [timeWarningOpen, setTimeWarningOpen] = useState(false);
+  const timeWarningExamRef = useRef('');
   const selected = exams.find(item => item.id === selectedId);
   const storageKey = selected ? attemptStorageKey(selected.id, studentId, nisn) : '';
   const selectedFormUrl = selected ? embedUrl(selected.formUrl, nisn, studentId, studentName, className) : '';
@@ -135,6 +137,14 @@ export const StudentGoogleFormExams: React.FC<{
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!examRoom || !started || !selected || selected.enableCountdown === false || remainingExam <= 0 || remainingExam > 10 * 60 * 1000) return;
+    if (timeWarningExamRef.current !== selected.id) {
+      timeWarningExamRef.current = selected.id;
+      setTimeWarningOpen(true);
+    }
+  }, [examRoom, started, selected?.id, selected?.enableCountdown, remainingExam]);
 
   useEffect(() => {
     if (!examRoom || !selected || !attempt || !selected.enablePenalty || examExpired || attempt.completedAt) return;
@@ -217,6 +227,8 @@ export const StudentGoogleFormExams: React.FC<{
     if (attempt.completedAt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5"><section className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/><h1 className="mt-3 text-xl font-black text-slate-800">Ujian telah ditandai selesai</h1><p className="mt-2 text-sm leading-6 text-slate-500">Terima kasih. Status ini merupakan konfirmasi dari siswa; SIMPATIK tidak dapat membaca tombol Kirim Google Forms secara langsung.</p><button type="button" onClick={() => window.close()} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Tutup tab ujian</button></section></main>;
     return (
       <main className="h-screen overflow-hidden bg-[#F7FBF8]">
+        {timeWarningOpen && <div role="alert" className="fixed right-4 top-20 z-[60] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-xl"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-extrabold">Peringatan waktu ujian</p><p className="mt-2 text-sm leading-6">Waktu pengerjaan tinggal <strong>10 menit</strong>. Segera periksa jawaban dan tekan tombol <strong>Kirim</strong> pada Google Form sebelum waktu habis. Jika waktu habis, ujian tidak terkirim.</p></div><button type="button" aria-label="Tutup peringatan" onClick={() => setTimeWarningOpen(false)} className="shrink-0 rounded-lg px-2 py-1 text-lg font-bold text-amber-900 hover:bg-amber-100">×</button></div><button type="button" onClick={() => setTimeWarningOpen(false)} className="mt-3 rounded-lg bg-amber-800 px-3 py-2 text-xs font-bold text-white hover:bg-amber-900">Mengerti</button></div>}
+
         <header className="fixed inset-x-0 top-0 z-50 border-b border-[#D5EADB] bg-[#087F49] px-3 py-2 text-white shadow-sm sm:px-5">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
             <div className="min-w-0"><div className="flex items-center gap-2"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/15"><span className="text-sm font-black">S</span></span><span className="text-xs font-black tracking-wide">SIMPATIK EXAM</span><span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">AKTIF</span></div><p className="mt-0.5 truncate text-[10px] font-medium text-emerald-50 sm:text-xs">{selected.title} · {studentName} · Kelas {className}</p></div>
