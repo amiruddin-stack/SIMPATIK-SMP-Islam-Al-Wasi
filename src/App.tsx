@@ -75,7 +75,7 @@ function AppContent() {
   if (studentPortal) return <StudentPortalPage />;
 
   const sharedExamLink = new URLSearchParams(window.location.search).has('ujian');
-  if (sharedExamLink) return <ExamPage />;
+  if (sharedExamLink) return <ExamPage studentMode />;
 
   const registrationType = new URLSearchParams(window.location.search).get('daftar');
   if (registrationType === 'guru' || registrationType === 'siswa') return <RegistrationPage type={registrationType} />;
