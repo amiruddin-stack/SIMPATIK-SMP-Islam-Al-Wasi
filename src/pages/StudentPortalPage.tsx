@@ -44,54 +44,75 @@ export const StudentPortalPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [studentSession, setStudentSession] = useState(false);
+  const [sessionChecking, setSessionChecking] = useState(true);
   const [activeMenu, setActiveMenu] = useState<StudentMenu>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const examRoomId = new URLSearchParams(window.location.search).get('examRoom') || '';
 
   useEffect(() => {
     let alive = true;
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (!alive) return;
-      if (!user) { setStudentSession(false); setStudent(null); return; }
+    let unsubscribe = () => {};
+    const restoreSession = async () => {
       try {
-        const saved = localStorage.getItem('simpatik_student_identity');
-        const tokenResult = user.isAnonymous ? undefined : await user.getIdTokenResult();
+        await auth.authStateReady();
         if (!alive) return;
-        const profile = validateStoredStudentSession({
-          rawJson: saved,
-          uid: user.uid,
-          isAnonymous: user.isAnonymous,
-          claims: tokenResult?.claims,
-        });
-        if (!profile) {
-          setStudentSession(false);
-          setStudent(null);
-          return;
-        }
-        if (profile.authMode === 'firebase_directory' && typeof navigator !== 'undefined' && navigator.onLine) {
+        unsubscribe = onAuthStateChanged(auth, async user => {
+          if (!alive) return;
+          if (!user) {
+            setStudentSession(false);
+            setStudent(null);
+            setSessionChecking(false);
+            return;
+          }
           try {
-            const directorySnap = await getDoc(doc(db, 'studentExamDirectory', profile.id));
+            const saved = localStorage.getItem('simpatik_student_identity');
+            const tokenResult = user.isAnonymous ? undefined : await user.getIdTokenResult();
             if (!alive) return;
-            const directoryData = directorySnap.exists() ? directorySnap.data() : undefined;
-            if (!directoryData || String(directoryData.status || '').toLowerCase() !== 'aktif') {
-              localStorage.removeItem('simpatik_student_identity');
+            const profile = validateStoredStudentSession({
+              rawJson: saved,
+              uid: user.uid,
+              isAnonymous: user.isAnonymous,
+              claims: tokenResult?.claims,
+            });
+            if (!profile) {
               setStudentSession(false);
               setStudent(null);
+              setSessionChecking(false);
               return;
             }
-          } catch (verifyError) {
-            console.warn('Verifikasi direktori sesi siswa dilewati:', verifyError);
+            if (profile.authMode === 'firebase_directory' && typeof navigator !== 'undefined' && navigator.onLine) {
+              try {
+                const directorySnap = await getDoc(doc(db, 'studentExamDirectory', profile.id));
+                if (!alive) return;
+                const directoryData = directorySnap.exists() ? directorySnap.data() : undefined;
+                if (!directoryData || String(directoryData.status || '').toLowerCase() !== 'aktif') {
+                  localStorage.removeItem('simpatik_student_identity');
+                  setStudentSession(false);
+                  setStudent(null);
+                  setSessionChecking(false);
+                  return;
+                }
+              } catch (verifyError) {
+                console.warn('Verifikasi direktori sesi siswa dilewati:', verifyError);
+              }
+            }
+            setStudent(profile);
+            setStudentSession(true);
+            setSessionChecking(false);
+          } catch (error) {
+            console.error('Gagal memulihkan sesi siswa:', error);
+            localStorage.removeItem('simpatik_student_identity');
+            setStudentSession(false);
+            setStudent(null);
+            setSessionChecking(false);
           }
-        }
-        setStudent(profile);
-        setStudentSession(true);
+        });
       } catch (error) {
-        console.error('Gagal memulihkan sesi siswa:', error);
-        localStorage.removeItem('simpatik_student_identity');
-        setStudentSession(false);
-        setStudent(null);
+        console.error('Firebase belum selesai memulihkan sesi siswa:', error);
+        if (alive) setSessionChecking(false);
       }
-    });
+    };
+    void restoreSession();
     return () => { alive = false; unsubscribe(); };
   }, []);
 
@@ -198,7 +219,9 @@ export const StudentPortalPage: React.FC = () => {
   );
 
   if (studentSession && student) {
-    if (examRoomId) return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} studentName={student.name} examRoomId={examRoomId} />;
+    if (sessionChecking) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5 text-center text-sm font-semibold text-slate-500">Memulihkan sesi siswa…</main>;
+
+  if (examRoomId) return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} studentName={student.name} examRoomId={examRoomId} />;
     const selectMenu = (id: StudentMenu) => { setActiveMenu(id); setSidebarOpen(false); };
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
