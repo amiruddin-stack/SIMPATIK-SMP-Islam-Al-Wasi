@@ -10,6 +10,7 @@ import {
 import { db, handleFirestoreError, OperationType } from '../firebase/config';
 import { studentNisnHash } from '../lib/studentLookup';
 import { SCHOOL_CLASSES } from '../lib/classes';
+import { SCHOOL_SUBJECTS } from '../data/subjects';
 import { useAuth } from './AuthContext';
 import {
   initialAssessments,
@@ -127,7 +128,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [students, setStudents] = useState<Student[]>(() => loadLocal('students', initialStudents));
   const [teachers, setTeachers] = useState<Teacher[]>(() => loadLocal('teachers', initialTeachers));
   const [classes, setClasses] = useState<string[]>([...SCHOOL_CLASSES]);
-  const [subjects, setSubjects] = useState<string[]>(() => loadLocal('subjects', initialSubjects));
+  const [subjects, setSubjects] = useState<string[]>(() => [...SCHOOL_SUBJECTS]);
   const [extracurriculars, setExtracurriculars] = useState<string[]>(() => loadLocal('extracurriculars', ['Pramuka', 'Tahfidz', 'Hadroh', 'Olahraga']));
   const [attendances, setAttendances] = useState<AttendanceRecord[]>(() =>
     loadLocal('attendances', initialAttendances)
@@ -238,8 +239,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubClasses = onSnapshot(collection(db, 'master_classes'), (snapshot) => {
       setClasses([...SCHOOL_CLASSES]); saveLocal('classes', [...SCHOOL_CLASSES]);
     }, (error) => console.warn('Firestore classes snapshot:', error.message));
+    let subjectMigrationStarted = false;
     const unsubSubjects = onSnapshot(collection(db, 'master_subjects'), (snapshot) => {
-      if (!snapshot.empty) { const list = snapshot.docs.map((d) => String(d.data().name)); setSubjects(list); saveLocal('subjects', list); }
+      setSubjects([...SCHOOL_SUBJECTS]);
+      saveLocal('subjects', [...SCHOOL_SUBJECTS]);
+      const isPrimaryAdmin = currentUser.role === 'super_admin' && firebaseUser.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id';
+      const storedNames = snapshot.docs.map((item) => String(item.data().name || '').trim()).filter(Boolean);
+      const isCurrent = storedNames.length === SCHOOL_SUBJECTS.length &&
+        SCHOOL_SUBJECTS.every((name) => storedNames.includes(name));
+      if (isPrimaryAdmin && !isCurrent && !subjectMigrationStarted) {
+        subjectMigrationStarted = true;
+        void (async () => {
+          try {
+            await Promise.all(snapshot.docs.map((item) => deleteDoc(item.ref)));
+            await Promise.all(SCHOOL_SUBJECTS.map((name) =>
+              setDoc(doc(db, 'master_subjects', encodeURIComponent(name)), { name })
+            ));
+          } catch (error) {
+            subjectMigrationStarted = false;
+            console.warn('Pembaruan daftar 18 mata pelajaran:', error);
+          }
+        })();
+      }
     }, (error) => console.warn('Firestore subjects snapshot:', error.message));
     const unsubExtracurriculars = onSnapshot(collection(db, 'extracurriculars'), (snapshot) => {
       if (!snapshot.empty) { const list = snapshot.docs.map((d) => String(d.data().name)); setExtracurriculars(list); saveLocal('extracurriculars', list); }
@@ -547,6 +568,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setBehaviors(loadLocal('behaviors', initialBehaviors));
     setCounselings(loadLocal('counselings', initialCounseling));
     setAssessments(loadLocal('assessments', initialAssessments));
+    setSubjects([...SCHOOL_SUBJECTS]);
+    saveLocal('subjects', [...SCHOOL_SUBJECTS]);
     setSettings(loadLocal('settings', initialSchoolSetting));
   };
 
