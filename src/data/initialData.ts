@@ -1,3 +1,4 @@
+import { SCHOOL_SUBJECTS } from './subjects';
 import {
   Assessment,
   AttendanceRecord,
@@ -125,20 +126,7 @@ export const initialClasses = [
   'IX-B',
 ];
 
-export const initialSubjects = [
-  'Pendidikan Agama Islam (PAI)',
-  'Al-Qur’an Hadits & Tahfidz',
-  'Bahasa Arab',
-  'Bahasa Indonesia',
-  'Bahasa Inggris',
-  'Matematika',
-  'Ilmu Pengetahuan Alam (IPA)',
-  'Ilmu Pengetahuan Sosial (IPS)',
-  'Pendidikan Pancasila',
-  'Informatika',
-  'Pendidikan Jasmani & Olahraga (PJOK)',
-  'Seni Budaya & Prakarya',
-];
+export const initialSubjects = [...SCHOOL_SUBJECTS];
 
 export const initialAttendances: AttendanceRecord[] = [
   {
