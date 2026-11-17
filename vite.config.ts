@@ -12,30 +12,11 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        manifest: false,
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
-        manifest: {
-          id: '/',
-          name: 'SIMPATIK | SMP Islam Al-Wasi’',
-          short_name: 'SIMPATIK',
-          description: 'Sistem Informasi Manajemen Pendidikan dan Akademik Terpadu, Interaktif dan Kolaboratif SMP Islam Al-Wasi’.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'any',
-          start_url: './',
-          scope: './',
-          icons: [
-            {
-              src: 'icon.svg',
-              sizes: 'any',
-              type: 'image/svg+xml',
-              purpose: 'any maskable',
-            },
-          ],
-        },
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}'],
         },
         devOptions: {
           enabled: true,
@@ -45,6 +26,14 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), '.'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(process.cwd(), 'index.html'),
+          student: path.resolve(process.cwd(), 'student.html'),
+        },
       },
     },
     server: {
