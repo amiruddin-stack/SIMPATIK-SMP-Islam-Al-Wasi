@@ -255,7 +255,7 @@ export const StudentPortalPage: React.FC = () => {
           <p className="mt-2 max-w-sm text-sm text-slate-500">Materi {activeLabel.toLowerCase()} sedang disiapkan.</p>
         </section>
       );
-      if (activeMenu === 'ujian-form') return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} />;
+      if (activeMenu === 'ujian-form') return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} studentName={student.name} />;
       if (activeMenu === 'ujian-semester' || activeMenu === 'ujian-sekolah') return (
         <section className="rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm sm:p-5">
           <div className="mb-4"><h2 className="font-extrabold text-slate-800">{activeLabel}</h2><p className="mt-1 text-xs text-slate-500">Pilih ujian yang tersedia untuk kelas {student.className}.</p></div>
