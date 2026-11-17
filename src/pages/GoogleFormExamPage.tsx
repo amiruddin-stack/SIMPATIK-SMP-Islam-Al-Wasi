@@ -8,6 +8,10 @@ import { getClassDisplayName, getClassLevel } from '../lib/classes';
 
 type FormExam = {
   id: string;
+  examType?: string;
+  enableSchedule?: boolean;
+  enableCountdown?: boolean;
+  enablePenalty?: boolean;
   title: string;
   subject: string;
   className: string;
@@ -24,16 +28,20 @@ type FormExam = {
 
 type GoogleFormResult = { id: string; examId: string; studentName: string; nisn: string; score: number; total: number; percent: number; submittedAt: string };
 
-type FormExamDraft = { title: string; subject: string; className: string; formUrl: string; startAt: string; endAt: string; duration: number; status: FormExam['status'] };
+type FormExamDraft = { title: string; examType: string; subject: string; className: string; formUrl: string; enableSchedule: boolean; startAt: string; endAt: string; enableCountdown: boolean; duration: number; enablePenalty: boolean; status: FormExam['status'] };
 
 const emptyForm: FormExamDraft = {
   title: '',
+  examType: 'Asesmen Sumatif Akhir Semester',
   subject: '',
   className: '',
   formUrl: '',
+  enableSchedule: false,
   startAt: '',
   endAt: '',
+  enableCountdown: false,
   duration: 60,
+  enablePenalty: false,
   status: 'Draft',
 };
 
@@ -122,26 +130,31 @@ export const GoogleFormExamPage: React.FC = () => {
 
   const saveExam = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canManage || !draft.title.trim() || !draft.subject || !draft.className || !validFormUrl) {
+    if (!canManage || !draft.examType || !draft.subject || !draft.className || !validFormUrl) {
       setNotice('Lengkapi nama ujian, mata pelajaran, kelas, dan tautan Google Form yang valid.');
       return;
     }
-    if (draft.startAt && draft.endAt && new Date(draft.endAt) <= new Date(draft.startAt)) {
+    if (draft.enableSchedule && draft.startAt && draft.endAt && new Date(draft.endAt) <= new Date(draft.startAt)) {
       setNotice('Waktu selesai harus lebih akhir daripada waktu mulai.');
       return;
     }
     setSaving(true);
     setNotice('');
     const payload = {
-      title: draft.title.trim(),
+      title: draft.title.trim() || draft.examType + ' - ' + draft.subject,
+      examType: draft.examType,
       subject: draft.subject,
       className: getClassDisplayName(draft.className),
       classLevel: getClassLevel(draft.className),
       formId: getFormId(validFormUrl),
       formUrl: validFormUrl,
-      startAt: draft.startAt,
-      endAt: draft.endAt,
+      enableSchedule: draft.enableSchedule,
+      startAt: draft.enableSchedule ? draft.startAt : '',
+      endAt: draft.enableSchedule ? draft.endAt : '',
+      enableCountdown: draft.enableCountdown,
       duration: Math.max(1, Math.min(300, Number(draft.duration) || 60)),
+      enablePenalty: draft.enablePenalty,
+      penaltyMinutes: 3,
       status: draft.status,
       updatedAt: new Date().toISOString(),
       updatedBy: firebaseUser?.uid || '',
@@ -172,12 +185,16 @@ export const GoogleFormExamPage: React.FC = () => {
     setEditingId(exam.id);
     setDraft({
       title: exam.title,
+      examType: exam.examType || 'Ujian Harian',
       subject: exam.subject,
       className: getClassDisplayName(exam.className) || exam.className,
       formUrl: exam.formUrl,
+      enableSchedule: exam.enableSchedule ?? Boolean(exam.startAt || exam.endAt),
       startAt: exam.startAt || '',
       endAt: exam.endAt || '',
+      enableCountdown: exam.enableCountdown ?? true,
       duration: exam.duration || 60,
+      enablePenalty: exam.enablePenalty || false,
       status: exam.status,
     });
     setPreviewId('');
@@ -210,13 +227,26 @@ export const GoogleFormExamPage: React.FC = () => {
       <form onSubmit={saveExam} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center justify-between gap-3"><h3 className="font-extrabold text-slate-800">{editingId ? 'Ubah Data Ujian Form' : 'Data Ujian Baru'}</h3>{editingId && <button type="button" onClick={resetForm} className="inline-flex items-center gap-1 text-xs font-bold text-slate-500"><X size={15}/> Batal</button>}</div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Nama ujian<input required value={draft.title} onChange={e => setDraft(v => ({ ...v, title: e.target.value }))} placeholder="Contoh: Penilaian Harian Bahasa Arab" className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium outline-none focus:border-emerald-500"/></label>
+          <label className="space-y-1 text-xs font-bold text-slate-600">Jenis ujian<select required value={draft.examType} onChange={e => setDraft(v => ({ ...v, examType: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium"><option>Asesmen Sumatif Akhir Semester</option><option>Ujian Sekolah</option><option>Ujian Harian</option></select></label>
           <label className="space-y-1 text-xs font-bold text-slate-600">Mata pelajaran<select required value={draft.subject} onChange={e => setDraft(v => ({ ...v, subject: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium">{subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}</select></label>
           <label className="space-y-1 text-xs font-bold text-slate-600">Kelas<select required value={draft.className} onChange={e => setDraft(v => ({ ...v, className: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium">{classes.map(cls => <option key={cls} value={cls}>{cls}</option>)}</select></label>
+          <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Nama ujian / keterangan (opsional)<input value={draft.title} onChange={e => setDraft(v => ({ ...v, title: e.target.value }))} placeholder="Otomatis mengikuti jenis ujian dan mata pelajaran jika dikosongkan" className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium outline-none focus:border-emerald-500"/></label>
           <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Link Google Form<div className="relative"><Link2 size={17} className="absolute left-3 top-3 text-slate-400"/><input required type="url" value={draft.formUrl} onChange={e => setDraft(v => ({ ...v, formUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/e/.../viewform" className="w-full rounded-xl border border-slate-200 py-3 pl-9 pr-3 text-sm font-medium outline-none focus:border-emerald-500"/></div>{draft.formUrl && <span className={validFormUrl ? 'text-emerald-700' : 'text-rose-600'}>{validFormUrl ? 'Tautan Google Form dikenali.' : 'Masukkan tautan Google Form yang benar.'}<span className="mt-1 block font-medium text-slate-500">Tambahkan pertanyaan wajib NISN dan KODE PESERTA, lalu gunakan tautan praisi hasil fungsi generateSimpNisnPrefillUrl di Apps Script.</span></span>}</label>
-          <label className="space-y-1 text-xs font-bold text-slate-600">Mulai ujian<input type="datetime-local" value={draft.startAt} onChange={e => setDraft(v => ({ ...v, startAt: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label>
-          <label className="space-y-1 text-xs font-bold text-slate-600">Selesai ujian<input type="datetime-local" value={draft.endAt} onChange={e => setDraft(v => ({ ...v, endAt: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label>
-          <label className="space-y-1 text-xs font-bold text-slate-600">Durasi (menit)<input type="number" min="1" max="300" value={draft.duration} onChange={e => setDraft(v => ({ ...v, duration: Number(e.target.value) }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label>
+          <div className="sm:col-span-2 space-y-3">
+            <h4 className="text-sm font-extrabold text-slate-800">Pengaturan Lanjutan</h4>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <label className="flex cursor-pointer items-center justify-between gap-3"><span><span className="block text-xs font-extrabold text-slate-700">Aktifkan jadwal ujian</span><span className="mt-1 block text-[11px] font-medium text-slate-500">Batasi waktu ujian berdasarkan tanggal dan jam.</span></span><input type="checkbox" checked={draft.enableSchedule} onChange={e => setDraft(v => ({ ...v, enableSchedule: e.target.checked }))} className="h-5 w-5 accent-emerald-600"/></label>
+              {draft.enableSchedule && <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="space-y-1 text-xs font-bold text-slate-600">Waktu mulai<input type="datetime-local" value={draft.startAt} onChange={e => setDraft(v => ({ ...v, startAt: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label><label className="space-y-1 text-xs font-bold text-slate-600">Waktu selesai<input type="datetime-local" value={draft.endAt} onChange={e => setDraft(v => ({ ...v, endAt: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label></div>}
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <label className="flex cursor-pointer items-center justify-between gap-3"><span><span className="block text-xs font-extrabold text-slate-700">Aktifkan hitung mundur</span><span className="mt-1 block text-[11px] font-medium text-slate-500">Waktu mulai dihitung saat siswa menekan tombol Mulai Ujian.</span></span><input type="checkbox" checked={draft.enableCountdown} onChange={e => setDraft(v => ({ ...v, enableCountdown: e.target.checked }))} className="h-5 w-5 accent-emerald-600"/></label>
+              {draft.enableCountdown && <label className="mt-3 block space-y-1 text-xs font-bold text-slate-600">Durasi (menit)<input type="number" min="1" max="300" value={draft.duration} onChange={e => setDraft(v => ({ ...v, duration: Number(e.target.value) }))} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium"/></label>}
+            </div>
+            <div className="rounded-xl border border-slate-200 p-3">
+              <label className="flex cursor-pointer items-center justify-between gap-3"><span><span className="block text-xs font-extrabold text-slate-700">Aktifkan sanksi keluar ruang ujian</span><span className="mt-1 block text-[11px] font-medium text-slate-500">Pindah aplikasi, membuka tab lain, atau meminimalkan SIMPATIK dikenai jeda 3 menit setiap kejadian.</span></span><input type="checkbox" checked={draft.enablePenalty} onChange={e => setDraft(v => ({ ...v, enablePenalty: e.target.checked }))} className="h-5 w-5 accent-emerald-600"/></label>
+              {draft.enablePenalty && <p className="mt-2 text-[11px] font-semibold text-amber-700">Setiap kali siswa keluar saat ujian berlangsung, akses formulir dikunci 3 menit. Keluar berulang menambah waktu sanksi secara akumulatif.</p>}
+            </div>
+          </div>
           <label className="space-y-1 text-xs font-bold text-slate-600">Status<select value={draft.status} onChange={e => setDraft(v => ({ ...v, status: e.target.value as FormExam['status'] }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium"><option value="Draft">Draft</option><option value="Aktif">Aktif</option></select></label>
         </div>
         <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white hover:bg-[#06683C] disabled:opacity-60"><Save size={17}/>{saving ? 'Menyimpan…' : editingId ? 'Simpan Perubahan' : 'Buat Ujian Form'}</button>
