@@ -131,7 +131,7 @@ export const GoogleFormExamPage: React.FC = () => {
 
   const saveExam = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canManage || !draft.examType || !draft.subject || !draft.className || !validFormUrl) {
+    if (!canManage || !draft.examType || (draft.examType === 'Lainnya' && !draft.title.trim()) || !draft.subject || !draft.className || !validFormUrl) {
       setNotice('Lengkapi nama ujian, mata pelajaran, kelas, dan tautan Google Form yang valid.');
       return;
     }
