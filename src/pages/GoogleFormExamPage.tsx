@@ -142,7 +142,7 @@ export const GoogleFormExamPage: React.FC = () => {
     setSaving(true);
     setNotice('');
     const payload = {
-      title: draft.title.trim() || draft.examType + ' - ' + draft.subject,
+      title: draft.examType === 'Lainnya' ? draft.title.trim() : draft.examType,
       examType: draft.examType,
       subject: draft.subject,
       className: getClassDisplayName(draft.className),
@@ -186,7 +186,7 @@ export const GoogleFormExamPage: React.FC = () => {
     setEditingId(exam.id);
     setDraft({
       title: exam.title,
-      examType: exam.examType || 'Ujian Harian',
+      examType: ['Asesmen Sumatif Akhir Semester', 'Asesmen Sumatif Akhir Tahun', 'Asesmen Sumatif Akhir Jenjang', 'Asesmen Diagnostik', 'Asesmen Formatif'].includes(exam.examType || '') ? exam.examType! : 'Lainnya',
       subject: exam.subject,
       className: getClassDisplayName(exam.className) || exam.className,
       formUrl: exam.formUrl,
@@ -246,10 +246,10 @@ export const GoogleFormExamPage: React.FC = () => {
       <form onSubmit={saveExam} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center justify-between gap-3"><h3 className="font-extrabold text-slate-800">{editingId ? 'Ubah Data Ujian Form' : 'Data Ujian Baru'}</h3>{editingId && <button type="button" onClick={resetForm} className="inline-flex items-center gap-1 text-xs font-bold text-slate-500"><X size={15}/> Batal</button>}</div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1 text-xs font-bold text-slate-600">Jenis ujian<select required value={draft.examType} onChange={e => setDraft(v => ({ ...v, examType: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium"><option>Asesmen Sumatif Akhir Semester</option><option>Ujian Sekolah</option><option>Ujian Harian</option></select></label>
+          <label className="space-y-1 text-xs font-bold text-slate-600">Nama ujian<select required value={draft.examType} onChange={e => setDraft(v => ({ ...v, examType: e.target.value, title: e.target.value === 'Lainnya' ? v.title : '' }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium"><option>Asesmen Sumatif Akhir Semester</option><option>Asesmen Sumatif Akhir Tahun</option><option>Asesmen Sumatif Akhir Jenjang</option><option>Asesmen Diagnostik</option><option>Asesmen Formatif</option><option>Lainnya</option></select></label>
           <label className="space-y-1 text-xs font-bold text-slate-600">Mata pelajaran<select required value={draft.subject} onChange={e => setDraft(v => ({ ...v, subject: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium">{subjects.map(subject => <option key={subject} value={subject}>{subject}</option>)}</select></label>
           <label className="space-y-1 text-xs font-bold text-slate-600">Kelas<select required value={draft.className} onChange={e => setDraft(v => ({ ...v, className: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium">{classes.map(cls => <option key={cls} value={cls}>{cls}</option>)}</select></label>
-          <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Nama ujian / keterangan (opsional)<input value={draft.title} onChange={e => setDraft(v => ({ ...v, title: e.target.value }))} placeholder="Otomatis mengikuti jenis ujian dan mata pelajaran jika dikosongkan" className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium outline-none focus:border-emerald-500"/></label>
+          {draft.examType === 'Lainnya' && <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Tuliskan nama ujian<input required value={draft.title} onChange={e => setDraft(v => ({ ...v, title: e.target.value }))} placeholder="Masukkan nama ujian" className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium outline-none focus:border-emerald-500"/></label>}
           <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Link Google Form<div className="relative"><Link2 size={17} className="absolute left-3 top-3 text-slate-400"/><input required type="url" value={draft.formUrl} onChange={e => setDraft(v => ({ ...v, formUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/e/.../viewform" className="w-full rounded-xl border border-slate-200 py-3 pl-9 pr-3 text-sm font-medium outline-none focus:border-emerald-500"/></div>{draft.formUrl && <span className={validFormUrl ? 'text-emerald-700' : 'text-rose-600'}>{validFormUrl ? 'Tautan Google Form dikenali.' : 'Masukkan tautan Google Form yang benar.'}<span className="mt-1 block font-medium text-slate-500">Tambahkan pertanyaan wajib NISN dan KODE PESERTA, lalu gunakan tautan praisi hasil fungsi generateSimpNisnPrefillUrl di Apps Script.</span></span>}</label>
           <div className="sm:col-span-2 space-y-3">
             <h4 className="text-sm font-extrabold text-slate-800">Pengaturan Lanjutan</h4>
