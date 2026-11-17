@@ -229,10 +229,16 @@ service cloud.firestore {
           && resource.data.classLevel in ['VII', 'VIII', 'IX']);
       allow create: if isGuruOrAdmin()
         && request.resource.data.keys().hasOnly([
-          'title', 'subject', 'className', 'classLevel', 'formId', 'formUrl', 'startAt', 'endAt',
-          'duration', 'status', 'createdAt', 'createdBy', 'teacherName',
-          'updatedAt', 'updatedBy'
+          'title', 'examType', 'subject', 'className', 'classLevel', 'formId', 'formUrl',
+          'enableSchedule', 'startAt', 'endAt', 'enableCountdown', 'duration',
+          'enablePenalty', 'penaltyMinutes', 'status', 'createdAt', 'createdBy',
+          'teacherName', 'updatedAt', 'updatedBy'
         ])
+        && (!('examType' in request.resource.data) || request.resource.data.examType is string)
+        && (!('enableSchedule' in request.resource.data) || request.resource.data.enableSchedule is bool)
+        && (!('enableCountdown' in request.resource.data) || request.resource.data.enableCountdown is bool)
+        && (!('enablePenalty' in request.resource.data) || request.resource.data.enablePenalty is bool)
+        && (!('penaltyMinutes' in request.resource.data) || (request.resource.data.penaltyMinutes is number && request.resource.data.penaltyMinutes >= 1 && request.resource.data.penaltyMinutes <= 30))
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 150
@@ -250,9 +256,15 @@ service cloud.firestore {
         && request.resource.data.status in ['Draft', 'Aktif'];
       allow update: if isGuruOrAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'title', 'subject', 'className', 'classLevel', 'formId', 'formUrl', 'startAt', 'endAt',
-          'duration', 'status', 'updatedAt', 'updatedBy'
+          'title', 'examType', 'subject', 'className', 'classLevel', 'formId', 'formUrl',
+          'enableSchedule', 'startAt', 'endAt', 'enableCountdown', 'duration',
+          'enablePenalty', 'penaltyMinutes', 'status', 'updatedAt', 'updatedBy'
         ])
+        && (!('examType' in request.resource.data) || request.resource.data.examType is string)
+        && (!('enableSchedule' in request.resource.data) || request.resource.data.enableSchedule is bool)
+        && (!('enableCountdown' in request.resource.data) || request.resource.data.enableCountdown is bool)
+        && (!('enablePenalty' in request.resource.data) || request.resource.data.enablePenalty is bool)
+        && (!('penaltyMinutes' in request.resource.data) || (request.resource.data.penaltyMinutes is number && request.resource.data.penaltyMinutes >= 1 && request.resource.data.penaltyMinutes <= 30))
         && request.resource.data.title is string
         && request.resource.data.formId is string
         && request.resource.data.formUrl is string
