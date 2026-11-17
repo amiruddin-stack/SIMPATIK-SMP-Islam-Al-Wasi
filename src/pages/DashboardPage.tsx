@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Bell } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { NavTab } from '../components/layout/Sidebar';
-import { Header } from '../components/layout/Header';
 import { getClassLevel } from '../lib/classes';
 import {
   Users,
@@ -11,43 +9,14 @@ import {
   Settings,
   FileText,
   ClipboardCheck,
-  Search,
   CalendarCheck,
 } from 'lucide-react';
 
-interface DashboardPageProps {
-  onNavigate: (tab: NavTab) => void;
-  activeTab: NavTab;
-}
-
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, activeTab }) => {
-  const [globalSearch, setGlobalSearch] = useState('');
+export const DashboardPage: React.FC = () => {
   const [attendancePeriod, setAttendancePeriod] = useState<'today'|'week'|'1'|'2'|'3'|'4'|'semester'>('today');
   const [journalPeriod, setJournalPeriod] = useState<'today'|'week'|'1'|'2'|'3'>('today');
   const [attendanceClass, setAttendanceClass] = useState('Semua Kelas');
   const { students, classes, attendances, journals, settings } = useData();
-
-  const handleGlobalSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    const query = globalSearch.trim().toLowerCase();
-    if (!query) return;
-    const destinations: [string[], NavTab][] = [
-      [['presensi', 'kehadiran', 'absen', 'hadir', 'izin', 'sakit'], 'attendance'],
-      [['jurnal', 'kbm', 'pembelajaran', 'materi'], 'journal'],
-      [['nilai', 'penilaian', 'tugas', 'ulangan'], 'assessment'],
-      [['kelas', 'rombel'], 'classes'],
-      [['mapel', 'mata pelajaran', 'kurikulum'], 'subjects'],
-      [['ujian', 'soal', 'cbt', 'tes'], 'exams'],
-      [['wali', 'rapor', 'rekap', 'capaian'], 'grades'],
-      [['bk', 'konseling', 'bimbingan'], 'counseling'],
-      [['laporan', 'cetak', 'rekapitulasi'], 'reports'],
-      [['siswa', 'guru', 'data master', 'sekolah'], 'master'],
-      [['perilaku', 'karakter', 'sikap', 'prestasi', 'pelanggaran'], 'behavior'],
-      [['pengaturan', 'profil', 'aplikasi'], 'settings'],
-    ];
-    const match = destinations.find(([keywords]) => keywords.some((keyword) => query.includes(keyword)));
-    if (match) onNavigate(match[1]);
-  };
 
   const today = new Date();
   const todayStr = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
@@ -95,21 +64,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, active
     <div className="min-h-screen w-full bg-white font-sans text-slate-800 antialiased">
       {/* HERO SECTION with compact aligned card and integrated top navbar */}
       <section className="relative w-full overflow-hidden pb-3 pt-0 bg-white">
-        <div className="relative z-10 mx-auto flex w-full max-w-[1240px] items-center gap-3 border-b border-slate-100 bg-white px-3 py-2 md:px-8">
-          <div className="md:hidden"><Header activeTab={activeTab} onNavigate={onNavigate} embedded /></div>
-          <div className="flex min-w-0 items-center gap-3">
-            <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10" />
-            <span className="max-w-[112px] truncate text-xs font-extrabold tracking-tight text-slate-900 sm:max-w-none sm:text-base">SMP Islam Al-Wasi’</span>
-          </div>
-          <form onSubmit={handleGlobalSearch} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-3 sm:h-10 sm:px-4">
-            <Search size={17} className="shrink-0 text-[#0B8F4D]" />
-            <input value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} type="search" aria-label="Cari siswa atau fitur SIMPATIK" placeholder="Search - siswa atau fitur SIMPATIK" className="min-w-0 w-full bg-transparent text-xs text-slate-700 outline-none placeholder:text-slate-400 sm:text-sm" />
-          </form>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 sm:h-10 sm:w-10" aria-label="Notifikasi">
-            <Bell size={18} strokeWidth={1.8} />
-          </div>
-        </div>
-
         {/* Full-width hero card with illustration beside unchanged hero text */}
         <div className="relative z-10 mx-auto max-w-[1240px] px-4 pt-2 pb-3 md:px-8 md:pt-3 md:pb-4">
           <div className="hero relative isolate flex w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-6 py-6 text-center shadow-[0_12px_30px_rgba(7,107,58,0.22)] md:flex-row md:justify-between md:gap-8 md:px-9 md:py-7 md:text-left">
