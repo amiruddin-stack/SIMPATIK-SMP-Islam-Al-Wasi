@@ -114,7 +114,7 @@ function AppContent() {
           {activeTab !== 'dashboard' && <div className="md:hidden"><Header activeTab={activeTab} onNavigate={setActiveTab} /></div>}
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
-              {activeTab !== 'dashboard' && activeTab !== 'subjects' && activeTab !== 'exams' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
+              {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
               {renderCurrentPage()}
             </div>
           </main>
