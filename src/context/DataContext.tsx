@@ -20,7 +20,6 @@ import {
   initialJournals,
   initialSchoolSetting,
   initialStudents,
-  initialSubjects,
   initialTeachers,
 } from '../data/initialData';
 import {
