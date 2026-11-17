@@ -46,12 +46,6 @@ export const StudentPortalPage: React.FC = () => {
   const [studentSession, setStudentSession] = useState(false);
   const [activeMenu, setActiveMenu] = useState<StudentMenu>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeExam, setActiveExam] = useState<{ examId: string; title: string; startedAt: number } | null>(() => {
-    try {
-      const raw = localStorage.getItem('simpatik_active_gform_' + (JSON.parse(localStorage.getItem('simpatik_student_identity') || '{}').id || ''));
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  });
   const examRoomId = new URLSearchParams(window.location.search).get('examRoom') || '';
 
   useEffect(() => {
@@ -100,27 +94,6 @@ export const StudentPortalPage: React.FC = () => {
     });
     return () => { alive = false; unsubscribe(); };
   }, []);
-
-  useEffect(() => {
-    if (!student?.id) return;
-    const key = 'simpatik_active_gform_' + student.id;
-    const syncActiveExam = () => {
-      try {
-        const raw = localStorage.getItem(key);
-        setActiveExam(raw ? JSON.parse(raw) : null);
-      } catch { setActiveExam(null); }
-    };
-    syncActiveExam();
-    const onStorage = (event: StorageEvent) => { if (event.key === key) syncActiveExam(); };
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('simpatik-exam-start', syncActiveExam);
-    window.addEventListener('simpatik-exam-finish', syncActiveExam);
-    return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('simpatik-exam-start', syncActiveExam);
-      window.removeEventListener('simpatik-exam-finish', syncActiveExam);
-    };
-  }, [student?.id]);
 
   const loginStudent = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -226,18 +199,6 @@ export const StudentPortalPage: React.FC = () => {
 
   if (studentSession && student) {
     if (examRoomId) return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} studentName={student.name} examRoomId={examRoomId} />;
-    if (activeExam) return (
-      <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] px-4 py-8">
-        <section className="w-full max-w-md rounded-2xl border border-[#D5EADB] bg-white p-6 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#087F49]"><ClipboardCheck size={28}/></div>
-          <p className="mt-4 text-[10px] font-black tracking-[0.18em] text-[#087F49]">SIMPATIK FOR STUDENTS</p>
-          <h1 className="mt-2 text-xl font-black text-slate-800">UJIAN SEDANG BERLANGSUNG</h1>
-          <p className="mt-2 text-sm font-bold text-slate-700">{activeExam.title}</p>
-          <p className="mt-2 text-xs leading-5 text-slate-500">Halaman utama dikunci sementara. Silakan kembali ke tab SIMPATIK Exam Room untuk melanjutkan ujian.</p>
-          <div className="mt-5 rounded-xl bg-[#F2FBF5] p-3 text-xs font-semibold text-[#087F49]">Nama: {student.name} · Kelas {student.className}</div>
-        </section>
-      </main>
-    );
     const selectMenu = (id: StudentMenu) => { setActiveMenu(id); setSidebarOpen(false); };
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
