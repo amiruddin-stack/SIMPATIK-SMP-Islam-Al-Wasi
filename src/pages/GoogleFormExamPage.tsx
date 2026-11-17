@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { addDoc, collection, doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, X } from 'lucide-react';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, Trash2, X } from 'lucide-react';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -86,6 +86,7 @@ export const GoogleFormExamPage: React.FC = () => {
   const [draft, setDraft] = useState<FormExamDraft>(emptyForm);
   const [editingId, setEditingId] = useState('');
   const [previewId, setPreviewId] = useState('');
+  const [deletingId, setDeletingId] = useState('');
 
   const canManage = Boolean(firebaseUser && !firebaseUser.isAnonymous && currentUser &&
     ['super_admin', 'kepala_sekolah', 'operator', 'guru', 'wali_kelas'].includes(currentUser.role || ''));
@@ -201,6 +202,24 @@ export const GoogleFormExamPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const deleteExam = async (exam: FormExam) => {
+    const confirmed = window.confirm('Hapus ujian "' + exam.title + '" dari daftar Ujian Form? Data hasil siswa yang sudah masuk tetap disimpan.');
+    if (!confirmed || !canManage) return;
+    setDeletingId(exam.id);
+    setNotice('');
+    try {
+      await deleteDoc(doc(db, 'googleFormExams', exam.id));
+      if (editingId === exam.id) resetForm();
+      if (previewId === exam.id) setPreviewId('');
+      setNotice('Ujian "' + exam.title + '" berhasil dihapus. Hasil siswa tetap tersimpan.');
+    } catch (error) {
+      console.error('Gagal menghapus Ujian Form:', error);
+      setNotice('Ujian belum dapat dihapus. Periksa izin Firestore dan koneksi internet.');
+    } finally {
+      setDeletingId('');
+    }
+  };
+
   const changeStatus = async (exam: FormExam, status: FormExam['status']) => {
     try {
       await updateDoc(doc(db, 'googleFormExams', exam.id), { status, updatedAt: new Date().toISOString() });
@@ -259,7 +278,7 @@ export const GoogleFormExamPage: React.FC = () => {
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">Memuat data ujian…</div> : exams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-7 text-center"><FilePlus2 className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-sm font-bold text-slate-600">Belum ada Ujian Form</p><p className="mt-1 text-xs text-slate-400">Buat ujian pertama melalui formulir di atas.</p></div> : exams.map(exam => (
           <article key={exam.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h4 className="font-extrabold text-slate-800">{exam.title}</h4><p className="mt-1 text-xs text-slate-500">{exam.subject} · Kelas {getClassDisplayName(exam.className) || exam.className} · {exam.duration} menit</p><p className="mt-2 text-[11px] text-slate-400">{exam.startAt ? new Date(exam.startAt).toLocaleString('id-ID') : 'Jadwal belum ditentukan'}{exam.endAt ? ' — ' + new Date(exam.endAt).toLocaleString('id-ID') : ''}</p></div><span className={'rounded-full px-3 py-1 text-[11px] font-extrabold ' + (exam.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : exam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700')}>{exam.status}</span></div>
-            <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setPreviewId(previewId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button type="button" onClick={() => editExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><Pencil size={14}/> Ubah</button>{exam.status !== 'Arsip' && <button type="button" onClick={() => void changeStatus(exam, 'Arsip')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"><Archive size={14}/> Arsipkan</button>}</div>
+            <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setPreviewId(previewId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button type="button" onClick={() => editExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><Pencil size={14}/> Ubah</button>{exam.status !== 'Arsip' && <button type="button" onClick={() => void changeStatus(exam, 'Arsip')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"><Archive size={14}/> Arsipkan</button>}<button type="button" disabled={deletingId === exam.id} onClick={() => void deleteExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Trash2 size={14}/>{deletingId === exam.id ? 'Menghapus…' : 'Hapus'}</button></div>
             {previewId === exam.id && <div className="mt-4 overflow-hidden rounded-xl border border-slate-200"><iframe title={'Pratinjau ' + exam.title} src={getEmbedUrl(exam.formUrl)} className="h-[620px] w-full bg-slate-50" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/></div>}
             <div className="mt-4 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between gap-2"><h5 className="text-xs font-extrabold text-slate-700">Hasil masuk</h5><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{results.filter(result => result.examId === exam.id).length} siswa</span></div>
