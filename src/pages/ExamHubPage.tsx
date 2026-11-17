@@ -32,12 +32,7 @@ export const ExamHubPage: React.FC = () => {
 
   return (
     <section className="mx-auto max-w-4xl space-y-5">
-      <div className="rounded-3xl bg-gradient-to-br from-[#087F49] to-[#0B6B42] p-6 text-white shadow-sm sm:p-8">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15"><ClipboardList size={26}/></div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-100">SIMPATIK AL-WASI’</p>
-        <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Menu Ujian</h1>
-        <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-50">Pilih jenis ujian yang akan dikelola. Semua fitur ujian tersedia dalam satu pintu masuk.</p>
-      </div>
+      <p className="text-sm text-slate-500">Pilih jenis ujian yang akan dikelola. Semua fitur ujian tersedia dalam satu pintu masuk.</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <button type="button" onClick={() => setSection('simpatik')} className="group rounded-2xl border border-[#BFE8CF] bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#16B364] hover:shadow-md sm:p-6">
