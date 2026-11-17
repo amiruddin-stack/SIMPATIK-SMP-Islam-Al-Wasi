@@ -10,6 +10,15 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="../icon.svg" />
     <link rel="apple-touch-icon" href="../pwa-192x192.png" />
+    <script>
+      (function () {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('student') !== '1') {
+          url.searchParams.set('student', '1');
+          window.location.replace(url.toString());
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#F8FAF9] text-slate-800 antialiased">
     <div id="root"></div>
