@@ -7,7 +7,7 @@
   "background_color": "#F7FBF8",
   "display": "standalone",
   "orientation": "any",
-  "start_url": "./student/",
+  "start_url": "./student/?student=1",
   "scope": "./student/",
   "icons": [
     {
