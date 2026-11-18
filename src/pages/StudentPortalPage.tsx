@@ -192,13 +192,6 @@ export const StudentPortalPage: React.FC = () => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('simpatik_student_identity');
-    setStudent(null);
-    setStudentSession(false);
-    void signOut(auth);
-  };
-
   if (view === 'register') return (
     <div className="min-h-screen bg-[#F7FBF8] px-3 py-5 sm:px-6">
       <div className="mx-auto max-w-2xl">
