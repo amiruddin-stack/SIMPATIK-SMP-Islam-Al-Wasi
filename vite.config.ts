@@ -17,7 +17,7 @@ export default defineConfig(() => {
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}'],
-          navigateFallbackDenylist: [/\/student(?:\/|$)/],
+          navigateFallbackDenylist: [/\/students?(?:\/|$)/],
         },
         devOptions: {
           enabled: true,
@@ -33,7 +33,7 @@ export default defineConfig(() => {
       rollupOptions: {
         input: {
           main: path.resolve(process.cwd(), 'index.html'),
-          student: path.resolve(process.cwd(), 'student/index.html'),
+          student: path.resolve(process.cwd(), 'students/index.html'),
         },
       },
     },
