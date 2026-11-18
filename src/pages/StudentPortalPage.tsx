@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, ClipboardCheck,
-  GraduationCap, KeyRound, LogOut, ShieldCheck, UserRound,
-  UserSquare2
+  GraduationCap, UserRound, UserSquare2
 } from 'lucide-react';
 import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInAnonymously, signInWithCustomToken, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -20,13 +19,13 @@ import { ExamPage } from './ExamPage';
 import { StudentGoogleFormExams } from './StudentGoogleFormExams';
 
 type StudentView = 'home' | 'register' | 'login';
-type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'ujian-form' | 'keamanan';
+type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'ujian-form';
 
 const menuTitles: Record<StudentMenu, string> = {
   dashboard: 'Dashboard',
   profil: 'Profil', biodata: 'Biodata Siswa', tahsin: 'Tahsin',
   'bacaan-sholat': 'Bacaan Sholat', 'ujian-semester': 'Ujian Semester',
-  'ujian-sekolah': 'Ujian Sekolah', 'ujian-form': 'Ujian Form', keamanan: 'Keamanan'
+  'ujian-sekolah': 'Ujian Sekolah', 'ujian-form': 'Ujian Form'
 };
 
 export const StudentPortalPage: React.FC = () => {
@@ -259,13 +258,7 @@ export const StudentPortalPage: React.FC = () => {
           <ExamPage studentMode />
         </section>
       );
-      return (
-        <section className="rounded-2xl border border-[#D9EEE2] bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><ShieldCheck size={25}/></div><div><h2 className="font-extrabold text-slate-800">Keamanan Akun</h2><p className="text-xs text-slate-500">Kelola sesi masuk pada perangkat ini.</p></div></div>
-          <div className="mt-5 rounded-xl bg-[#F5FBF7] p-4"><p className="text-sm font-bold text-slate-800">Masuk menggunakan NISN</p><p className="mt-1 text-xs leading-5 text-slate-500">Sesi akun tersimpan pada perangkat ini agar siswa tidak perlu masuk berulang kali. Jangan gunakan perangkat bersama tanpa keluar dari akun.</p></div>
-          <button type="button" onClick={logout} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 px-4 py-3 text-sm font-bold text-rose-600 transition hover:bg-rose-50"><LogOut size={17}/> Keluar dari akun siswa</button>
-        </section>
-      );
+      return null;
     };
 
     return (
@@ -324,7 +317,6 @@ export const StudentPortalPage: React.FC = () => {
               { id: 'dashboard', label: 'Home', icon: GraduationCap },
               { id: 'ujian-form', label: 'Ujian', icon: ClipboardCheck },
               { id: 'profil', label: 'Profil', icon: UserRound },
-              { id: 'keamanan', label: 'Akun', icon: ShieldCheck },
             ].map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return (
               <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} aria-current={selected ? 'page' : undefined} className={'flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-extrabold transition '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-500 hover:bg-[#F5FBF7]')}>
                 <Icon size={20} strokeWidth={selected ? 2.5 : 2}/><span>{item.label}</span>
