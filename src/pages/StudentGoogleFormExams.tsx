@@ -152,6 +152,11 @@ export const StudentGoogleFormExams: React.FC<{
     const registerExit = () => {
       if (document.visibilityState === 'visible' && document.hasFocus()) return;
       const stamp = Date.now();
+      try {
+        const resumeKey = 'simpatik_exam_resume_request_' + selected.id;
+        const resumeRequest = Number(localStorage.getItem(resumeKey) || 0);
+        if (resumeRequest && stamp - resumeRequest < 5000) { localStorage.removeItem(resumeKey); return; }
+      } catch (error) { console.warn('Gagal membaca permintaan lanjut ujian:', error); }
       if (stamp - lastHandled < 1800) return;
       lastHandled = stamp;
       setAttempt(current => {
@@ -191,7 +196,8 @@ export const StudentGoogleFormExams: React.FC<{
     target.searchParams.set('student', '1');
     target.searchParams.set('examRoom', selected.id);
     target.searchParams.delete('page');
-    const examWindow = window.open(target.toString(), '_blank');
+    const roomWindowName = 'SIMPATIK_EXAM_' + studentId + '_' + selected.id;
+    const examWindow = window.open(target.toString(), roomWindowName);
     if (!examWindow) {
       setOpenError('Tab ujian tidak dapat dibuka. Izinkan pop-up untuk SIMPATIK, lalu tekan Mulai Ujian kembali.');
       return;
@@ -207,6 +213,19 @@ export const StudentGoogleFormExams: React.FC<{
     setNow(Date.now());
     setOpenError('');
     window.dispatchEvent(new Event('simpatik-exam-start'));
+  };
+
+  const continueExam = () => {
+    if (!selected || !attempt) return;
+    const target = new URL(window.location.href);
+    target.searchParams.set('student', '1');
+    target.searchParams.set('examRoom', selected.id);
+    target.searchParams.delete('page');
+    const roomWindowName = 'SIMPATIK_EXAM_' + studentId + '_' + selected.id;
+    try { localStorage.setItem('simpatik_exam_resume_request_' + selected.id, String(Date.now())); } catch (error) { console.error('Gagal menandai lanjut ujian:', error); }
+    const examWindow = window.open(target.toString(), roomWindowName);
+    if (!examWindow) setOpenError('Tab ujian tidak dapat dibuka. Izinkan pop-up untuk SIMPATIK, lalu tekan Lanjutkan Ujian kembali.');
+    else setOpenError('');
   };
 
   const finishExam = () => {
@@ -253,7 +272,7 @@ export const StudentGoogleFormExams: React.FC<{
           <div className="grid gap-3 sm:grid-cols-2">{exams.map(exam => <button key={exam.id} type="button" onClick={() => setSelectedId(exam.id)} className={'rounded-xl border p-4 text-left transition ' + (selectedId === exam.id ? 'border-[#0B8F4D] bg-[#F2FBF5] ring-2 ring-[#D5EADB]' : 'border-slate-200 bg-white hover:border-emerald-300')}><span className="text-sm font-extrabold text-slate-800">{exam.title}</span><span className="mt-1 block text-xs text-slate-500">{exam.subject} · {exam.duration || 60} menit</span>{exam.endAt && <span className="mt-2 flex items-center gap-1 text-[11px] text-slate-400"><CalendarClock size={13}/> Batas: {new Date(exam.endAt).toLocaleString('id-ID')}</span>}</button>)}</div>
           {selected && !selectedFormUrl && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-800">Tautan Google Form belum valid. Guru perlu memeriksa tautan ujian di SIMPATIK.</div>}
           {selected && selectedFormUrl && !started && <section className="rounded-2xl border border-[#D5EADB] bg-white p-4 shadow-sm"><h3 className="text-sm font-extrabold text-slate-800">{selected.title}</h3><p className="mt-1 text-xs text-slate-500">{selected.subject} · {selected.examType || 'Ujian Form'}</p><p className="mt-3 text-xs leading-5 text-slate-600">Saat menekan Mulai Ujian, ruang ujian akan terbuka di tab baru. Waktu ujian dimulai pada saat itu.</p><button type="button" onClick={startExam} className="mt-4 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Mulai Ujian</button>{openError && <p role="alert" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
-          {selected && started && <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2 font-extrabold text-emerald-800"><CheckCircle2 size={18}/> Ujian sedang berlangsung di tab baru</div><p className="mt-2 text-xs leading-5 text-emerald-800">Halaman utama SIMPATIK dikunci sementara. Lanjutkan ujian pada tab SIMPATIK Exam Room. Pelanggaran tercatat: {attempt?.violations || 0}.</p></section>}
+          {selected && started && <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2 font-extrabold text-emerald-800"><CheckCircle2 size={18}/> Ujian sedang berlangsung di tab baru</div><p className="mt-2 text-xs leading-5 text-emerald-800">Lanjutkan ujian pada tab SIMPATIK Exam Room. Jawaban dan waktu ujian tetap tersimpan; tidak membuat sesi baru. Pelanggaran tercatat: {attempt?.violations || 0}.</p><button type="button" onClick={continueExam} className="mt-3 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Lanjutkan Ujian</button>{openError && <p role="alert" className="mt-2 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
         </>
       )}
       <p className="text-[11px] leading-5 text-slate-400">Status dan waktu ujian disimpan di perangkat siswa. Penalti bergantung pada kemampuan browser mendeteksi perpindahan tab/aplikasi. Google Forms berasal dari layanan Google sehingga SIMPATIK tidak dapat membaca secara langsung apakah tombol Kirim sudah berhasil ditekan.</p>
