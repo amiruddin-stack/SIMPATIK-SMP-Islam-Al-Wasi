@@ -95,6 +95,7 @@ export const StudentGoogleFormExams: React.FC<{
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [now, setNow] = useState(Date.now());
   const [openError, setOpenError] = useState('');
+  const [closeTabFallback, setCloseTabFallback] = useState(false);
   const [timeWarningOpen, setTimeWarningOpen] = useState(false);
   const timeWarningExamRef = useRef('');
   const selected = exams.find(item => item.id === selectedId);
@@ -241,9 +242,30 @@ export const StudentGoogleFormExams: React.FC<{
     window.dispatchEvent(new Event('simpatik-exam-finish'));
   };
 
+  const closeExamTab = () => {
+    setCloseTabFallback(false);
+    try {
+      window.close();
+    } catch (error) {
+      console.warn('Browser menolak menutup tab ujian:', error);
+    }
+    window.setTimeout(() => {
+      if (!window.closed) setCloseTabFallback(true);
+    }, 400);
+  };
+
+  const returnToStudentPortal = () => {
+    try { window.opener?.focus(); } catch (error) { console.warn('Tab utama tidak dapat difokuskan:', error); }
+    const portalUrl = new URL(window.location.href);
+    portalUrl.searchParams.delete('examRoom');
+    portalUrl.searchParams.delete('page');
+    portalUrl.searchParams.set('student', '1');
+    window.location.assign(portalUrl.toString());
+  };
+
   if (examRoom) {
     if (loading || !selected || !attempt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5 text-center text-sm font-semibold text-slate-500">Menyiapkan ruang ujian SIMPATIK…</main>;
-    if (attempt.completedAt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5"><section className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/><h1 className="mt-3 text-xl font-black text-slate-800">Ujian telah ditandai selesai</h1><p className="mt-2 text-sm leading-6 text-slate-500">Terima kasih. Status ini merupakan konfirmasi dari siswa; SIMPATIK tidak dapat membaca tombol Kirim Google Forms secara langsung.</p><button type="button" onClick={() => window.close()} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Tutup tab ujian</button></section></main>;
+    if (attempt.completedAt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5"><section className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/><h1 className="mt-3 text-xl font-black text-slate-800">Ujian telah ditandai selesai</h1><p className="mt-2 text-sm leading-6 text-slate-500">Terima kasih. Status ini merupakan konfirmasi dari siswa; SIMPATIK tidak dapat membaca tombol Kirim Google Forms secara langsung.</p><button type="button" onClick={closeExamTab} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Tutup tab ujian</button>{closeTabFallback && <div role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left"><p className="text-xs leading-5 text-amber-900">Browser tidak mengizinkan tab ini ditutup otomatis. Anda dapat kembali ke halaman SIMPATIK tanpa login ulang.</p><button type="button" onClick={returnToStudentPortal} className="mt-3 w-full rounded-lg bg-[#087F49] px-3 py-2.5 text-sm font-bold text-white">Kembali ke SIMPATIK</button></div>}</section></main>;
     return (
       <main className="h-screen overflow-hidden bg-[#F7FBF8]">
         {timeWarningOpen && <div role="alert" className="fixed right-4 top-20 z-[60] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-xl"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-extrabold">Peringatan waktu ujian</p><p className="mt-2 text-sm leading-6">Waktu pengerjaan tinggal <strong>10 menit</strong>. Segera periksa jawaban dan tekan tombol <strong>Kirim</strong> pada Google Form sebelum waktu habis. Jika waktu habis, ujian tidak terkirim.</p></div><button type="button" aria-label="Tutup peringatan" onClick={() => setTimeWarningOpen(false)} className="shrink-0 rounded-lg px-2 py-1 text-lg font-bold text-amber-900 hover:bg-amber-100">×</button></div><button type="button" onClick={() => setTimeWarningOpen(false)} className="mt-3 rounded-lg bg-amber-800 px-3 py-2 text-xs font-bold text-white hover:bg-amber-900">Mengerti</button></div>}
