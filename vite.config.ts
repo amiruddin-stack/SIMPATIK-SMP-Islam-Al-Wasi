@@ -17,6 +17,7 @@ export default defineConfig(() => {
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff,woff2}'],
+          navigateFallbackDenylist: [/\/student(?:\/|$)/],
         },
         devOptions: {
           enabled: true,
