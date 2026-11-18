@@ -226,23 +226,19 @@ export const StudentPortalPage: React.FC = () => {
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
       if (activeMenu === 'dashboard') return (
-        <div className="grid gap-4">
-          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4"><h2 className="text-lg font-black text-slate-800">Perkembangan Siswa</h2><p className="mt-1 text-xs text-slate-500">Pantau perkembangan pembelajaran dan kedisiplinanmu.</p></div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[{ label: 'Bacaan Sholat', value: 80, icon: BookOpen }, { label: 'Doa Harian', value: 70, icon: BookOpen }, { label: 'Kehadiran', value: 90, icon: CalendarDays }].map(item => { const Icon = item.icon; return (
-                <div key={item.label} className="rounded-xl border border-[#E5F1E9] bg-[#FAFDFA] p-4">
-                  <div className="flex items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-bold text-slate-700"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E3F7EC] text-[#087F49]"><Icon size={18}/></span>{item.label}</div><span className="text-lg font-black tabular-nums text-[#087F49]">{item.value}%</span></div>
-                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#E7F1EA]"><div className="h-full rounded-full bg-gradient-to-r from-[#0B8F4D] to-[#34B56F]" style={{ width: item.value + '%' }}/></div>
-                </div>
-              ); })}
-            </div>
-          </section>
-          <section className="rounded-2xl border border-[#D9EEE2] bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex items-center gap-2"><GraduationCap className="text-[#087F49]" size={21}/><h2 className="font-black text-slate-800">Perkembangan Akademik</h2></div>
-            <p className="mt-2 text-sm leading-6 text-slate-500">Ringkasan nilai dan hasil belajar akan ditampilkan di bagian ini setelah data akademik siswa tersedia.</p>
-          </section>
-        </div>
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { id: 'profil', label: 'Profil', description: 'Lihat profil dan identitas akun', icon: UserRound, tone: 'bg-[#E3F7EC] text-[#087F49]' },
+            { id: 'ujian-form', label: 'Ujian', description: 'Lihat dan ikuti ujian yang tersedia', icon: ClipboardCheck, tone: 'bg-[#E3F7EC] text-[#087F49]' },
+            { id: 'keamanan', label: 'Pengaturan', description: 'Kelola akun dan sesi masuk', icon: ShieldCheck, tone: 'bg-[#E3F7EC] text-[#087F49]' },
+          ].map(item => { const Icon = item.icon; return (
+            <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className="group flex min-h-[150px] flex-col items-start rounded-2xl border border-[#D9EEE2] bg-white p-4 text-left shadow-sm transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7] active:scale-[0.98] sm:p-5">
+              <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${item.tone}`}><Icon size={24}/></span>
+              <span className="mt-4 text-base font-black text-slate-800">{item.label}</span>
+              <span className="mt-1 text-xs leading-5 text-slate-500">{item.description}</span>
+            </button>
+          ); })}
+        </section>
       );
       if (activeMenu === 'profil') return (
         <div className="grid gap-4">
