@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, ArrowRight, Bell, BookOpen, CalendarDays, ClipboardCheck,
-  GraduationCap, KeyRound, LogOut, Menu, ShieldCheck, UserRound,
-  UserSquare2, X
+  GraduationCap, KeyRound, LogOut, ShieldCheck, UserRound,
+  UserSquare2
 } from 'lucide-react';
 import { browserLocalPersistence, onAuthStateChanged, setPersistence, signInAnonymously, signInWithCustomToken, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -46,7 +46,6 @@ export const StudentPortalPage: React.FC = () => {
   const [studentSession, setStudentSession] = useState(false);
   const [sessionChecking, setSessionChecking] = useState(true);
   const [activeMenu, setActiveMenu] = useState<StudentMenu>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const examRoomId = new URLSearchParams(window.location.search).get('examRoom') || '';
 
   useEffect(() => {
@@ -222,7 +221,7 @@ export const StudentPortalPage: React.FC = () => {
     if (sessionChecking) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5 text-center text-sm font-semibold text-slate-500">Memulihkan sesi siswa…</main>;
 
   if (examRoomId) return <StudentGoogleFormExams className={student.className} nisn={student.nisn} studentId={student.id} studentName={student.name} examRoomId={examRoomId} />;
-    const selectMenu = (id: StudentMenu) => { setActiveMenu(id); setSidebarOpen(false); };
+    const selectMenu = (id: StudentMenu) => { setActiveMenu(id); };
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
       if (activeMenu === 'dashboard') return (
@@ -295,9 +294,8 @@ export const StudentPortalPage: React.FC = () => {
     return (
       <main className="min-h-screen bg-[#F7FBF8]">
         <div className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
-          <div className="mb-3 flex items-center gap-3 px-1">
-            <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Buka menu" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9EEE2] bg-white text-[#087F49] shadow-sm"><Menu size={21}/></button>
-            <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-800 sm:text-base">{student.name}</p><p className="text-[11px] font-medium text-slate-500">Kelas {student.className}</p></div>
+          <div className="mb-3 flex items-center justify-between gap-3 px-1">
+            <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-800 sm:text-base">{student.name}</p><p className="text-[11px] font-medium text-slate-500">Kelas {student.className}</p></div>
             <button type="button" aria-label="Notifikasi" title="Notifikasi" className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D9EEE2] bg-white text-[#087F49] shadow-sm"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"/></button>
           </div>
           {activeMenu === 'dashboard' && (
@@ -337,19 +335,26 @@ export const StudentPortalPage: React.FC = () => {
             ); })}
           </section>
           )}
-          <div className="mt-4 grid items-start gap-4 md:grid-cols-[250px_minmax(0,1fr)]">
-            <aside className="hidden rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm md:block">
-              <p className="px-3 pb-3 pt-2 text-[11px] font-black uppercase tracking-wider text-slate-400">Menu Siswa</p>
-              {menuGroups.map(group => <div key={group.title} className="mb-3 last:mb-0"><p className="px-3 py-2 text-xs font-extrabold text-[#087F49]">{group.title}</p><div className="space-y-1">{group.items.map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className={'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-600 hover:bg-[#F5FBF7]')}><Icon size={18}/><span className="min-w-0 flex-1">{item.label}</span>{'soon' in item && item.soon && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700">Soon</span>}</button>; })}</div></div>)}
-            </aside>
-
-            <section className="min-w-0">
-              {renderContent()}
-            </section>
-          </div>
+          <section className="mt-4 min-w-0 pb-24">
+            {renderContent()}
+          </section>
         </div>
 
-        {sidebarOpen && <div className="fixed inset-0 z-[200] md:hidden"><button type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)} className="absolute inset-0 bg-slate-950/40"/><aside className="absolute inset-y-0 left-0 w-[min(86vw,320px)] overflow-y-auto bg-white p-4 shadow-2xl"><div className="mb-4 flex items-center justify-between"><p className="font-black text-[#087F49]">Menu Siswa</p><button type="button" aria-label="Tutup menu" onClick={() => setSidebarOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><X size={20}/></button></div>{menuGroups.map(group => <div key={group.title} className="mb-4"><p className="px-3 py-2 text-xs font-extrabold text-[#087F49]">{group.title}</p><div className="space-y-1">{group.items.map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className={'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-600')}><Icon size={18}/><span className="flex-1">{item.label}</span>{'soon' in item && item.soon && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700">Soon</span>}</button>; })}</div></div>)}</aside></div>}
+
+              <nav aria-label="Menu utama siswa" className="fixed inset-x-0 bottom-0 z-50 border-t border-[#D9EEE2] bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-8px_24px_rgba(8,127,73,0.08)] backdrop-blur">
+          <div className="mx-auto grid max-w-lg grid-cols-4 gap-1">
+            {[
+              { id: 'dashboard', label: 'Home', icon: GraduationCap },
+              { id: 'ujian-form', label: 'Ujian', icon: ClipboardCheck },
+              { id: 'profil', label: 'Profil', icon: UserRound },
+              { id: 'keamanan', label: 'Akun', icon: ShieldCheck },
+            ].map(item => { const Icon = item.icon; const selected = activeMenu === item.id; return (
+              <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} aria-current={selected ? 'page' : undefined} className={'flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-extrabold transition '+(selected ? 'bg-[#E3F7EC] text-[#087F49]' : 'text-slate-500 hover:bg-[#F5FBF7]')}>
+                <Icon size={20} strokeWidth={selected ? 2.5 : 2}/><span>{item.label}</span>
+              </button>
+            ); })}
+          </div>
+        </nav>
       </main>
     );
   }
