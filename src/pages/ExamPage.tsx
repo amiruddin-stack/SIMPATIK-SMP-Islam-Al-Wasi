@@ -124,7 +124,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
           setExams(current => current.some(item => item.id === cachedBundle.exam.id) ? current : [...current, cachedBundle.exam]);
           setQuestions(current => [...current.filter(item => !cachedBundle.questions.some((q: Question) => q.id === item.id)), ...cachedBundle.questions]);
         }
-        if (session?.exam && session?.attemptId && session?.deadlineAt && (!linkedExamId || session.exam.id === linkedExamId)) {
+        if (!studentMode && session?.exam && session?.attemptId && session?.deadlineAt && (!linkedExamId || session.exam.id === linkedExamId)) {
           setActiveExam(session.exam);
           setAnswers(session.answers || {});
           setStudentAnswerKeys(session.studentAnswerKeys || await readOfflineRecord<Record<string, AnswerKeyRecord | null>>('exam:keys:' + session.exam.id) || {});
@@ -142,18 +142,14 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
         }
         setOfflineReady(Boolean(cachedQuestions?.length && cachedExams?.length));
         await auth.authStateReady();
-        if (studentMode && session?.exam && session.ownerUid !== auth.currentUser?.uid) {
-          setActiveExam(null);
-          setSection('student');
-          setAttemptId('');
-          setAnswers({});
-          setOwnerUid('');
-          setMessage('');
-        }
         let studentClassForQuery = '';
         let studentClassNameForQuery = '';
         if (studentMode) {
-          if (!auth.currentUser) await signInAnonymously(auth);
+          if (!auth.currentUser) {
+            setRosterLoadState('error');
+            setMessage('Sesi siswa belum siap. Kembali ke SIMPATIK for Students dan buka kembali menu ujian tanpa keluar dari akun.');
+            return;
+          }
           const savedIdentity = localStorage.getItem('simpatik_student_identity');
           if (!savedIdentity) { setRosterLoadState('error'); setMessage('Sesi siswa tidak ditemukan. Silakan masuk kembali menggunakan NISN.'); return; }
           const identity = JSON.parse(savedIdentity) as { id: string; name: string; className: string };
@@ -645,42 +641,76 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
     await saveOfflineRecord('exam:keys:' + exam.id, loadedKeys);
     try {
       await auth.authStateReady();
-      if (navigator.onLine && !auth.currentUser) await signInAnonymously(auth);
-      const sessionOwnerUid = auth.currentUser?.uid || '';
+      if (!auth.currentUser) {
+        setMessage('Sesi akun siswa tidak tersedia. Silakan kembali ke SIMPATIK for Students dan pastikan akun masih aktif.');
+        return;
+      }
+      const sessionOwnerUid = auth.currentUser.uid;
       const priorAttemptsQuery = studentMode
         ? query(collection(db, 'examAttempts'), where('studentId', '==', studentId))
         : query(collection(db, 'examAttempts'), where('ownerUid', '==', sessionOwnerUid));
       const priorAttempts = await getDocs(priorAttemptsQuery);
-      const finishedDoc = priorAttempts.docs.find(snapshot => {
+      const matchingAttempts = priorAttempts.docs.filter(snapshot => {
         const data = snapshot.data();
-        return data.examId === exam.id && data.status === 'Selesai' && (!data.studentId || data.studentId === studentId);
+        return data.examId === exam.id && (!data.studentId || data.studentId === studentId);
       });
+      const finishedDoc = matchingAttempts.find(snapshot => snapshot.data().status === 'Selesai');
       if (finishedDoc) {
         const data = finishedDoc.data();
         await saveOfflineRecord(completionKey, { examId: exam.id, studentId, studentName: verifiedStudentName, completedAt: data.submittedAt || new Date().toISOString() });
         setCompletedExamNotice(exam.title);
         return;
       }
-      const id = crypto.randomUUID();
-      const started = new Date().toISOString();
-      const endAt = Date.now() + exam.duration * 60 * 1000;
+      const localSession = await readOfflineRecord<any>('session:active');
+      const activeDoc = matchingAttempts.find(snapshot => snapshot.data().status === 'Mengerjakan');
+      const activeData = activeDoc?.data();
+      const resumeLocal = Boolean(localSession?.exam?.id === exam.id && localSession?.studentId === studentId && localSession?.attemptId);
+      const attemptIdToUse = resumeLocal
+        ? localSession.attemptId
+        : activeDoc?.id || crypto.randomUUID();
+      const started = resumeLocal
+        ? (localSession.startedAt || activeData?.startedAt || new Date().toISOString())
+        : (activeData?.startedAt || new Date().toISOString());
+      const endAt = resumeLocal && Number(localSession.deadlineAt) > 0
+        ? Number(localSession.deadlineAt)
+        : new Date(started).getTime() + exam.duration * 60 * 1000;
+      const restoredAnswers = sanitizeAnswersMap(
+        resumeLocal ? (localSession.answers || {}) : (activeData?.answers || {})
+      );
       const resolvedName = student?.name || verifiedStudentName;
       const resolvedClass = student?.className || studentClass;
-      const attempt = buildAttemptCreatePayload({
-        examId: exam.id,
-        examTitle: exam.title,
-        studentId,
-        studentName: resolvedName,
-        className: resolvedClass,
-        answers: {},
-        ownerUid: sessionOwnerUid,
-        startedAt: started,
+      if (!activeDoc && !resumeLocal) {
+        const attempt = buildAttemptCreatePayload({
+          examId: exam.id,
+          examTitle: exam.title,
+          studentId,
+          studentName: resolvedName,
+          className: resolvedClass,
+          answers: {},
+          ownerUid: sessionOwnerUid,
+          startedAt: started,
+        });
+        if (navigator.onLine) await setDoc(doc(db, 'examAttempts', attemptIdToUse), attempt);
+      }
+      await saveOfflineRecord('session:active', {
+        exam, attemptId: attemptIdToUse, studentId, className: resolvedClass,
+        answers: restoredAnswers, deadlineAt: endAt, startedAt: started,
+        studentName: resolvedName, ownerUid: activeData?.ownerUid || localSession?.ownerUid || sessionOwnerUid,
+        studentAnswerKeys: loadedKeys
       });
-      if (navigator.onLine) await setDoc(doc(db, 'examAttempts', id), attempt);
-      await saveOfflineRecord('session:active', { exam, attemptId: id, studentId, className: resolvedClass, answers: {}, deadlineAt: endAt, startedAt: started, studentName: resolvedName, ownerUid: sessionOwnerUid });
-      setOwnerUid(sessionOwnerUid);
+      setOwnerUid(activeData?.ownerUid || localSession?.ownerUid || sessionOwnerUid);
       setStartedAt(started);
-      setAttemptId(id); setAnswers({}); setStudentGrade(computeExamGrade(exam.questionIds, {}, loadedKeys, Object.fromEntries(examQuestions.map(q => [q.id, q.points])))); setCurrentQuestion(0); setActiveExam(exam); setDeadlineAt(endAt); setSecondsLeft(exam.duration * 60); setSection('take'); setMessage(navigator.onLine ? '' : 'Mode offline aktif. Jawaban disimpan pada perangkat dan akan disinkronkan saat internet kembali.');
+      setAttemptId(attemptIdToUse);
+      setAnswers(restoredAnswers);
+      setStudentGrade(computeExamGrade(exam.questionIds, restoredAnswers, loadedKeys, Object.fromEntries(examQuestions.map(q => [q.id, q.points]))));
+      setCurrentQuestion(0);
+      setActiveExam(exam);
+      setDeadlineAt(endAt);
+      setSecondsLeft(Math.max(0, Math.ceil((endAt - Date.now()) / 1000)));
+      setSection('take');
+      setMessage(activeDoc || resumeLocal
+        ? 'Ujian sebelumnya berhasil dipulihkan. Jawaban yang sudah diisi tetap tersimpan.'
+        : (navigator.onLine ? '' : 'Mode offline aktif. Jawaban disimpan pada perangkat dan akan disinkronkan saat internet kembali.'));
     } catch (e) { setMessage('Tidak dapat memulai ujian. Pastikan data ujian sudah tersimpan di perangkat.'); }
   };
 
