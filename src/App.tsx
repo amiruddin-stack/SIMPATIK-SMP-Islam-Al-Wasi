@@ -71,8 +71,9 @@ function AppContent() {
     );
   }
 
-  const studentPortal = new URLSearchParams(window.location.search).get('student') === '1';
-  if (studentPortal) return <StudentPortalPage />;
+  const studentPath = /\/students?\/?$/.test(window.location.pathname);
+  const legacyStudentLink = new URLSearchParams(window.location.search).get('student') === '1';
+  if (studentPath || legacyStudentLink) return <StudentPortalPage />;
 
   const sharedExamLink = new URLSearchParams(window.location.search).has('ujian');
   if (sharedExamLink) return <ExamPage studentMode />;
