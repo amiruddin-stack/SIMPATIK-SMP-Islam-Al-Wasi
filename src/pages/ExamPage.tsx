@@ -74,6 +74,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
   const [timeWarningOpen, setTimeWarningOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [attemptId, setAttemptId] = useState('');
+  const [savedActiveExamId, setSavedActiveExamId] = useState('');
   const [ownerUid, setOwnerUid] = useState('');
   const [startedAt, setStartedAt] = useState('');
   const [verifiedStudentName, setVerifiedStudentName] = useState('');
@@ -153,6 +154,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
           const savedIdentity = localStorage.getItem('simpatik_student_identity');
           if (!savedIdentity) { setRosterLoadState('error'); setMessage('Sesi siswa tidak ditemukan. Silakan masuk kembali menggunakan NISN.'); return; }
           const identity = JSON.parse(savedIdentity) as { id: string; name: string; className: string };
+          if (session?.exam?.id && session.studentId === identity.id && session.attemptId) setSavedActiveExamId(session.exam.id);
           if (!identity.id || !identity.name || !identity.className) { setRosterLoadState('error'); setMessage('Identitas siswa tidak valid. Silakan masuk kembali.'); return; }
           studentClassForQuery = identity.className.trim();
           studentClassNameForQuery = identity.className;
@@ -665,6 +667,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
       const activeDoc = matchingAttempts.find(snapshot => snapshot.data().status === 'Mengerjakan');
       const activeData = activeDoc?.data();
       const resumeLocal = Boolean(localSession?.exam?.id === exam.id && localSession?.studentId === studentId && localSession?.attemptId);
+      if (resumeLocal || activeDoc) setSavedActiveExamId(exam.id);
       const attemptIdToUse = resumeLocal
         ? localSession.attemptId
         : activeDoc?.id || crypto.randomUUID();
@@ -810,6 +813,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
         setMessage('Ujian selesai secara offline. Hasil tersimpan di perangkat dan akan dikirim otomatis saat internet kembali.');
       }
       await deleteOfflineRecord('session:active');
+      setSavedActiveExamId('');
       setActiveExam(null); setSection('results');
     } catch (e) {
       const reason = e instanceof Error ? e.message : 'Sinkronisasi akan dicoba kembali saat internet tersedia.';
@@ -952,7 +956,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
       {rosterLoadState === 'loading' && <p role="status" className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600">Memuat daftar siswa…</p>}
       {(rosterLoadState === 'empty' || rosterLoadState === 'error') && <p role="alert" className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Daftar siswa belum tersedia, hubungi admin sekolah.</p>}
     </div>
-    {studentId && <div className="space-y-3"><h3 className="font-bold text-slate-700">Ujian tersedia</h3>{availableExams.map(ex=><div key={ex.id} className={panel}><div className="flex items-start justify-between gap-3"><div><h4 className="font-extrabold">{ex.title}</h4><p className="mt-1 text-xs text-slate-500">{ex.subject ? ex.subject + ' · ' : ''}{ex.duration} menit · {ex.questionIds.length} soal</p></div><button className={btn} onClick={()=>void startExam(ex)}><Play size={15}/> Mulai</button></div></div>)}{!availableExams.length&&<p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Belum ada ujian aktif untuk kelas ini.</p>}</div>}
+    {studentId && <div className="space-y-3"><h3 className="font-bold text-slate-700">Ujian tersedia</h3>{availableExams.map(ex=><div key={ex.id} className={panel}><div className="flex items-start justify-between gap-3"><div><h4 className="font-extrabold">{ex.title}</h4><p className="mt-1 text-xs text-slate-500">{ex.subject ? ex.subject + ' · ' : ''}{ex.duration} menit · {ex.questionIds.length} soal</p></div><button className={btn} onClick={()=>void startExam(ex)}><Play size={15}/> {savedActiveExamId===ex.id?'Lanjutkan':'Masuk'}</button></div></div>)}{!availableExams.length&&<p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Belum ada ujian aktif untuk kelas ini.</p>}</div>}
   </div>;
 
   if (section === 'take' && activeExam) {
