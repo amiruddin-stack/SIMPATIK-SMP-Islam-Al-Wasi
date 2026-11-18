@@ -319,6 +319,24 @@ export const StudentPortalPage: React.FC = () => {
               <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-widest text-white/80">SIMPATIK FOR STUDENTS</p><h1 className="truncate text-lg font-black sm:text-xl">{activeLabel}</h1></div>
             </header>
           )}
+          {activeMenu === 'dashboard' && (
+          <section aria-label="Ringkasan perkembangan siswa" className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
+            {[
+              { label: 'Perkembangan Akademik', icon: GraduationCap, detail: 'Ringkasan nilai belajar' },
+              { label: 'Persentase Kehadiran', icon: CalendarDays, detail: 'Rekap kehadiran siswa' },
+              { label: 'Bacaan Sholat', icon: BookOpen, detail: 'Progres penguasaan bacaan' },
+            ].map(item => { const Icon = item.icon; return (
+              <article key={item.label} className="rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm min-[420px]:p-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><Icon size={18}/></span>
+                  <h2 className="min-w-0 text-xs font-extrabold leading-4 text-slate-700">{item.label}</h2>
+                </div>
+                <p className="mt-3 text-2xl font-black tracking-tight text-slate-400">—</p>
+                <p className="mt-1 text-[10px] leading-4 text-slate-500">Data belum tersedia</p>
+              </article>
+            ); })}
+          </section>
+          )}
           <div className="mt-4 grid items-start gap-4 md:grid-cols-[250px_minmax(0,1fr)]">
             <aside className="hidden rounded-2xl border border-[#D9EEE2] bg-white p-3 shadow-sm md:block">
               <p className="px-3 pb-3 pt-2 text-[11px] font-black uppercase tracking-wider text-slate-400">Menu Siswa</p>
