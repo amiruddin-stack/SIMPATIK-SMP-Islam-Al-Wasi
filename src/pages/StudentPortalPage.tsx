@@ -216,21 +216,6 @@ export const StudentPortalPage: React.FC = () => {
     const selectMenu = (id: StudentMenu) => { setActiveMenu(id); };
     const activeLabel = menuTitles[activeMenu];
     const renderContent = () => {
-      if (activeMenu === 'dashboard') return (
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {[
-            { id: 'profil', label: 'Profil', description: 'Lihat profil dan identitas akun', icon: UserRound, tone: 'bg-[#E3F7EC] text-[#087F49]' },
-            { id: 'ujian-form', label: 'Ujian', description: 'Lihat dan ikuti ujian yang tersedia', icon: ClipboardCheck, tone: 'bg-[#E3F7EC] text-[#087F49]' },
-            { id: 'keamanan', label: 'Pengaturan', description: 'Kelola akun dan sesi masuk', icon: ShieldCheck, tone: 'bg-[#E3F7EC] text-[#087F49]' },
-          ].map(item => { const Icon = item.icon; return (
-            <button key={item.id} type="button" onClick={() => selectMenu(item.id as StudentMenu)} className="group flex min-h-[150px] flex-col items-start rounded-2xl border border-[#D9EEE2] bg-white p-4 text-left shadow-sm transition hover:border-[#0B8F4D] hover:bg-[#F5FCF7] active:scale-[0.98] sm:p-5">
-              <span className={`flex h-12 w-12 items-center justify-center rounded-xl ${item.tone}`}><Icon size={24}/></span>
-              <span className="mt-4 text-base font-black text-slate-800">{item.label}</span>
-              <span className="mt-1 text-xs leading-5 text-slate-500">{item.description}</span>
-            </button>
-          ); })}
-        </section>
-      );
       if (activeMenu === 'profil') return (
         <div className="grid gap-4">
           <section className="rounded-2xl border border-[#D9EEE2] bg-white p-5 shadow-sm">
