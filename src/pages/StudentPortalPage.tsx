@@ -22,14 +22,6 @@ import { StudentGoogleFormExams } from './StudentGoogleFormExams';
 type StudentView = 'home' | 'register' | 'login';
 type StudentMenu = 'dashboard' | 'profil' | 'biodata' | 'tahsin' | 'bacaan-sholat' | 'ujian-semester' | 'ujian-sekolah' | 'ujian-form' | 'keamanan';
 
-const menuGroups = [
-  { title: 'Utama', items: [{ id: 'dashboard', label: 'Dashboard', icon: GraduationCap }] },
-  { title: 'Akun', items: [{ id: 'profil', label: 'Profil', icon: UserRound }, { id: 'biodata', label: 'Biodata Siswa', icon: UserSquare2 }] },
-  { title: 'Islamic Life Skill', items: [{ id: 'tahsin', label: 'Tahsin', icon: BookOpen, soon: true }, { id: 'bacaan-sholat', label: 'Bacaan Sholat', icon: BookOpen, soon: true }] },
-  { title: 'Asesmen', items: [{ id: 'ujian-semester', label: 'Ujian Semester', icon: CalendarDays }, { id: 'ujian-sekolah', label: 'Ujian Sekolah', icon: ClipboardCheck }, { id: 'ujian-form', label: 'Ujian Form', icon: ClipboardCheck }] },
-  { title: 'Pengaturan', items: [{ id: 'keamanan', label: 'Keamanan', icon: ShieldCheck }] },
-] as const;
-
 const menuTitles: Record<StudentMenu, string> = {
   dashboard: 'Dashboard',
   profil: 'Profil', biodata: 'Biodata Siswa', tahsin: 'Tahsin',
