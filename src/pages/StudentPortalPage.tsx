@@ -304,7 +304,8 @@ export const StudentPortalPage: React.FC = () => {
           <header className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#0B8F4D] via-[#087F49] to-[#06663A] px-5 py-6 text-white shadow-lg sm:px-7 sm:py-7">
             <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full border-[24px] border-white/10"/>
             <div className="pointer-events-none absolute -bottom-24 right-24 h-44 w-44 rounded-full bg-white/5"/>
-            <div className="relative z-10">
+            <img src={`${import.meta.env.BASE_URL}images/Desain%20tanpa%20judul_20261118_110522_0000.png`} alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 z-0 h-full max-h-[250px] w-[42%] object-contain object-bottom drop-shadow-[0_8px_8px_rgba(0,0,0,0.12)]"/>
+            <div className="relative z-10 max-w-[62%]">
               <h1 className="text-lg font-black leading-tight tracking-wide sm:text-2xl">SIMPATIK FOR STUDENTS</h1>
               <p className="mt-1 text-sm font-bold text-white/90 sm:text-base">SMP Islam Al-Wasi'</p>
               <p className="mt-4 text-xs font-semibold text-white/80">Qurani, Ramah Anak dan Berkarakter</p>
