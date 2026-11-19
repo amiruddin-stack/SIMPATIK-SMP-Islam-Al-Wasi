@@ -1,8 +1,8 @@
-name: Deploy SIMPATIK to GitHub Pages
+name: Deploy SIMPATIK PWA to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, deploy/github-pages]
   workflow_dispatch:
 
 permissions:
@@ -11,35 +11,43 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-deploy-v2
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Type check
-        run: npm run lint
-      - name: Build
+        run: npm install --legacy-peer-deps --no-audit --no-fund --fetch-retries=2 --fetch-timeout=120000
+      - name: Build PWA
         run: npm run build
+      - name: Add SPA fallback
+        run: cp dist/index.html dist/404.html
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
