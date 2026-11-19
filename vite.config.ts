@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
-    base: process.env.GITHUB_ACTIONS === 'true' ? '/Sipadu-SMP-Islam-Al-Wasi/' : '/',
+    base: process.env.GITHUB_ACTIONS === 'true' ? '/SIMPATIK-SMP-Islam-Al-Wasi/' : '/',
     plugins: [
       react(),
       tailwindcss(),
