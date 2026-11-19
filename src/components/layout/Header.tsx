@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { NavTab } from './Sidebar';
-import { Menu, X, ChevronDown, Home, UserRound, GraduationCap, BookOpen, ClipboardList, LogOut, CalendarDays } from 'lucide-react';
+import { ChevronDown, Home, UserRound, GraduationCap, BookOpen, ClipboardList, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: NavTab;
@@ -28,7 +27,6 @@ const academicItems: [NavTab, string][] = [
 export const Header: React.FC<HeaderProps> = ({ activeTab, onNavigate, embedded = false }) => {
   const { currentUser, firebaseUser, loading, loginWithGoogle, logout } = useAuth();
   const [academicOpen, setAcademicOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const academicRef = useRef<HTMLDivElement>(null);
   const academicMenuRef = useRef<HTMLDivElement>(null);
   const [academicPosition, setAcademicPosition] = useState({ left: 0, top: 76 });
@@ -39,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onNavigate, embedded 
       if (academicRef.current && !academicRef.current.contains(target) && !academicMenuRef.current?.contains(target)) setAcademicOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setAcademicOpen(false); setMobileMenuOpen(false); }
+      if (event.key === 'Escape') setAcademicOpen(false);
     };
     document.addEventListener('mousedown', closeMenus);
     document.addEventListener('keydown', closeOnEscape);
@@ -52,7 +50,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onNavigate, embedded 
   const navigate = (tab: NavTab) => {
     onNavigate(tab);
     setAcademicOpen(false);
-    setMobileMenuOpen(false);
   };
   const navClass = (tab: NavTab) => `flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2.5 text-sm font-semibold transition-colors ${activeTab === tab ? 'bg-[#DDF7E9] text-[#087F49]' : 'text-slate-700 hover:bg-[#EAF9F0] hover:text-[#087F49]'}`;
   const isAcademicActive = academicItems.some(([tab]) => tab === activeTab);
@@ -91,7 +88,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onNavigate, embedded 
           ) : (
             <button type="button" onClick={() => void loginWithGoogle()} disabled={loading} className="rounded-xl bg-[#18B66A] px-3 py-2 text-xs font-bold text-white hover:bg-[#0B9654] disabled:opacity-60">{loading ? 'Memeriksa…' : 'Login'}</button>
           ))}
-          <button type="button" onClick={() => setMobileMenuOpen(value => !value)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#087F49]" aria-label={mobileMenuOpen ? 'Tutup menu' : 'Buka menu'} aria-expanded={mobileMenuOpen}>{mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
         </div>
       </div>
 
@@ -101,33 +97,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onNavigate, embedded 
         </div>
       )}
 
-      {mobileMenuOpen && createPortal(
-        <div className="lg:hidden" style={{ position: 'fixed', inset: 0, zIndex: 2147483647, isolation: 'isolate' }}>
-          <button type="button" aria-label="Tutup menu" onClick={() => setMobileMenuOpen(false)} className="bg-slate-950/45" style={{ position: 'fixed', inset: 0, zIndex: 2147483646, width: '100%', height: '100%', border: 0 }}/>
-          <aside className="flex flex-col overflow-y-auto bg-white p-5 shadow-2xl" style={{ position: 'fixed', left: 0, top: 0, zIndex: 2147483647, height: '100dvh', width: 'min(86vw, 340px)', maxWidth: 340, overscrollBehavior: 'contain' }}>
-            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
-              <div className="min-w-0"><p className="truncate text-sm font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Guru'}</p><p className="text-[10px] text-slate-500">SIMPATIK</p></div>
-              <button type="button" onClick={() => setMobileMenuOpen(false)} className="rounded-lg p-2 text-slate-500" aria-label="Tutup menu"><X size={21}/></button>
-            </div>
-            <div className="space-y-1">
-              <button onClick={() => navigate('dashboard')} className={navClass('dashboard') + ' w-full'}><Home size={16}/>Beranda</button>
-              <button onClick={() => navigate('settings')} className={navClass('settings') + ' w-full'}><UserRound size={16}/>Profil</button>
-              <button onClick={() => navigate('classes')} className={navClass('classes') + ' w-full'}><GraduationCap size={16}/>Kelas</button>
-              <button onClick={() => navigate('subjects')} className={navClass('subjects') + ' w-full'}><BookOpen size={16}/>Mapel</button>
-              <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Akademik</p>
-              {academicItems.map(([tab, label]) => <button key={tab} onClick={() => navigate(tab)} className={`block w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition hover:bg-[#E3F7EC] ${activeTab === tab ? 'bg-[#E3F7EC] text-[#076B3A]' : 'text-slate-700'}`}>{label}</button>)}
-              <button onClick={() => navigate('ils')} className={navClass('ils') + ' w-full mt-2'}>ILS</button>
-            </div>
-            <div className="mt-auto border-t border-[#E3F7EC] pt-4">
-              <p className="truncate text-xs font-bold text-slate-700">{currentUser?.displayName || 'Akun'}</p>
-              <p className="truncate text-[10px] text-slate-400">{currentUser?.email || ''}</p>
-              {firebaseUser && !firebaseUser.isAnonymous && currentUser && <button type="button" onClick={() => void logout()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-600"><LogOut size={14}/>Keluar</button>}
-              <p className="mt-3 text-[10px] text-slate-400">Qurani, Ramah Anak dan Berkarakter</p>
-            </div>
-          </aside>
-        </div>,
-        document.body
-      )}
+
     </header>
   );
 };
