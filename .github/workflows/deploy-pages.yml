@@ -1,4 +1,4 @@
-name: Deploy SIPADU PWA to GitHub Pages
+name: Deploy SIMPATIK PWA to GitHub Pages
 
 on:
   push:
