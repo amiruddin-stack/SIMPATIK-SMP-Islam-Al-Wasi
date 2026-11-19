@@ -36,7 +36,7 @@ function ComingSoonPage({ title, description }: { title: string; description: st
 }
 
 function AppContent() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, firebaseUser, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
   const mobileNavItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
     { tab: 'attendance', label: 'Presensi', icon: Users },
@@ -80,6 +80,19 @@ function AppContent() {
 
   const registrationType = new URLSearchParams(window.location.search).get('daftar');
   if (registrationType === 'guru' || registrationType === 'siswa') return <RegistrationPage type={registrationType} />;
+
+  if (!currentUser && firebaseUser) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f8fbf9] px-5">
+        <section className="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-7 text-center shadow-lg">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">✓</div>
+          <h1 className="text-xl font-bold text-slate-800">Sesi login masih aktif</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">Akun Anda masih terhubung. Namun, profil SIMPATIK belum berhasil dimuat. Periksa koneksi internet, lalu coba muat ulang. Anda tidak perlu login kembali.</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-6 w-full rounded-xl bg-[#087F49] px-5 py-3 text-sm font-bold text-white">Coba Muat Ulang</button>
+        </section>
+      </main>
+    );
+  }
 
   if (!currentUser) return <LoginPage />;
 
