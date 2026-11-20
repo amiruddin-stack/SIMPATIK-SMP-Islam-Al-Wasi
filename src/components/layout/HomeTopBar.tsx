@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Grid3X3 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 import { NavTab } from './Sidebar';
-import { Header } from './Header';
+import { useAuth } from '../../context/AuthContext';
 
 interface HomeTopBarProps {
   activeTab: NavTab;
@@ -10,10 +9,8 @@ interface HomeTopBarProps {
   onOpenMore: () => void;
 }
 
-export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, onOpenMore }) => {
+export const HomeTopBar: React.FC<HomeTopBarProps> = ({ onOpenMore }) => {
   const { currentUser } = useAuth();
-
-
 
   return (
     <div className="relative z-20 w-full bg-white">
