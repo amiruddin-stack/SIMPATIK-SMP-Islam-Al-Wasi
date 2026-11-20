@@ -22,7 +22,7 @@ export function LoginPage() {
       `}</style>
       <div aria-hidden="true" className="simpatik-login-sweep pointer-events-none absolute -left-1/3 top-[-20%] z-0 h-[140%] w-1/3 bg-gradient-to-r from-transparent via-white/75 to-transparent blur-xl" />
       <section className="relative z-10 w-full max-w-md px-2 py-6 text-center sm:px-6">
-        <div className="mx-auto mb-5 flex h-32 w-32 items-center justify-center">
+        <div className="mx-auto mb-5 flex h-52 w-52 items-center justify-center sm:h-60 sm:w-60">
           <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain" />
         </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-700">SMP Islam Al-Wasi’</p>
