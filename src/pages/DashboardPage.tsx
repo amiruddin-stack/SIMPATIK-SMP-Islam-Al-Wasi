@@ -83,7 +83,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               </div>
             </div>
             <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px]">
-              <img src={`${import.meta.env.BASE_URL}IMG_20261120_092150.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-auto w-full object-contain" loading="eager"/>
+              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain" loading="eager"/>
             </div>
           </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
