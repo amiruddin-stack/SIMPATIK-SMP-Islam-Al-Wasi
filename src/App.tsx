@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Home, Users, NotebookPen, UserRound, CalendarDays, Grid3X3, X,
+  Home, Users, NotebookPen, FileText, Grid3X3, X,
   GraduationCap, BookOpen, ClipboardList, ClipboardCheck, FileText,
   HeartHandshake, ShieldCheck, MoreHorizontal
 } from 'lucide-react';
@@ -45,10 +45,10 @@ function AppContent() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const mobileNavItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
+    { tab: 'dashboard', label: 'Home', icon: Home },
     { tab: 'attendance', label: 'Presensi', icon: Users },
     { tab: 'journal', label: 'Jurnal', icon: NotebookPen },
-    { tab: 'dashboard', label: 'Home', icon: Home },
-    { tab: 'homeroom', label: 'G-Wali', icon: UserRound },
+    { tab: 'exams', label: 'Ujian', icon: FileText },
   ];
 
   const appMenuItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
@@ -114,7 +114,7 @@ function AppContent() {
 
   const renderCurrentPage = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardPage />;
+      case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
       case 'attendance': return <AttendancePage />;
       case 'journal': return <JournalPage />;
       case 'behavior': return <BehaviorPage />;
@@ -141,7 +141,7 @@ function AppContent() {
       <div className="flex min-h-screen w-full">
         <DesktopSidebar activeTab={activeTab} onNavigate={setActiveTab} />
         <div className="min-w-0 flex-1">
-          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} />
+          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMoreMenuOpen(open => !open)} />
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
               {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
@@ -176,17 +176,13 @@ function AppContent() {
         </>
       )}
 
-      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-[100] grid grid-cols-5 border-t border-[#D5EADB] bg-white/95 px-1 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-6px_20px_rgba(15,70,40,0.08)] backdrop-blur md:hidden">
+      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-[100] grid grid-cols-4 border-t border-[#D5EADB] bg-white/95 px-1 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-6px_20px_rgba(15,70,40,0.08)] backdrop-blur md:hidden">
         {mobileNavItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => setActiveTab(tab)} aria-current={activeTab === tab ? 'page' : undefined} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition-colors ${activeTab === tab ? 'text-[#087F49]' : 'text-slate-500'}`}>
             <span className={`flex h-8 w-9 items-center justify-center rounded-xl ${activeTab === tab ? 'bg-[#E3F7EC]' : ''}`}><Icon size={19} strokeWidth={activeTab === tab ? 2.4 : 1.9}/></span>
             <span>{label}</span>
           </button>
         ))}
-        <button type="button" onClick={() => setMoreMenuOpen(open => !open)} aria-expanded={moreMenuOpen} aria-label="More, buka menu aplikasi" className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold transition-colors ${moreMenuOpen ? 'text-[#087F49]' : 'text-slate-500'}`}>
-          <span className={`flex h-8 w-9 items-center justify-center rounded-xl ${moreMenuOpen ? 'bg-[#E3F7EC]' : ''}`}><Grid3X3 size={19} strokeWidth={moreMenuOpen ? 2.4 : 1.9}/></span>
-          <span>More</span>
-        </button>
       </nav>
       <OfflineIndicator />
     </div>

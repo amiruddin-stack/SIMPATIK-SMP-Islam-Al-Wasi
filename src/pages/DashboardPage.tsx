@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Search } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { NavTab } from '../components/layout/Sidebar';
 import { getClassLevel } from '../lib/classes';
@@ -12,11 +14,13 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 
-export const DashboardPage: React.FC = () => {
+export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({ onNavigate }) => {
   const [attendancePeriod, setAttendancePeriod] = useState<'today'|'week'|'1'|'2'|'3'|'4'|'semester'>('today');
   const [journalPeriod, setJournalPeriod] = useState<'today'|'week'|'1'|'2'|'3'>('today');
   const [attendanceClass, setAttendanceClass] = useState('Semua Kelas');
   const { students, classes, attendances, journals, settings } = useData();
+  const { currentUser } = useAuth();
+  const [homeSearch, setHomeSearch] = useState('');
 
   const today = new Date();
   const todayStr = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
@@ -62,31 +66,30 @@ export const DashboardPage: React.FC = () => {
   const journalPeriodLabel = journalPeriod === 'today' ? 'Jurnal hari ini' : journalPeriod === 'week' ? '1 pekan terakhir' : journalPeriod + ' bulan terakhir';
   return (
     <div className="min-h-screen w-full bg-white font-sans text-slate-800 antialiased">
-      {/* HERO SECTION with compact aligned card and integrated top navbar */}
-      <section className="relative w-full overflow-hidden pb-3 pt-0 bg-white">
-        {/* Full-width hero card with illustration beside unchanged hero text */}
-        <div className="relative z-10 mx-auto max-w-[1240px] px-4 pt-2 pb-3 md:px-8 md:pt-3 md:pb-4">
-          <div className="hero relative isolate flex w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-6 py-6 text-center shadow-[0_12px_30px_rgba(7,107,58,0.22)] md:flex-row md:justify-between md:gap-8 md:px-9 md:py-7 md:text-left">
+      <section className="relative w-full bg-white pb-2 pt-1">
+        <div className="mx-auto max-w-[1240px] px-4 pt-2 md:px-8">
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
+            <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
+          </div>
+          <div className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9">
             <div aria-hidden="true" className="pointer-events-none absolute -left-12 -top-14 h-52 w-52 rounded-full bg-white/[0.07]" />
-            <div aria-hidden="true" className="pointer-events-none absolute -left-8 -bottom-20 h-40 w-40 rounded-full bg-white/[0.05]" />
-            <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-14 h-52 w-52 rounded-full bg-white/[0.08]" />
-            <div aria-hidden="true" className="pointer-events-none absolute right-20 -bottom-20 h-40 w-40 rounded-full bg-white/[0.06]" />
-            <div className="relative z-10 w-full max-w-3xl md:min-w-0 md:flex-1 md:text-left">
-              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl md:text-4xl">SIMPATIK</h1>
-              <div className="mt-1.5 space-y-1 text-xs font-normal leading-relaxed tracking-[0.01em] text-white/90 sm:text-[13px]">
-                <p>Sistem Informasi Manajemen Pembelajaran &amp; Asesmen</p>
+            <div className="relative z-10 min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/85 sm:text-xs">Welcome</p>
+              <h1 className="mt-1 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl">SIMPATIK</h1>
+              <div className="mt-2 space-y-1 text-[11px] font-semibold leading-relaxed text-white sm:text-xs md:text-sm">
+                <p>Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi’</p>
                 <p>yang Terpadu, Interaktif dan Kolaboratif</p>
               </div>
             </div>
-            <div className="relative z-10 flex w-full shrink-0 items-center justify-center md:mr-0 md:w-[32%] md:translate-x-4 md:self-stretch">
-              <img
-                src={`${import.meta.env.BASE_URL}images/Desain%20tanpa%20judul_20261114_225126_0000.png`}
-                alt="Ilustrasi struktur manajemen SIMPATIK"
-                className="hero-illustration h-auto object-contain"
-                loading="eager"
-              />
+            <div className="relative z-10 flex w-[76px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px]">
+              <img src={`${import.meta.env.BASE_URL}IMG_20261120_092150.png`} alt="Logo SIMPATIK" className="h-auto w-full object-contain drop-shadow-md" loading="eager"/>
             </div>
           </div>
+          <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
+            <Search size={18} className="shrink-0 text-[#0B8F4D]"/>
+            <input value={homeSearch} onChange={event=>setHomeSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Search (siswa/layanan)" className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
+          </form>
         </div>
       </section>
 
