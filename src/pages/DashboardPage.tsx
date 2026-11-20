@@ -78,8 +78,8 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               <p className="text-[10px] font-bold tracking-[0.12em] text-white/90 sm:text-xs">Welcome!</p>
               <h1 className="mt-1 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl">SIMPATIK</h1>
               <div className="mt-2 space-y-1 text-[9px] font-semibold leading-tight tracking-tight text-white sm:text-xs md:text-sm">
-                <p className="whitespace-nowrap">Sistem Informasi Manajemen &amp; Pembelajaran</p>
-                <p className="whitespace-nowrap">Al Wasi' yang Terpadu, Interaktif &amp; Kolaboratif</p>
+                <p className="whitespace-nowrap">Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
+                <p className="whitespace-nowrap">yang Terpadu, Interaktif &amp; Kolaboratif</p>
               </div>
             </div>
             <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px]">
