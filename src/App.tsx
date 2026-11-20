@@ -114,7 +114,7 @@ function AppContent() {
 
   const renderCurrentPage = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardPage />;
+      case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
       case 'attendance': return <AttendancePage />;
       case 'journal': return <JournalPage />;
       case 'behavior': return <BehaviorPage />;
