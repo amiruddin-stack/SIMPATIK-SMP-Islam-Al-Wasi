@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
   Home, Users, NotebookPen, FileText, Grid3X3, X,
-  GraduationCap, BookOpen, ClipboardList, ClipboardCheck, FileText,
-  HeartHandshake, ShieldCheck, MoreHorizontal
+  GraduationCap, BookOpen, ClipboardList, ClipboardCheck,
+  HeartHandshake, ShieldCheck, MoreHorizontal, UserRound, CalendarDays
 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -132,7 +132,7 @@ function AppContent() {
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
       case 'schedule': return <ComingSoonPage title="Jadwal" description="Informasi jadwal kegiatan dan pembelajaran sedang dalam tahap persiapan." />;
       case 'more': return <MorePage />;
-      default: return <DashboardPage />;
+      default: return <DashboardPage onNavigate={setActiveTab} />;
     }
   };
 
