@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
   Home, Users, NotebookPen, FileText, Grid3X3, X,
-  GraduationCap, BookOpen, ClipboardList, ClipboardCheck, FileText,
-  HeartHandshake, ShieldCheck, MoreHorizontal
+  GraduationCap, BookOpen, ClipboardList, ClipboardCheck,
+  HeartHandshake, ShieldCheck, MoreHorizontal, UserRound, CalendarDays
 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
