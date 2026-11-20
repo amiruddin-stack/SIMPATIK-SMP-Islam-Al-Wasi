@@ -14,7 +14,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 
-export const DashboardPage: React.FC = () => {
+export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({ onNavigate }) => {
   const [attendancePeriod, setAttendancePeriod] = useState<'today'|'week'|'1'|'2'|'3'|'4'|'semester'>('today');
   const [journalPeriod, setJournalPeriod] = useState<'today'|'week'|'1'|'2'|'3'>('today');
   const [attendanceClass, setAttendanceClass] = useState('Semua Kelas');
@@ -86,7 +86,7 @@ export const DashboardPage: React.FC = () => {
               <img src={`${import.meta.env.BASE_URL}IMG_20261120_092150.png`} alt="Logo SIMPATIK" className="h-auto w-full object-contain drop-shadow-md" loading="eager"/>
             </div>
           </div>
-          <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) window.dispatchEvent(new CustomEvent('simpatik-home-search',{detail:found[1]})); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
+          <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
             <Search size={18} className="shrink-0 text-[#0B8F4D]"/>
             <input value={homeSearch} onChange={event=>setHomeSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Search (siswa/layanan)" className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
           </form>
