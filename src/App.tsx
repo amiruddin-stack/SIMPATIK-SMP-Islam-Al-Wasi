@@ -132,7 +132,7 @@ function AppContent() {
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
       case 'schedule': return <ComingSoonPage title="Jadwal" description="Informasi jadwal kegiatan dan pembelajaran sedang dalam tahap persiapan." />;
       case 'more': return <MorePage />;
-      default: return <DashboardPage />;
+      default: return <DashboardPage onNavigate={setActiveTab} />;
     }
   };
 
