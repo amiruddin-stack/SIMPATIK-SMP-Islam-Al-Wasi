@@ -5,18 +5,31 @@ export function LoginPage() {
   const { loginWithGoogle, loading } = useAuth();
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#E7F8EF] via-white to-[#EAF5EF] px-5 py-10">
-      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-green-200/40 blur-3xl" />
-      <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/80 bg-white/95 p-7 text-center shadow-[0_24px_80px_rgba(8,127,73,0.13)] sm:p-10">
-        <div className="mx-auto mb-5 flex h-32 w-32 items-center justify-center">
+    <main className="simpatik-login-shine relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F0FBF4] px-5 py-10">
+      <style>{`
+        @keyframes simpatik-login-light-sweep {
+          0% { transform: translateX(-180%) skewX(-18deg); }
+          5% { transform: translateX(420%) skewX(-18deg); }
+          100% { transform: translateX(420%) skewX(-18deg); }
+        }
+        .simpatik-login-sweep {
+          animation: simpatik-login-light-sweep 30s linear infinite;
+          will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .simpatik-login-sweep { animation: none; }
+        }
+      `}</style>
+      <div aria-hidden="true" className="simpatik-login-sweep pointer-events-none absolute -left-1/3 top-[-20%] z-0 h-[140%] w-1/3 bg-gradient-to-r from-transparent via-white/75 to-transparent blur-xl" />
+      <section className="relative z-10 w-full max-w-md px-2 py-6 text-center sm:px-6">
+        <div className="mx-auto mb-5 flex h-52 w-52 items-center justify-center sm:h-60 sm:w-60">
           <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-full w-full object-contain" />
         </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-700">SMP Islam Al-Wasi’</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">SIMPATIK</h1>
         <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-emerald-500" />
         <p className="mt-4 text-sm font-extrabold tracking-wide text-[#087F49]">Selamat Datang Guru Hebat</p>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-slate-500">Silakan masuk menggunakan akun Google resmi sekolah untuk melanjutkan ke aplikasi.</p>
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-slate-600">Silakan masuk menggunakan akun Google resmi sekolah untuk melanjutkan ke aplikasi.</p>
         <button
           type="button"
           onClick={() => void loginWithGoogle()}
@@ -31,11 +44,11 @@ export function LoginPage() {
           </svg>
           {loading ? 'SIMPATIK sedang dipersiapkan…' : 'Masuk dengan Google Sekolah'}
         </button>
-        <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-left">
+        <div className="mt-6">
           <p className="text-xs font-extrabold text-emerald-950">Akun yang diizinkan</p>
           <p className="mt-1 text-xs font-medium text-emerald-800">@smpialwasi-maros.sch.id</p>
         </div>
-        <p className="mt-6 text-[10px] font-medium tracking-wide text-slate-400">Qurani, Ramah Anak dan Berkarakter</p>
+        <p className="mt-6 text-[10px] font-medium tracking-wide text-slate-500">Qurani, Ramah Anak dan Berkarakter</p>
       </section>
     </main>
   );
