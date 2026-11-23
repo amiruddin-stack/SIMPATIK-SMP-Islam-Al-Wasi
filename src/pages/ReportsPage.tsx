@@ -4,7 +4,6 @@ import { useData } from '../context/DataContext';
 import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
 export const ReportsPage: React.FC = () => {
-  const { canAccessBK } = useAuth();
   const {
     students,
     classes,
@@ -83,7 +82,7 @@ export const ReportsPage: React.FC = () => {
 
     const csvContent =
       'data:text/csv;charset=utf-8,' +
-      [`Laporan Resmi ${reportType.toUpperCase()} - ${settings.schoolName}`]
+      [`Laporan Resmi ${String(reportType || 'umum').toUpperCase()} - ${settings.schoolName}`]
         .concat([headers.join(',')])
         .concat(rows.map((e) => e.join(',')))
         .join('\n');
@@ -117,22 +116,6 @@ export const ReportsPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-            >
-              
-              <span>Ekspor CSV</span>
-            </button>
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-[#076B3A] hover:bg-[#076B3A] rounded-lg transition-colors shadow-xs"
-            >
-              
-              <span>Cetak Dokumen Resmi</span>
-            </button>
-          </div>
         </div>
 
         {reportType ? (
@@ -144,20 +127,34 @@ export const ReportsPage: React.FC = () => {
             >
               ← Kembali ke daftar laporan
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExportCSV}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200"
-              >
-                <span>Ekspor CSV</span>
-              </button>
-              <button
-                onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#076B3A] px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#065A31]"
-              >
-                <span>Cetak Dokumen Resmi</span>
-              </button>
-            </div>
+            {(reportType === 'attendance' || reportType === 'journal' || reportType === 'counseling') && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200"
+                >
+                  <span>Ekspor CSV</span>
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#076B3A] px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#065A31]"
+                >
+                  <span>Cetak Dokumen Resmi</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3 pt-1 text-xs">
+            <span className="font-semibold text-slate-500">Pilih Kelas:</span>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-medium text-slate-900 focus:border-[#076B3A] focus:outline-none"
+            >
+              {classes.map((c) => (
+                <option key={c} value={c}>Kelas {c}</option>
+              ))}
+            </select>
           </div>
         ) : (
           <div className="border-t border-slate-100 pt-3">
