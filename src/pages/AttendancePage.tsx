@@ -4,14 +4,16 @@ import { useData } from '../context/DataContext';
 import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 import { AttendanceRecord, AttendanceStatus } from '../types';
 
-export const AttendancePage: React.FC = () => {
+export const AttendancePage: React.FC<{ onDirtyChange?: (dirty: boolean) => void }> = ({ onDirtyChange }) => {
   const { currentUser, canInputAttendance } = useAuth();
-  const { students, classes, attendances, saveAttendance, settings } = useData();
+  const { students, classes, subjects, attendances, saveAttendance, settings } = useData();
 
   const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+  const [selectedSubject, setSelectedSubject] = useState<string>(currentUser?.subject || subjects[0] || 'Pendidikan Agama Islam (PAI)');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<'input' | 'rekap'>('input');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -22,7 +24,7 @@ export const AttendancePage: React.FC = () => {
 
   // Existing attendance record for selected class & date
   const existingRecord = attendances.find(
-    (a) => getClassLevel(a.className) === getClassLevel(selectedClass) && a.date === selectedDate
+    (a) => getClassLevel(a.className) === getClassLevel(selectedClass) && a.date === selectedDate && (a.subject === selectedSubject || (!a.subject && selectedSubject === (currentUser?.subject || subjects[0])))
   );
 
   // Attendance state in local draft
@@ -44,9 +46,24 @@ export const AttendancePage: React.FC = () => {
       setNotes({});
     }
     setSavedSuccess(false);
-  }, [selectedClass, selectedDate, existingRecord]);
+    setHasUnsavedChanges(false);
+    onDirtyChange?.(false);
+  }, [selectedClass, selectedDate, selectedSubject, existingRecord]);
+
+  React.useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeave);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeave);
+  }, [hasUnsavedChanges]);
+
+  const markUnsaved = () => { setHasUnsavedChanges(true); onDirtyChange?.(true); };
 
   const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
+    markUnsaved();
     setCurrentStatuses((prev) => ({
       ...prev,
       [studentId]: status,
@@ -54,6 +71,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleNoteChange = (studentId: string, note: string) => {
+    markUnsaved();
     setNotes((prev) => ({
       ...prev,
       [studentId]: note,
@@ -61,6 +79,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleSetAllPresent = () => {
+    markUnsaved();
     const updated: Record<string, AttendanceStatus> = {};
     classStudents.forEach((s) => {
       updated[s.id] = 'Hadir';
@@ -69,11 +88,12 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    const recordId = `att-${selectedDate}-${selectedClass.toLowerCase()}`;
+    const recordId = `att-${selectedDate}-${selectedClass.toLowerCase()}-${encodeURIComponent(selectedSubject)}`;
     const newRecord: AttendanceRecord = {
       id: recordId,
       date: selectedDate,
       className: selectedClass,
+      subject: selectedSubject,
       academicYear: settings.activeAcademicYear,
       semester: settings.activeSemester,
       records: currentStatuses,
@@ -84,6 +104,8 @@ export const AttendancePage: React.FC = () => {
     };
 
     await saveAttendance(newRecord);
+    setHasUnsavedChanges(false);
+    onDirtyChange?.(false);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
@@ -223,11 +245,16 @@ export const AttendancePage: React.FC = () => {
 
           <div>
             <label className="block text-slate-500 font-semibold mb-1">
-              Tahun Ajaran & Semester
+              Mata Pelajaran
             </label>
-            <div className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-medium truncate">
-              {settings.activeAcademicYear} - {settings.activeSemester}
-            </div>
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:border-[#076B3A]"
+            >
+              {subjects.map((subject) => <option key={subject} value={subject}>{subject}</option>)}
+            </select>
+            <p className="mt-1 text-[10px] text-slate-400">{settings.activeAcademicYear} · Semester {settings.activeSemester}</p>
           </div>
         </div>
       </div>
@@ -278,14 +305,7 @@ export const AttendancePage: React.FC = () => {
               >
                 ✓ Setel Semua Hadir
               </button>
-              {canInputAttendance && (
-                <button
-                  onClick={handleSave}
-                  className="hidden md:inline-flex px-4 py-1.5 text-xs font-bold text-white bg-[#076B3A] hover:bg-[#05552E] rounded-lg transition-colors shadow-xs"
-                >
-                  Simpan Presensi
-                </button>
-              )}
+
             </div>
           </div>
 
@@ -353,7 +373,7 @@ export const AttendancePage: React.FC = () => {
           </div>
 
           {canInputAttendance && (
-            <div className="md:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
               <div className="mb-2 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-600">Persentase Kehadiran</span>
                 <span className="font-bold text-[#076B3A]">{percentage}%</span>
