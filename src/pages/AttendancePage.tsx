@@ -281,9 +281,9 @@ export const AttendancePage: React.FC = () => {
               {canInputAttendance && (
                 <button
                   onClick={handleSave}
-                  className="px-4 py-1.5 text-xs font-bold text-white bg-[#076B3A] hover:bg-[#076B3A] rounded-lg transition-colors shadow-xs"
+                  className="hidden md:inline-flex px-4 py-1.5 text-xs font-bold text-white bg-[#076B3A] hover:bg-[#05552E] rounded-lg transition-colors shadow-xs"
                 >
-                   Simpan Presensi
+                  Simpan Presensi
                 </button>
               )}
             </div>
@@ -351,6 +351,34 @@ export const AttendancePage: React.FC = () => {
               })
             )}
           </div>
+
+          {canInputAttendance && (
+            <div className="md:hidden sticky bottom-0 z-20 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-600">Persentase Kehadiran</span>
+                <span className="font-bold text-[#076B3A]">{percentage}%</span>
+              </div>
+              <div
+                className="mb-3 h-2 w-full overflow-hidden rounded-full bg-slate-100"
+                role="progressbar"
+                aria-label="Persentase kehadiran siswa"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percentage}
+              >
+                <div
+                  className="h-full rounded-full bg-[#0B8F4D] transition-all duration-300"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+              <button
+                onClick={handleSave}
+                className="w-full rounded-xl bg-[#076B3A] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#05552E] active:scale-[0.99]"
+              >
+                Simpan Presensi
+              </button>
+            </div>
+          )}
 
           {/* Tampilan tabel untuk tablet dan desktop */}
           <div className="hidden md:block overflow-x-auto">
