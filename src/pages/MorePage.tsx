@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GraduationCap, Share2, ArrowUpRight, ChevronRight, Copy, ArrowLeft, Users, ClipboardCheck, BookOpen, HeartHandshake } from 'lucide-react';
+import { GraduationCap, Share2, ArrowUpRight, ChevronRight, Copy, ArrowLeft, Users, ClipboardCheck, BookOpen, HeartHandshake, ExternalLink } from 'lucide-react';
 
 export const MorePage: React.FC = () => {
   const [notice, setNotice] = useState('');
@@ -78,6 +78,7 @@ export const MorePage: React.FC = () => {
                 <button type="button" onClick={() => void copyLink(counselingUrl, 'SIMPATIK for Counseling')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-bold text-white hover:bg-[#06683C]"><Copy size={17}/> Salin Link</button>
               </div>
             </div>
+            <button type="button" onClick={() => window.location.assign(counselingUrl)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-bold text-white hover:bg-[#06683C]"><ExternalLink size={18}/> Buka SIMPATIK for Counseling</button>
             <button type="button" onClick={() => void shareLink(counselingUrl, 'SIMPATIK for Counseling', 'Silakan buka portal layanan BK SIMPATIK SMP Islam Al-Wasi’.')} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#B9DEC8] bg-[#F4FAF6] px-4 py-3 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]"><Share2 size={18}/> Bagikan Link</button>
             {notice && <p role="status" className="rounded-xl bg-[#E3F7EC] px-4 py-3 text-xs font-semibold text-[#087640]">{notice}</p>}
           </div>
@@ -112,6 +113,7 @@ export const MorePage: React.FC = () => {
                 <button type="button" onClick={() => void copyLink(studentUrl, 'SIMPATIK for Student')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-bold text-white hover:bg-[#06683C]"><Copy size={17}/> Salin Link</button>
               </div>
             </div>
+            <button type="button" onClick={() => window.location.assign(studentUrl)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-bold text-white hover:bg-[#06683C]"><ExternalLink size={18}/> Buka SIMPATIK for Students</button>
             <button type="button" onClick={() => void shareLink(studentUrl, 'SIMPATIK for Student', 'Silakan buka portal siswa SIMPATIK SMP Islam Al-Wasi’.')} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#B9DEC8] bg-[#F4FAF6] px-4 py-3 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]"><Share2 size={18}/> Bagikan Link</button>
             {notice && <p role="status" className="rounded-xl bg-[#E3F7EC] px-4 py-3 text-xs font-semibold text-[#087640]">{notice}</p>}
           </div>
