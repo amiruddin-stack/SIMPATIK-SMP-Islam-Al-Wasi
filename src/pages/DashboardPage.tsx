@@ -72,17 +72,17 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9">
+          <div className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9 lg:min-h-[320px] lg:gap-8 lg:px-12 lg:py-10">
             <div aria-hidden="true" className="pointer-events-none absolute -left-12 -top-14 h-52 w-52 rounded-full bg-white/[0.07]" />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-[10px] font-bold tracking-[0.12em] text-white/90 sm:text-xs">Welcome!</p>
-              <h1 className="mt-1 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl">SIMPATIK</h1>
-              <div className="mt-2 space-y-1 text-[9px] font-semibold leading-tight tracking-tight text-white sm:text-xs md:text-sm">
+              <p className="text-[10px] font-bold tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
+              <h1 className="mt-1 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">SIMPATIK</h1>
+              <div className="mt-2 space-y-1 text-[9px] font-semibold leading-tight tracking-tight text-white sm:text-xs md:text-sm lg:text-base lg:leading-relaxed">
                 <p className="whitespace-nowrap">Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
                 <p className="whitespace-nowrap">yang Terpadu, Interaktif &amp; Kolaboratif</p>
               </div>
             </div>
-            <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px]">
+            <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px] lg:w-[220px]">
               <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain" loading="eager"/>
             </div>
           </div>
