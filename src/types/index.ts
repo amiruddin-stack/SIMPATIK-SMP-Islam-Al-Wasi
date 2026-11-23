@@ -46,6 +46,7 @@ export interface AttendanceRecord {
   id: string;
   date: string; // YYYY-MM-DD
   className: string;
+  subject?: string;
   academicYear: string;
   semester: 'Ganjil' | 'Genap';
   records: {
@@ -57,6 +58,21 @@ export interface AttendanceRecord {
   recordedBy: string;
   recordedByName: string;
   updatedAt: string;
+}
+
+export interface StudentJournalEntry {
+  id: string;
+  recordType: 'student_note';
+  sourceAttendanceId: string;
+  studentId: string;
+  studentName: string;
+  className: string;
+  date: string;
+  subject: string;
+  note: string;
+  teacherId: string;
+  teacherName: string;
+  createdAt: string;
 }
 
 export interface Journal {
