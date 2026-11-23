@@ -74,10 +74,10 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
           </div>
           <style>{`
             .simpatik-hero {
-              --hero-dark: #0c4a04;
-              --hero-mid: #2b7d12;
-              --hero-light: #43b020;
-              --hero-accent: #073102;
+              --hero-dark: #076B3A;
+              --hero-mid: #0B8F4D;
+              --hero-light: #16A05A;
+              --hero-accent: #087640;
               position: relative;
               isolation: isolate;
               width: 100%;
