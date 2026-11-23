@@ -39,7 +39,7 @@ function classDisplayName(value: string) {
   const labels: Record<string, string> = { VII: 'VII (Tujuh)', VIII: 'VIII (Delapan)', IX: 'IX (Sembilan)' };
   return labels[level] || value.trim();
 }
-export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> = ({ onBack, studentMode = false }) => {
+export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean; hideBanner?: boolean }> = ({ onBack, studentMode = false, hideBanner = false }) => {
   const { classes, settings } = useData();
   const { firebaseUser, currentUser } = useAuth();
   const isVerifiedExamAdmin = firebaseUser?.email?.toLowerCase() === 'amiruddin@smpialwasi-maros.sch.id';
@@ -985,7 +985,7 @@ export const ExamPage: React.FC<{ onBack?: () => void; studentMode?: boolean }> 
   const sectionTitles = { home: ["Ujian", "Pilih pengelolaan ujian SIMPATIK."], student: ["Identitas Peserta", "Verifikasi identitas siswa sebelum mengerjakan ujian."], create: ["Buat Ujian", "Susun ujian dari paket soal yang tersedia."], manage: ["Kelola Ujian", "Atur status dan tautan pengerjaan ujian."], share: ["Bagikan Ujian", "Salin dan bagikan tautan kepada siswa."], results: ["Hasil Ujian", "Lihat dan periksa hasil pengerjaan siswa."], take: ["Pengerjaan Ujian", "Kerjakan soal dan simpan jawaban secara otomatis."], archive: ["Arsip Ujian", "Lihat dan pulihkan ujian yang telah diarsipkan."] } as const;
   const [bannerTitle, bannerDescription] = sectionTitles[section];
   return <div className="space-y-5">
-    {!linkedExamId&&<section className="page-banner relative flex min-h-[104px] w-full items-center justify-between gap-4 px-4 py-4 text-white sm:min-h-[116px] sm:px-6 md:px-7">
+    {!linkedExamId&&!hideBanner&&<section className="page-banner relative flex min-h-[104px] w-full items-center justify-between gap-4 px-4 py-4 text-white sm:min-h-[116px] sm:px-6 md:px-7">
       <div className="relative z-10 flex min-w-0 items-center gap-3 sm:gap-4">
         <button type="button" onClick={() => section === "home" ? onBack?.() : setSection("home")} aria-label="Kembali ke halaman sebelumnya" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white shadow-sm transition hover:bg-white hover:text-[#087640] sm:h-11 sm:w-11"><ArrowLeft size={20}/></button>
         <div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/85 sm:text-[11px]">SIMPATIK · AKADEMIK</p><h2 className="mt-0.5 truncate text-xl font-black tracking-tight text-white sm:text-2xl md:text-[28px]">{bannerTitle}</h2><p className="mt-1 line-clamp-1 text-[11px] font-medium text-white/90 sm:text-xs">{bannerDescription}</p></div>
