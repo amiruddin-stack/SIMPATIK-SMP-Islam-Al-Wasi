@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
-  Home, Users, NotebookPen, FileText, Grid3X3, X,
-  GraduationCap, BookOpen, ClipboardList, ClipboardCheck,
-  MoreHorizontal, UserRound, CalendarDays
+  Home, Users, NotebookPen, FileText
 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { HomeTopBar } from './components/layout/HomeTopBar';
 import { PageBanner } from './components/layout/PageBanner';
-import { NavTab, DesktopSidebar } from './components/layout/Sidebar';
+import { NavTab, DesktopSidebar, MobileSidebar } from './components/layout/Sidebar';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { DashboardPage } from './pages/DashboardPage';
 import { AttendancePage } from './pages/AttendancePage';
@@ -40,7 +38,7 @@ function ComingSoonPage({ title, description }: { title: string; description: st
 function AppContent() {
   const { currentUser, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const mobileNavItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
     { tab: 'dashboard', label: 'Home', icon: Home },
@@ -49,30 +47,12 @@ function AppContent() {
     { tab: 'exams', label: 'Ujian', icon: FileText },
   ];
 
-  const appMenuItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
-    { tab: 'dashboard', label: 'Beranda', icon: Home },
-    { tab: 'settings', label: 'Profil', icon: UserRound },
-    { tab: 'classes', label: 'Kelas', icon: GraduationCap },
-    { tab: 'subjects', label: 'Mapel', icon: BookOpen },
-    { tab: 'attendance', label: 'Presensi Siswa', icon: Users },
-    { tab: 'journal', label: 'Jurnal Pembelajaran', icon: NotebookPen },
-    { tab: 'assessment', label: 'Input Nilai Kelas', icon: ClipboardList },
-    { tab: 'grades', label: 'Rekap Nilai', icon: ClipboardCheck },
-    { tab: 'exams', label: 'Ujian', icon: FileText },
-    { tab: 'reports', label: 'Laporan', icon: FileText },
-    { tab: 'master', label: 'Data Guru & Siswa', icon: Users },
-    { tab: 'homeroom', label: 'Guru Wali', icon: UserRound },
-    { tab: 'schedule', label: 'Jadwal', icon: CalendarDays },
-    { tab: 'ils', label: 'ILS', icon: BookOpen },
-    { tab: 'more', label: 'Layanan Lainnya', icon: MoreHorizontal },
-  ];
-
   const setActiveTab = (tab: NavTab) => {
     const url = new URL(window.location.href);
     url.searchParams.set('page', tab);
     window.history.pushState({ simpatikTab: tab }, '', url);
     setActiveTabState(tab);
-    setMoreMenuOpen(false);
+    setMobileSidebarOpen(false);
   };
 
   React.useEffect(() => {
@@ -135,7 +115,7 @@ function AppContent() {
       <div className="flex min-h-screen w-full">
         <DesktopSidebar activeTab={activeTab} onNavigate={setActiveTab} />
         <div className="min-w-0 flex-1">
-          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMoreMenuOpen(open => !open)} />
+          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMobileSidebarOpen(open => !open)} />
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
               {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
@@ -145,30 +125,7 @@ function AppContent() {
         </div>
       </div>
 
-      {moreMenuOpen && (
-        <>
-          <button type="button" aria-label="Tutup menu aplikasi" onClick={() => setMoreMenuOpen(false)} className="fixed inset-0 z-[110] bg-slate-900/25 md:hidden" />
-          <section aria-label="Menu aplikasi" className="fixed inset-x-3 bottom-[78px] z-[120] max-h-[68vh] overflow-y-auto rounded-[24px] border border-[#D5EADB] bg-white p-4 shadow-[0_16px_48px_rgba(15,70,40,0.2)] md:hidden">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-extrabold text-slate-800">Menu Aplikasi</h2>
-                <p className="text-[11px] text-slate-500">Pilih menu SIMPATIK</p>
-              </div>
-              <button type="button" onClick={() => setMoreMenuOpen(false)} aria-label="Tutup" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {appMenuItems.map(({ tab, label, icon: Icon }) => (
-                <button key={tab} type="button" onClick={() => setActiveTab(tab)} aria-current={activeTab === tab ? 'page' : undefined} className={`flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border px-2 py-3 text-center transition-colors ${activeTab === tab ? 'border-[#8BD5AA] bg-[#E3F7EC] text-[#076B3A]' : 'border-slate-100 bg-slate-50 text-slate-600 active:bg-[#E3F7EC]'}`}>
-                  <Icon size={21} strokeWidth={1.9} />
-                  <span className="text-[10px] font-bold leading-tight">{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+      <MobileSidebar activeTab={activeTab} onNavigate={setActiveTab} isOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
 
       <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-[100] grid grid-cols-4 border-t border-[#D5EADB] bg-white/95 px-1 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-6px_20px_rgba(15,70,40,0.08)] backdrop-blur md:hidden">
         {mobileNavItems.map(({ tab, label, icon: Icon }) => (
