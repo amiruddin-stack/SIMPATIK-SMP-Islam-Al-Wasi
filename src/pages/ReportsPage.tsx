@@ -118,6 +118,7 @@ export const ReportsPage: React.FC = () => {
         </div>
 
         {reportType ? (
+          <>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
             <button
               type="button"
@@ -155,6 +156,7 @@ export const ReportsPage: React.FC = () => {
               ))}
             </select>
           </div>
+          </>
         ) : (
           <div className="border-t border-slate-100 pt-3">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Daftar Laporan</h3>
