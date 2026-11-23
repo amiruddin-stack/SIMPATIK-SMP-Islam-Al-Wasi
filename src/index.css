@@ -244,3 +244,21 @@ body {
     radial-gradient(circle at 62% 38%, rgb(255 255 255 / 8%) 0 66px, transparent 67px),
     radial-gradient(circle at 18% 82%, rgb(255 255 255 / 6%) 0 43px, transparent 44px);
 }
+
+
+@media (min-width: 1024px) {
+  .hero {
+    min-height: 320px;
+    padding: 36px 48px;
+    gap: 32px;
+  }
+
+  .hero h1 {
+    font-size: clamp(4rem, 5vw, 5rem);
+  }
+
+  .hero img,
+  .hero .hero-illustration {
+    width: 220px;
+  }
+}
