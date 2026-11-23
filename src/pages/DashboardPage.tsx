@@ -72,18 +72,20 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-gradient-to-br from-[#087640] via-[#0B9654] to-[#27C879] px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9 lg:min-h-[320px] lg:gap-8 lg:px-12 lg:py-10">
-            <div aria-hidden="true" className="pointer-events-none absolute -left-12 -top-14 h-52 w-52 rounded-full bg-white/[0.07]" />
+          <div
+            className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-[#087640] bg-cover bg-center px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9 lg:min-h-[320px] lg:gap-8 lg:px-12 lg:py-10"
+            style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hero-simpatik-green.jpg)` }}
+          >
             <div className="relative z-10 min-w-0 flex-1">
               <p className="text-[10px] font-bold tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
-              <h1 className="mt-1 text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">SIMPATIK</h1>
+              <h1 className="mt-1 text-3xl font-black tracking-tight text-white drop-shadow-sm sm:text-4xl md:text-5xl lg:text-6xl">Simpatik for Teachers</h1>
               <div className="mt-2 space-y-1 text-[9px] font-semibold leading-tight tracking-tight text-white sm:text-xs md:text-sm lg:text-base lg:leading-relaxed">
-                <p className="whitespace-nowrap">Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
-                <p className="whitespace-nowrap">yang Terpadu, Interaktif &amp; Kolaboratif</p>
+                <p>Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
+                <p>yang Terpadu, Interaktif dan Kolaboratif</p>
               </div>
             </div>
             <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px] lg:w-[220px]">
-              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain" loading="eager"/>
+              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain drop-shadow-sm" style={{ width: 'clamp(64px, 18vw, 220px)' }} loading="eager"/>
             </div>
           </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
