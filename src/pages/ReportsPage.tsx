@@ -16,9 +16,19 @@ export const ReportsPage: React.FC = () => {
     settings,
   } = useData();
 
-  type ReportCategory = 'attendance' | 'journal' | 'behavior' | 'counseling' | 'grades';
+  type ReportCategory = 'program' | 'attendance' | 'journal' | 'homeroom' | 'ils' | 'counseling' | 'library' | 'extracurricular' | 'behavior' | 'grades';
 
-  const [reportType, setReportType] = useState<ReportCategory>('attendance');
+  const [reportType, setReportType] = useState<ReportCategory | null>(null);
+  const reportItems: { type: ReportCategory; label: string }[] = [
+    { type: 'program', label: 'Program Sekolah' },
+    { type: 'attendance', label: 'Kehadiran' },
+    { type: 'journal', label: 'Jurnal' },
+    { type: 'homeroom', label: 'Guru Wali' },
+    { type: 'ils', label: 'Islamic Life Skills' },
+    { type: 'counseling', label: 'Konseling' },
+    { type: 'library', label: 'Perpustakaan' },
+    { type: 'extracurricular', label: 'Ekstra kurikuler' },
+  ];
   const [selectedClass, setSelectedClass] = useState<string>(SCHOOL_CLASSES[0]);
 
   const classStudents = students.filter(
@@ -30,7 +40,7 @@ export const ReportsPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    let filename = `Laporan_${reportType}_${selectedClass}.csv`;
+    let filename = `Laporan_${reportType || 'umum'}_${selectedClass}.csv`;
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
 
@@ -125,85 +135,53 @@ export const ReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Categories Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-t border-slate-100 pt-3">
-          <button
-            onClick={() => setReportType('attendance')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-              reportType === 'attendance'
-                ? 'bg-[#076B3A] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-             Laporan Presensi
-          </button>
-
-          <button
-            onClick={() => setReportType('journal')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-              reportType === 'journal'
-                ? 'bg-[#076B3A] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-             Laporan Jurnal KBM
-          </button>
-
-          <button
-            onClick={() => setReportType('behavior')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-              reportType === 'behavior'
-                ? 'bg-[#076B3A] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-             Laporan Karakter Siswa
-          </button>
-
-          {canAccessBK && (
+        {reportType ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
             <button
-              onClick={() => setReportType('counseling')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-                reportType === 'counseling'
-                  ? 'bg-[#076B3A] text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+              type="button"
+              onClick={() => setReportType(null)}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200"
             >
-               Laporan Layanan BK
+              ← Kembali ke daftar laporan
             </button>
-          )}
-
-          <button
-            onClick={() => setReportType('grades')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${
-              reportType === 'grades'
-                ? 'bg-[#076B3A] text-white shadow-xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-             Laporan Hasil Belajar
-          </button>
-        </div>
-
-        {/* Filter Kelas */}
-        <div className="flex items-center gap-3 pt-1 text-xs">
-          <span className="font-semibold text-slate-500">Pilih Kelas:</span>
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-medium focus:outline-none focus:border-[#076B3A]"
-          >
-            {classes.map((c) => (
-              <option key={c} value={c}>
-                Kelas {c}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200"
+              >
+                <span>Ekspor CSV</span>
+              </button>
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#076B3A] px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-[#065A31]"
+              >
+                <span>Cetak Dokumen Resmi</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="border-t border-slate-100 pt-3">
+            <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">Daftar Laporan</h3>
+            <div className="space-y-2">
+              {reportItems.map((item, index) => (
+                <button
+                  key={item.type}
+                  type="button"
+                  onClick={() => setReportType(item.type)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-[#D5EADB] bg-white p-3 text-left transition hover:border-[#16B364] hover:bg-[#F7FCF9]"
+                >
+                  <span className="w-7 shrink-0 text-sm font-bold text-[#0B8F4D]">{index + 1}.</span>
+                  <span className="min-w-0 flex-1 text-sm font-semibold text-slate-700">{item.label}</span>
+                  <span className="text-[#0B8F4D]">→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* PRINTABLE OFFICIAL LETTERHEAD DOCUMENT PREVIEW */}
-      <div className="p-8 md:p-12 rounded-2xl bg-white border border-slate-200 shadow-xs max-w-4xl mx-auto space-y-6 print:border-none print:p-0 print:shadow-none">
+      {reportType && <div className="p-8 md:p-12 rounded-2xl bg-white border border-slate-200 shadow-xs max-w-4xl mx-auto space-y-6 print:border-none print:p-0 print:shadow-none">
         {/* Kop Surat Resmi */}
         <div className="text-center pb-4 border-b-2 border-slate-900 space-y-1">
           <div className="flex items-center justify-center gap-4">
@@ -230,8 +208,13 @@ export const ReportsPage: React.FC = () => {
         {/* Title of Document */}
         <div className="text-center space-y-1">
           <h2 className="text-sm md:text-base font-bold text-slate-900 uppercase tracking-wide underline underline-offset-4">
-            {reportType === 'attendance' && `REKAPITULASI PRESENSI KEHADIRAN KELAS ${selectedClass}`}
+            {reportType === 'program' && `LAPORAN PROGRAM SEKOLAH`}
+            {reportType === 'attendance' && `REKAPITULASI KEHADIRAN KELAS ${selectedClass}`}
             {reportType === 'journal' && `REKAPITULASI JURNAL PEMBELAJARAN GURU (KBM)`}
+            {reportType === 'homeroom' && `LAPORAN GURU WALI`}
+            {reportType === 'ils' && `LAPORAN ISLAMIC LIFE SKILLS`}
+            {reportType === 'library' && `LAPORAN PERPUSTAKAAN`}
+            {reportType === 'extracurricular' && `LAPORAN EKSTRAKURIKULER`}
             {reportType === 'behavior' && `LAPORAN PERKEMBANGAN KARAKTER DAN PEMBINAAN SISWA`}
             {reportType === 'counseling' && `LAPORAN LAYANAN BIMBINGAN KONSELING (BK)`}
             {reportType === 'grades' && `LEGER NILAI HASIL EVALUASI PEMBELAJARAN KELAS ${selectedClass}`}
@@ -357,6 +340,13 @@ export const ReportsPage: React.FC = () => {
             </table>
           )}
 
+          {(reportType === 'program' || reportType === 'homeroom' || reportType === 'ils' || reportType === 'library' || reportType === 'extracurricular') && (
+            <div className="rounded-xl border border-dashed border-[#B7E8CD] bg-[#F7FCF9] px-5 py-10 text-center">
+              <p className="text-sm font-bold text-slate-700">Laporan {reportItems.find(item => item.type === reportType)?.label} belum tersedia</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Bagian ini sudah disiapkan. Data laporan akan ditampilkan setelah sumber data dan format rekapnya diaktifkan.</p>
+            </div>
+          )}
+
           {reportType === 'counseling' && (
             <table className="w-full text-left text-xs border border-slate-300">
               <thead className="bg-slate-100 font-bold border-b border-slate-300">
@@ -411,7 +401,7 @@ export const ReportsPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };
