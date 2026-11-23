@@ -72,20 +72,55 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div
-            className="hero relative isolate flex min-h-[190px] w-full items-center justify-between gap-3 overflow-hidden rounded-[24px] border border-white/20 bg-[#087640] bg-cover bg-center px-5 py-5 text-left shadow-[0_12px_30px_rgba(7,107,58,0.18)] sm:px-7 md:min-h-[210px] md:px-9 lg:min-h-[320px] lg:gap-8 lg:px-12 lg:py-10"
-            style={{ backgroundImage: `url(${import.meta.env.BASE_URL}hero-simpatik-green.jpg)` }}
-          >
+          <style>{`
+            .simpatik-hero {
+              --hero-dark: #0c4a04;
+              --hero-mid: #2b7d12;
+              --hero-light: #43b020;
+              --hero-accent: #073102;
+              position: relative; isolation: isolate; width: 100%; max-width: 960px;
+              aspect-ratio: 960 / 340; min-height: 190px; margin: 0 auto;
+              display: flex; align-items: center; justify-content: space-between; gap: 12px;
+              overflow: hidden; border-radius: 36px; border: 1px solid rgba(255,255,255,.2);
+              padding: 20px 24px;
+              background: linear-gradient(120deg, var(--hero-dark) 0%, var(--hero-mid) 50%, var(--hero-light) 100%);
+              box-shadow: 0 14px 30px rgba(0,0,0,.18); text-align: left;
+            }
+            .simpatik-hero-waves { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; }
+            .simpatik-hero-stripes-tr {
+              position: absolute; top: 0; right: 0; z-index: 1; width: 50%; height: 60%;
+              background: repeating-linear-gradient(-35deg, rgba(255,255,255,.08) 0 2px, transparent 2px 16px);
+              -webkit-mask-image: linear-gradient(to bottom left, #000 10%, transparent 75%);
+              mask-image: linear-gradient(to bottom left, #000 10%, transparent 75%); pointer-events: none;
+            }
+            .simpatik-hero-stripes-bl {
+              position: absolute; left: 0; bottom: 0; z-index: 1; width: 35%; height: 45%;
+              background: repeating-linear-gradient(-35deg, rgba(0,0,0,.14) 0 2px, transparent 2px 14px);
+              -webkit-mask-image: linear-gradient(to top right, #000 10%, transparent 75%);
+              mask-image: linear-gradient(to top right, #000 10%, transparent 75%); pointer-events: none;
+            }
+            @media (max-width: 700px) { .simpatik-hero { border-radius: 24px; padding: 16px; } }
+          `}</style>
+          <div className="simpatik-hero">
+            <svg className="simpatik-hero-waves" viewBox="0 0 960 340" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M0,40 C160,0 300,110 470,70 C640,30 760,-10 960,30 L960,0 L0,0 Z" fill="var(--hero-accent)" opacity=".55" />
+              <path d="M0,150 C140,110 260,230 430,200 C600,170 720,120 960,160 L960,340 L0,340 Z" fill="var(--hero-light)" opacity=".45" />
+              <path d="M0,260 C180,220 340,320 520,285 C700,250 820,210 960,240 L960,340 L0,340 Z" fill="var(--hero-light)" opacity=".7" />
+              <path d="M620,340 C700,290 800,270 960,300 L960,340 Z" fill="var(--hero-mid)" opacity=".8" />
+              <path d="M520,340 C560,320 640,318 690,340 Z" fill="var(--hero-accent)" opacity=".6" />
+            </svg>
+            <div className="simpatik-hero-stripes-tr" />
+            <div className="simpatik-hero-stripes-bl" />
             <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-[10px] font-bold tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
-              <h1 className="mt-1 text-3xl font-black tracking-tight text-white drop-shadow-sm sm:text-4xl md:text-5xl lg:text-6xl">Simpatik for Teachers</h1>
-              <div className="mt-2 space-y-1 text-[9px] font-semibold leading-tight tracking-tight text-white sm:text-xs md:text-sm lg:text-base lg:leading-relaxed">
+              <p className="text-[10px] font-bold italic tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
+              <h1 className="mt-1 text-[clamp(20px,4.2vw,48px)] font-black leading-tight tracking-tight text-white drop-shadow-sm">Simpatik for Teachers</h1>
+              <div className="mt-2 space-y-1 text-[clamp(9px,1.45vw,16px)] font-semibold leading-tight tracking-tight text-white">
                 <p>Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
                 <p>yang Terpadu, Interaktif dan Kolaboratif</p>
               </div>
             </div>
-            <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px] lg:w-[220px]">
-              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain drop-shadow-sm" style={{ width: 'clamp(64px, 18vw, 220px)' }} loading="eager"/>
+            <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px] lg:w-[180px]">
+              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain" loading="eager" />
             </div>
           </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
