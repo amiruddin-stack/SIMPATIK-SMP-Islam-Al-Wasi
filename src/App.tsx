@@ -39,6 +39,9 @@ function AppContent() {
   const { currentUser, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [attendanceHasUnsaved, setAttendanceHasUnsaved] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<NavTab | null>(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   const mobileNavItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
     { tab: 'dashboard', label: 'Home', icon: Home },
@@ -47,7 +50,7 @@ function AppContent() {
     { tab: 'exams', label: 'Ujian', icon: FileText },
   ];
 
-  const setActiveTab = (tab: NavTab) => {
+  const commitNavigation = (tab: NavTab) => {
     const url = new URL(window.location.href);
     url.searchParams.set('page', tab);
     window.history.pushState({ simpatikTab: tab }, '', url);
@@ -55,14 +58,43 @@ function AppContent() {
     setMobileSidebarOpen(false);
   };
 
+  const setActiveTab = (tab: NavTab) => {
+    if (tab === activeTab) {
+      setMobileSidebarOpen(false);
+      return;
+    }
+    if (attendanceHasUnsaved && activeTab === 'attendance') {
+      setPendingNavigation(tab);
+      setShowUnsavedDialog(true);
+      return;
+    }
+    commitNavigation(tab);
+  };
+
+  const discardAndNavigate = () => {
+    if (!pendingNavigation) return;
+    setAttendanceHasUnsaved(false);
+    setShowUnsavedDialog(false);
+    commitNavigation(pendingNavigation);
+    setPendingNavigation(null);
+  };
+
   React.useEffect(() => {
     const restore = () => {
       const tab = (window.history.state?.simpatikTab || new URLSearchParams(window.location.search).get('page') || 'dashboard') as NavTab;
+      if (attendanceHasUnsaved && activeTab === 'attendance' && tab !== 'attendance') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', 'attendance');
+        window.history.pushState({ simpatikTab: 'attendance' }, '', url);
+        setPendingNavigation(tab);
+        setShowUnsavedDialog(true);
+        return;
+      }
       setActiveTabState(tab);
     };
     window.addEventListener('popstate', restore);
     return () => window.removeEventListener('popstate', restore);
-  }, []);
+  }, [attendanceHasUnsaved, activeTab]);
 
   if (loading) {
     return (
@@ -90,7 +122,7 @@ function AppContent() {
   const renderCurrentPage = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
-      case 'attendance': return <AttendancePage />;
+      case 'attendance': return <AttendancePage onDirtyChange={setAttendanceHasUnsaved} />;
       case 'journal': return <JournalPage />;
       case 'assessment': return <AssessmentPage />;
       case 'grades': return <GradeSummaryPage />;
@@ -134,6 +166,19 @@ function AppContent() {
           </button>
         ))}
       </nav>
+      {showUnsavedDialog && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/50 p-4" role="alertdialog" aria-modal="true" aria-labelledby="unsaved-title">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-xl text-amber-600">!</div>
+            <h2 id="unsaved-title" className="text-base font-bold text-slate-900">Presensi belum disimpan</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Ada perubahan pada absensi atau catatan siswa. Simpan terlebih dahulu agar catatan tidak hilang.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setShowUnsavedDialog(false); setPendingNavigation(null); }} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-600">Kembali mengisi</button>
+              <button type="button" onClick={discardAndNavigate} className="rounded-xl bg-rose-600 px-3 py-2.5 text-xs font-bold text-white">Keluar tanpa simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
       <OfflineIndicator />
     </div>
   );
