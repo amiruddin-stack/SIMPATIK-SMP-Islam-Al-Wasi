@@ -59,7 +59,6 @@ function AppContent() {
     const restore = () => {
       const tab = (window.history.state?.simpatikTab || new URLSearchParams(window.location.search).get('page') || 'dashboard') as NavTab;
       setActiveTabState(tab);
-      setMoreMenuOpen(false);
     };
     window.addEventListener('popstate', restore);
     return () => window.removeEventListener('popstate', restore);
