@@ -78,39 +78,59 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               --hero-mid: #2b7d12;
               --hero-light: #43b020;
               --hero-accent: #073102;
-              position: relative; isolation: isolate; width: 100%; max-width: 960px;
-              aspect-ratio: 960 / 340; min-height: 190px; margin: 0 auto;
-              display: flex; align-items: center; justify-content: space-between; gap: 12px;
-              overflow: hidden; border-radius: 36px; border: 1px solid rgba(255,255,255,.2);
+              position: relative;
+              isolation: isolate;
+              width: 100%;
+              max-width: 960px;
+              aspect-ratio: 1000 / 560;
+              min-height: 190px;
+              margin: 0 auto;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+              overflow: hidden;
+              border-radius: 36px;
+              border: 1px solid rgba(255,255,255,.2);
               padding: 20px 24px;
-              background: linear-gradient(120deg, var(--hero-dark) 0%, var(--hero-mid) 50%, var(--hero-light) 100%);
-              box-shadow: 0 14px 30px rgba(0,0,0,.18); text-align: left;
+              background: linear-gradient(120deg, var(--hero-mid) 0%, var(--hero-light) 60%, var(--hero-mid) 100%);
+              box-shadow: 0 14px 30px rgba(0,0,0,.18);
+              text-align: left;
             }
-            .simpatik-hero-waves { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; }
-            .simpatik-hero-stripes-tr {
-              position: absolute; top: 0; right: 0; z-index: 1; width: 50%; height: 60%;
-              background: repeating-linear-gradient(-35deg, rgba(255,255,255,.08) 0 2px, transparent 2px 16px);
-              -webkit-mask-image: linear-gradient(to bottom left, #000 10%, transparent 75%);
-              mask-image: linear-gradient(to bottom left, #000 10%, transparent 75%); pointer-events: none;
+            .simpatik-hero-waves {
+              position: absolute;
+              inset: 0;
+              z-index: 0;
+              width: 100%;
+              height: 100%;
+              display: block;
             }
-            .simpatik-hero-stripes-bl {
-              position: absolute; left: 0; bottom: 0; z-index: 1; width: 35%; height: 45%;
-              background: repeating-linear-gradient(-35deg, rgba(0,0,0,.14) 0 2px, transparent 2px 14px);
-              -webkit-mask-image: linear-gradient(to top right, #000 10%, transparent 75%);
-              mask-image: linear-gradient(to top right, #000 10%, transparent 75%); pointer-events: none;
+            @media (max-width: 700px) {
+              .simpatik-hero { border-radius: 24px; padding: 16px; }
             }
-            @media (max-width: 700px) { .simpatik-hero { border-radius: 24px; padding: 16px; } }
           `}</style>
           <div className="simpatik-hero">
-            <svg className="simpatik-hero-waves" viewBox="0 0 960 340" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M0,40 C160,0 300,110 470,70 C640,30 760,-10 960,30 L960,0 L0,0 Z" fill="var(--hero-accent)" opacity=".55" />
-              <path d="M0,150 C140,110 260,230 430,200 C600,170 720,120 960,160 L960,340 L0,340 Z" fill="var(--hero-light)" opacity=".45" />
-              <path d="M0,260 C180,220 340,320 520,285 C700,250 820,210 960,240 L960,340 L0,340 Z" fill="var(--hero-light)" opacity=".7" />
-              <path d="M620,340 C700,290 800,270 960,300 L960,340 Z" fill="var(--hero-mid)" opacity=".8" />
-              <path d="M520,340 C560,320 640,318 690,340 Z" fill="var(--hero-accent)" opacity=".6" />
+            <svg className="simpatik-hero-waves" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <pattern id="simpatik-hero-stripes" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+                  <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(255,255,255,.14)" strokeWidth="2" />
+                </pattern>
+                <pattern id="simpatik-hero-stripes-dark" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+                  <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(0,0,0,.12)" strokeWidth="2" />
+                </pattern>
+              </defs>
+              <path d="M0,0 H600 C560,70 480,130 380,120 C250,110 120,170 0,230 Z" fill="var(--hero-light)" opacity=".85" />
+              <path d="M600,0 H1000 V300 C920,262 860,250 790,262 C700,274 650,190 600,120 C585,80 596,40 600,0 Z" fill="var(--hero-accent)" opacity=".45" />
+              <path d="M0,230 C120,190 240,230 330,300 C420,370 520,380 600,330 L0,330 Z" fill="var(--hero-accent)" opacity=".35" />
+              <path d="M0,300 C120,230 260,290 400,330 C560,375 700,345 820,280 C900,236 960,236 1000,256 V560 H0 Z" fill="var(--hero-light)" opacity=".85" />
+              <path d="M0,420 C110,390 220,440 300,510 C340,545 370,560 400,560 H0 Z" fill="var(--hero-accent)" opacity=".5" />
+              <path d="M430,560 C480,510 600,500 700,540 C722,550 732,556 740,560 Z" fill="var(--hero-light)" opacity=".7" />
+              <path d="M720,560 C760,500 860,470 960,490 C1000,500 1000,520 1000,560 Z" fill="var(--hero-light)" opacity=".85" />
+              <path d="M1000,420 C930,450 900,510 880,560 H1000 Z" fill="var(--hero-mid)" opacity=".6" />
+              <path d="M780,40 H1000 V250 C940,232 880,200 820,160 C790,130 780,80 780,40 Z" fill="url(#simpatik-hero-stripes)" />
+              <path d="M900,330 C980,300 1000,300 1000,300 V420 C950,430 900,410 880,380 Z" fill="url(#simpatik-hero-stripes)" opacity=".8" />
+              <path d="M90,600 C100,560 130,470 170,440 C200,420 230,470 260,540 C270,570 270,600 260,600 Z" fill="url(#simpatik-hero-stripes-dark)" />
             </svg>
-            <div className="simpatik-hero-stripes-tr" />
-            <div className="simpatik-hero-stripes-bl" />
             <div className="relative z-10 min-w-0 flex-1">
               <p className="text-[10px] font-bold italic tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
               <h1 className="mt-1 text-[clamp(20px,4.2vw,48px)] font-black leading-tight tracking-tight text-white drop-shadow-sm">Simpatik for Teachers</h1>
