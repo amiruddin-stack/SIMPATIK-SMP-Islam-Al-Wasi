@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { GraduationCap, Share2, ArrowUpRight, ChevronRight, Copy, ArrowLeft, Users, ClipboardCheck, BookOpen } from 'lucide-react';
+import { GraduationCap, Share2, ArrowUpRight, ChevronRight, Copy, ArrowLeft, Users, ClipboardCheck, BookOpen, HeartHandshake } from 'lucide-react';
 
 export const MorePage: React.FC = () => {
   const [notice, setNotice] = useState('');
   const [showStudentInfo, setShowStudentInfo] = useState(false);
+  const [showCounselingInfo, setShowCounselingInfo] = useState(false);
 
   const makeLink = (key: string) => {
     const url = new URL(window.location.href);
@@ -14,6 +15,7 @@ export const MorePage: React.FC = () => {
   };
 
   const studentUrl = 'https://amiruddin-stack.github.io/Simpatik-for-Students/';
+  const counselingUrl = 'https://amiruddin-stack.github.io/Simpatik-for-Counseling/';
 
   const copyLink = async (url: string, label: string) => {
     try {
@@ -50,6 +52,39 @@ export const MorePage: React.FC = () => {
       }
     }
   };
+
+  if (showCounselingInfo) {
+    return (
+      <section className="mx-auto max-w-3xl space-y-4">
+        <button type="button" onClick={() => { setShowCounselingInfo(false); setNotice(''); }} className="inline-flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]">
+          <ArrowLeft size={18}/> Kembali ke Layanan Lainnya
+        </button>
+        <div className="overflow-hidden rounded-3xl border border-[#D5EADB] bg-white shadow-sm">
+          <div className="bg-gradient-to-br from-[#087F49] to-[#0B6B42] px-6 py-7 text-white">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><HeartHandshake size={30}/></div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-100">Layanan bimbingan dan konseling</p>
+            <h2 className="mt-2 text-2xl font-extrabold">SIMPATIK for Counseling</h2>
+            <p className="mt-2 text-sm leading-6 text-emerald-50">Portal layanan Bimbingan dan Konseling SMP Islam Al-Wasi’ untuk mendukung pendampingan, konsultasi, dan perkembangan peserta didik.</p>
+          </div>
+          <div className="space-y-4 p-5 sm:p-6">
+            <div className="rounded-2xl bg-[#F4FAF6] p-4">
+              <p className="text-sm font-extrabold text-slate-800">Layanan BK Terpadu</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Akses khusus untuk layanan konseling sekolah.</p>
+            </div>
+            <div>
+              <label htmlFor="counseling-portal-link" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Link SIMPATIK for Counseling</label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input id="counseling-portal-link" readOnly value={counselingUrl} onFocus={(event) => event.currentTarget.select()} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-700 outline-none"/>
+                <button type="button" onClick={() => void copyLink(counselingUrl, 'SIMPATIK for Counseling')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#087F49] px-4 py-3 text-sm font-bold text-white hover:bg-[#06683C]"><Copy size={17}/> Salin Link</button>
+              </div>
+            </div>
+            <button type="button" onClick={() => void shareLink(counselingUrl, 'SIMPATIK for Counseling', 'Silakan buka portal layanan BK SIMPATIK SMP Islam Al-Wasi’.')} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#B9DEC8] bg-[#F4FAF6] px-4 py-3 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]"><Share2 size={18}/> Bagikan Link</button>
+            {notice && <p role="status" className="rounded-xl bg-[#E3F7EC] px-4 py-3 text-xs font-semibold text-[#087640]">{notice}</p>}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (showStudentInfo) {
     return (
@@ -91,6 +126,11 @@ export const MorePage: React.FC = () => {
       <button type="button" onClick={() => { setShowStudentInfo(true); setNotice(''); }} className="flex w-full items-center gap-3 rounded-2xl border border-[#D5EADB] bg-white p-4 text-left shadow-sm transition hover:border-[#8ED6AE] hover:bg-[#F7FCF9]">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#087F49]"><GraduationCap size={25}/></span>
         <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold text-slate-800">SIMPATIK for Student</span><span className="mt-1 block text-xs text-slate-500">Informasi portal siswa, salin dan bagikan tautan</span></span>
+        <ChevronRight size={19} className="shrink-0 text-[#087F49]"/>
+      </button>
+      <button type="button" onClick={() => { setShowCounselingInfo(true); setNotice(''); }} className="flex w-full items-center gap-3 rounded-2xl border border-[#D5EADB] bg-white p-4 text-left shadow-sm transition hover:border-[#8ED6AE] hover:bg-[#F7FCF9]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E3F7EC] text-[#087F49]"><HeartHandshake size={25}/></span>
+        <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold text-slate-800">SIMPATIK for Counseling</span><span className="mt-1 block text-xs text-slate-500">Layanan Bimbingan dan Konseling sekolah, salin dan bagikan tautan</span></span>
         <ChevronRight size={19} className="shrink-0 text-[#087F49]"/>
       </button>
       <button type="button" onClick={() => void shareLink(makeLink(''), 'SIMPATIK SMP Islam Al-Wasi’', 'Akses SIMPATIK SMP Islam Al-Wasi’.')} className="flex w-full items-center gap-3 rounded-2xl border border-[#E2E8E5] bg-white p-4 text-left shadow-sm transition hover:border-[#8ED6AE] hover:bg-[#F7FCF9]">
