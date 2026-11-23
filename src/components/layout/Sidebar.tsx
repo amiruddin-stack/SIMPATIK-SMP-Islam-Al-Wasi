@@ -2,12 +2,12 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Home, UserRound, GraduationCap, BookOpen, ClipboardList,
-  Users, NotebookPen, ClipboardCheck, HeartHandshake, ShieldCheck,
+  Users, NotebookPen, ClipboardCheck,
   FileText, Settings, LogOut, CalendarDays, MoreHorizontal
 } from 'lucide-react';
 
 export type NavTab =
-  | 'dashboard' | 'attendance' | 'journal' | 'behavior' | 'counseling'
+  | 'dashboard' | 'attendance' | 'journal'
   | 'assessment' | 'exams' | 'grades' | 'master' | 'reports'
   | 'settings' | 'classes' | 'subjects' | 'ils' | 'homeroom' | 'schedule' | 'more' | 'google-form-exams';
 
@@ -38,8 +38,6 @@ const academicItems: { tab: NavTab; label: string; icon: React.ElementType }[] =
   { tab: 'assessment', label: 'Input Nilai Kelas', icon: ClipboardList },
   { tab: 'grades', label: 'Rekap Nilai', icon: ClipboardCheck },
   { tab: 'exams', label: 'Ujian', icon: FileText },
-  { tab: 'counseling', label: 'Bimbingan Konseling', icon: HeartHandshake },
-  { tab: 'behavior', label: 'Perilaku Siswa', icon: ShieldCheck },
   { tab: 'reports', label: 'Laporan', icon: FileText },
   { tab: 'master', label: 'Data Guru & Siswa', icon: Users },
   { tab: 'homeroom', label: 'Guru Wali', icon: UserRound },
@@ -79,7 +77,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
           <BookOpen size={18} strokeWidth={1.9} />ILS
         </button>
         <button type="button" onClick={() => onNavigate('more')} className={itemClass('more')}>
-          <MoreHorizontal size={18} strokeWidth={1.9} />More
+          <MoreHorizontal size={18} strokeWidth={1.9} />Layanan Lainnya
         </button>
       </nav>
 

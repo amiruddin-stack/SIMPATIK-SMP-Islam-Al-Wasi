@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Home, Users, NotebookPen, FileText, Grid3X3, X,
   GraduationCap, BookOpen, ClipboardList, ClipboardCheck,
-  HeartHandshake, ShieldCheck, MoreHorizontal, UserRound, CalendarDays
+  MoreHorizontal, UserRound, CalendarDays
 } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -13,8 +13,6 @@ import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { DashboardPage } from './pages/DashboardPage';
 import { AttendancePage } from './pages/AttendancePage';
 import { JournalPage } from './pages/JournalPage';
-import { BehaviorPage } from './pages/BehaviorPage';
-import { CounselingPage } from './pages/CounselingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { GradeSummaryPage } from './pages/GradeSummaryPage';
 import { MasterDataPage, RegistrationPage } from './pages/MasterDataPage';
@@ -61,14 +59,12 @@ function AppContent() {
     { tab: 'assessment', label: 'Input Nilai Kelas', icon: ClipboardList },
     { tab: 'grades', label: 'Rekap Nilai', icon: ClipboardCheck },
     { tab: 'exams', label: 'Ujian', icon: FileText },
-    { tab: 'counseling', label: 'Bimbingan Konseling', icon: HeartHandshake },
-    { tab: 'behavior', label: 'Perilaku Siswa', icon: ShieldCheck },
     { tab: 'reports', label: 'Laporan', icon: FileText },
     { tab: 'master', label: 'Data Guru & Siswa', icon: Users },
     { tab: 'homeroom', label: 'Guru Wali', icon: UserRound },
     { tab: 'schedule', label: 'Jadwal', icon: CalendarDays },
     { tab: 'ils', label: 'ILS', icon: BookOpen },
-    { tab: 'more', label: 'More', icon: MoreHorizontal },
+    { tab: 'more', label: 'Layanan Lainnya', icon: MoreHorizontal },
   ];
 
   const setActiveTab = (tab: NavTab) => {
@@ -117,8 +113,6 @@ function AppContent() {
       case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
       case 'attendance': return <AttendancePage />;
       case 'journal': return <JournalPage />;
-      case 'behavior': return <BehaviorPage />;
-      case 'counseling': return <CounselingPage />;
       case 'assessment': return <AssessmentPage />;
       case 'grades': return <GradeSummaryPage />;
       case 'master': return <MasterDataPage />;

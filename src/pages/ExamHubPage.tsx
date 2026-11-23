@@ -14,7 +14,7 @@ export const ExamHubPage: React.FC = () => {
         <button type="button" onClick={() => setSection('home')} className="inline-flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]">
           <ArrowLeft size={18}/> Kembali ke Ujian
         </button>
-        <ExamPage onBack={() => setSection('home')} />
+        <ExamPage onBack={() => setSection('home')} hideBanner />
       </section>
     );
   }

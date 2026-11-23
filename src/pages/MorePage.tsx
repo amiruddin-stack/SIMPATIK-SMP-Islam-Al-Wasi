@@ -55,7 +55,7 @@ export const MorePage: React.FC = () => {
     return (
       <section className="mx-auto max-w-3xl space-y-4">
         <button type="button" onClick={() => { setShowStudentInfo(false); setNotice(''); }} className="inline-flex items-center gap-2 rounded-xl px-2 py-2 text-sm font-bold text-[#087F49] hover:bg-[#E3F7EC]">
-          <ArrowLeft size={18}/> Kembali ke More
+          <ArrowLeft size={18}/> Kembali ke Layanan Lainnya
         </button>
         <div className="overflow-hidden rounded-3xl border border-[#D5EADB] bg-white shadow-sm">
           <div className="bg-gradient-to-br from-[#087F49] to-[#0B6B42] px-6 py-7 text-white">
