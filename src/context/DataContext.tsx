@@ -30,6 +30,7 @@ import {
   Journal,
   SchoolSetting,
   Student,
+  StudentJournalEntry,
   Teacher,
 } from '../types';
 
@@ -50,6 +51,7 @@ interface DataContextType {
   deleteExtracurricular: (name: string) => Promise<void>;
   attendances: AttendanceRecord[];
   journals: Journal[];
+  studentJournals: StudentJournalEntry[];
   behaviors: BehaviorRecord[];
   counselings: CounselingRecord[];
   assessments: Assessment[];
@@ -135,6 +137,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [journals, setJournals] = useState<Journal[]>(() =>
     loadLocal('journals', initialJournals)
   );
+  const [studentJournals, setStudentJournals] = useState<StudentJournalEntry[]>(() =>
+    loadLocal('student_journals', [])
+  );
   const [behaviors, setBehaviors] = useState<BehaviorRecord[]>(() =>
     loadLocal('behaviors', initialBehaviors)
   );
@@ -177,9 +182,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       collection(db, 'journals'),
       (snapshot) => {
         if (!snapshot.empty) {
-          const list = snapshot.docs.map((d) => d.data() as Journal);
-          setJournals(list);
-          saveLocal('journals', list);
+          const documents = snapshot.docs.map((d) => d.data() as Journal & Partial<StudentJournalEntry>);
+          const studentNotes = documents.filter((item) => item.recordType === 'student_note') as StudentJournalEntry[];
+          const teacherJournals = documents.filter((item) => item.recordType !== 'student_note') as Journal[];
+          setJournals(teacherJournals);
+          saveLocal('journals', teacherJournals);
+          setStudentJournals(studentNotes);
+          saveLocal('student_journals', studentNotes);
         }
       },
       (error) => {
@@ -305,8 +314,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updated;
     });
 
+    const noteEntries = Object.entries(record.notes || {}).map(([studentId, rawNote]) => {
+      const note = String(rawNote || '').trim();
+      const student = students.find((item) => item.id === studentId);
+      const id = `student-note-${encodeURIComponent(record.id)}-${encodeURIComponent(studentId)}`;
+      return { id, studentId, studentName: student?.name || studentId, note };
+    });
+
+    setStudentJournals((previous) => {
+      const next = previous.filter((entry) => entry.sourceAttendanceId !== record.id);
+      const additions = noteEntries.filter((entry) => entry.note).map((entry): StudentJournalEntry => ({
+        id: entry.id,
+        recordType: 'student_note',
+        sourceAttendanceId: record.id,
+        studentId: entry.studentId,
+        studentName: entry.studentName,
+        className: record.className,
+        date: record.date,
+        subject: record.subject || 'Mata Pelajaran',
+        note: entry.note,
+        teacherId: record.recordedBy,
+        teacherName: record.recordedByName,
+        createdAt: new Date().toISOString(),
+      }));
+      const updated = [...additions, ...next];
+      saveLocal('student_journals', updated);
+      return updated;
+    });
+
     try {
       await setDoc(doc(db, 'attendance', record.id), record);
+      await Promise.all(noteEntries.map((entry) => {
+        if (!entry.note) return deleteDoc(doc(db, 'journals', entry.id));
+        const studentNote: StudentJournalEntry = {
+          id: entry.id,
+          recordType: 'student_note',
+          sourceAttendanceId: record.id,
+          studentId: entry.studentId,
+          studentName: entry.studentName,
+          className: record.className,
+          date: record.date,
+          subject: record.subject || 'Mata Pelajaran',
+          note: entry.note,
+          teacherId: record.recordedBy,
+          teacherName: record.recordedByName,
+          createdAt: new Date().toISOString(),
+        };
+        return setDoc(doc(db, 'journals', entry.id), studentNote);
+      }));
       try {
         await setDoc(doc(db, 'attendance_history', `${record.id}-${Date.now()}`), { ...record, submittedAt: new Date().toISOString() });
       } catch (historyError) {
@@ -564,6 +619,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setStudents(loadLocal('students', initialStudents));
     setAttendances(loadLocal('attendances', initialAttendances));
     setJournals(loadLocal('journals', initialJournals));
+    setStudentJournals(loadLocal('student_journals', []));
     setBehaviors(loadLocal('behaviors', initialBehaviors));
     setCounselings(loadLocal('counselings', initialCounseling));
     setAssessments(loadLocal('assessments', initialAssessments));
@@ -585,6 +641,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addExtracurricular, deleteExtracurricular,
         attendances,
         journals,
+        studentJournals,
         behaviors,
         counselings,
         assessments,
