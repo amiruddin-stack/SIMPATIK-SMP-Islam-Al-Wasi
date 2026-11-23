@@ -82,7 +82,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               isolation: isolate;
               width: 100%;
               max-width: 960px;
-              aspect-ratio: 1000 / 560;
+              aspect-ratio: 960 / 340;
               min-height: 190px;
               margin: 0 auto;
               display: flex;
