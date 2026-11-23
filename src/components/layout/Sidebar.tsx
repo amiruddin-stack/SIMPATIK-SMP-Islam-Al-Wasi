@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Home, UserRound, GraduationCap, BookOpen, ClipboardList,
   Users, NotebookPen, ClipboardCheck,
-  FileText, Settings, LogOut, CalendarDays, MoreHorizontal
+  FileText, LogOut, CalendarDays, MoreHorizontal, X
 } from 'lucide-react';
 
 export type NavTab =
@@ -90,6 +90,65 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
         <p className="mt-3 px-2 text-[10px] leading-5 text-slate-400">Qurani, Ramah Anak dan Berkarakter</p>
       </div>
     </aside>
+  );
+};
+
+
+interface MobileSidebarProps {
+  activeTab: NavTab;
+  onNavigate: (tab: NavTab) => void;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const MobileSidebar: React.FC<MobileSidebarProps> = ({ activeTab, onNavigate, isOpen, onClose }) => {
+  const { currentUser, firebaseUser, logout } = useAuth();
+  if (!isOpen) return null;
+
+  const itemClass = (tab: NavTab) =>
+    `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+      activeTab === tab
+        ? 'bg-gradient-to-br from-[#27C879] via-[#18B66A] to-[#0B9654] text-white shadow-sm'
+        : 'text-slate-600 hover:bg-[#F2FAF5] hover:text-[#076B3A]'
+    }`;
+
+  return (
+    <>
+      <button type="button" aria-label="Tutup sidebar" onClick={onClose} className="fixed inset-0 z-[120] bg-slate-900/35 md:hidden" />
+      <aside aria-label="Sidebar navigasi mobile" className="fixed inset-y-0 left-0 z-[130] flex h-dvh w-[min(86vw,320px)] flex-col border-r border-[#D5EADB] bg-white px-4 py-5 shadow-2xl md:hidden">
+        <div className="mb-5 flex items-start justify-between border-b border-slate-100 px-2 pb-5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Guru</p>
+            <p className="mt-1 truncate text-base font-extrabold tracking-tight text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Guru'}</p>
+            <p className="mt-0.5 text-[10px] font-semibold text-slate-400">{currentUser?.role === 'super_admin' ? 'Admin Utama' : 'Guru'}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Tutup sidebar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><X size={19}/></button>
+        </div>
+        <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+          {primaryItems.map(({ tab, label, icon: Icon }) => (
+            <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
+              <Icon size={19} strokeWidth={1.9}/>{label}
+            </button>
+          ))}
+          <p className="px-3 pb-1 pt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Akademik</p>
+          {academicItems.map(({ tab, label, icon: Icon }) => (
+            <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
+              <Icon size={19} strokeWidth={1.9}/>{label}
+            </button>
+          ))}
+          <button type="button" onClick={() => onNavigate('ils')} className={itemClass('ils')}><BookOpen size={19}/>ILS</button>
+          <button type="button" onClick={() => onNavigate('more')} className={itemClass('more')}><MoreHorizontal size={19}/>Layanan Lainnya</button>
+        </nav>
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          {firebaseUser && !firebaseUser.isAnonymous && currentUser && (
+            <button type="button" onClick={() => { onClose(); void logout(); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-red-600">
+              <LogOut size={17}/>Keluar
+            </button>
+          )}
+          <p className="mt-2 px-2 text-[10px] leading-5 text-slate-400">Qurani, Ramah Anak dan Berkarakter</p>
+        </div>
+      </aside>
+    </>
   );
 };
 
