@@ -88,7 +88,7 @@ export const AttendancePage: React.FC<{ onDirtyChange?: (dirty: boolean) => void
   };
 
   const handleSave = async () => {
-    const recordId = `att-${selectedDate}-${selectedClass.toLowerCase()}-${encodeURIComponent(selectedSubject)}`;
+    const recordId = existingRecord?.id || `att-${selectedDate}-${selectedClass.toLowerCase()}-${encodeURIComponent(selectedSubject)}`;
     const newRecord: AttendanceRecord = {
       id: recordId,
       date: selectedDate,
