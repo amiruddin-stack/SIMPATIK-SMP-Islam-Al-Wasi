@@ -13,7 +13,7 @@ export const MorePage: React.FC = () => {
     return url.toString();
   };
 
-  const studentUrl = makeLink('student');
+  const studentUrl = 'https://amiruddin-stack.github.io/Simpatik-for-Students/';
 
   const copyLink = async (url: string, label: string) => {
     try {
