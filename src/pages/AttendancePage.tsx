@@ -295,8 +295,65 @@ export const AttendancePage: React.FC = () => {
             </div>
           )}
 
-          {/* Student Roster Table */}
-          <div className="overflow-x-auto">
+          {/* Tampilan kartu khusus HP */}
+          <div className="md:hidden p-3 space-y-3">
+            {classStudents.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-sm">
+                Tidak ada data siswa aktif di kelas {selectedClass}.
+              </div>
+            ) : (
+              classStudents.map((student, idx) => {
+                const status = currentStatuses[student.id] || 'Hadir';
+                const statusStyles: Record<AttendanceStatus, string> = {
+                  Hadir: 'bg-emerald-600 text-white border-emerald-600',
+                  Izin: 'bg-amber-500 text-white border-amber-500',
+                  Sakit: 'bg-blue-600 text-white border-blue-600',
+                  Alpa: 'bg-rose-600 text-white border-rose-600',
+                };
+                return (
+                  <article key={student.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-sm font-bold text-[#076B3A]">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm text-slate-900 leading-5">{student.name}</div>
+                        <div className="mt-0.5 text-xs text-slate-500">NISN: {student.nisn || '-'}</div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-400">{student.gender}</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(['Hadir', 'Izin', 'Sakit', 'Alpa'] as AttendanceStatus[]).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          aria-pressed={status === opt}
+                          onClick={() => handleStatusChange(student.id, opt)}
+                          className={`min-h-10 rounded-xl border px-1.5 py-2 text-xs font-bold transition-colors ${
+                            status === opt
+                              ? statusStyles[opt]
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Keterangan (opsional)"
+                      value={notes[student.id] || ''}
+                      onChange={(e) => handleNoteChange(student.id, e.target.value)}
+                      className="w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#076B3A] focus:ring-2 focus:ring-emerald-50"
+                    />
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          {/* Tampilan tabel untuk tablet dan desktop */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
                 <tr>
