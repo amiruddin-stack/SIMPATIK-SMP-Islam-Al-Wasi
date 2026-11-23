@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { getClassLevel, SCHOOL_CLASSES } from '../lib/classes';
 
