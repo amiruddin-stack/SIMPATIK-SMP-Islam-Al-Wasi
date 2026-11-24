@@ -32,7 +32,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onOpenMore })
     <header className="sticky top-0 z-40 w-full border-b border-[#E1EEE6] bg-white/95 shadow-[0_2px_10px_rgba(15,70,40,0.04)] backdrop-blur">
       <div className="mx-auto hidden min-h-[82px] w-full items-center justify-between gap-4 px-7 md:flex">
         <div className="flex min-w-0 items-center gap-3">
-          <img src="/IMG_20261120_092150.png" alt="Logo SMP Islam Al-Wasi'" className="h-12 w-12 shrink-0 rounded-xl object-contain" />
+          <img src="/logo-alwasi.png" alt="Logo SMP Islam Al-Wasi'" className="h-12 w-12 shrink-0 rounded-xl object-contain" />
           <div className="min-w-0 leading-tight">
             <p className="text-[21px] font-black tracking-tight text-[#087F49]">SIMPATIK</p>
             <p className="text-[11px] font-semibold text-slate-700">Sistem Informasi Manajemen dan Pembelajaran AL-Wasi'</p>
