@@ -30,17 +30,21 @@ const pageTitles: Partial<Record<NavTab, string>> = {
 export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onOpenMore }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#E1EEE6] bg-white/95 shadow-[0_2px_10px_rgba(15,70,40,0.04)] backdrop-blur">
-      <div className="mx-auto hidden min-h-[68px] w-full items-center justify-between gap-4 px-7 md:flex">
+      <div className="mx-auto hidden min-h-[82px] w-full items-center justify-between gap-4 px-7 md:flex">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]">
             <span className="text-sm font-black tracking-tight">S</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#0B8F4D]">SIMPATIK</p>
-            <h1 className="truncate text-base font-bold text-slate-800">{pageTitles[activeTab] || 'SIMPATIK'}</h1>
+          <div className="min-w-0 leading-tight">
+            <p className="text-[21px] font-black tracking-tight text-[#087F49]">SIMPATIK</p>
+            <p className="text-[11px] font-semibold text-slate-700">Sistem Informasi Manajemen dan Pembelajaran AL-Wasi'</p>
+            <p className="text-[10px] font-medium tracking-wide text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
           </div>
         </div>
-        <p className="truncate text-sm font-extrabold tracking-wide text-slate-700">SMP ISLAM AL-WASI'</p>
+        <div className="flex min-w-0 flex-col items-center text-center">
+          <p className="text-sm font-extrabold tracking-wide text-slate-700">SMP ISLAM AL-WASI'</p>
+          <p className="text-xs font-medium text-slate-500">{pageTitles[activeTab] || 'SIMPATIK'}</p>
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           <button type="button" onClick={() => window.location.reload()} aria-label="Refresh halaman" title="Refresh" className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F4FBF6] text-[#087F49] transition hover:bg-[#E3F7EC]">
             <RefreshCw size={19} strokeWidth={2.2}/>
