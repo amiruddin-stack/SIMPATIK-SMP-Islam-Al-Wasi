@@ -79,11 +79,11 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               <p className="mt-1 whitespace-nowrap text-sm font-medium text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
             </div>
             <img
-              src={`${import.meta.env.BASE_URL}logo-alwasi.png`}
-              alt="Logo SMP Islam Al-Wasi"
-              className="h-24 w-24 shrink-0 object-contain lg:h-28 lg:w-28"
-              width="112"
-              height="112"
+              src={`${import.meta.env.BASE_URL}images/simpatik-hero-vector.svg`}
+              alt="Ilustrasi pembelajaran digital SIMPATIK"
+              className="h-32 w-44 shrink-0 object-contain lg:h-40 lg:w-56"
+              width="224"
+              height="160"
               loading="eager"
             />
           </div>
