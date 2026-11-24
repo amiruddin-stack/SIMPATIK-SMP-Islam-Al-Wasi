@@ -88,7 +88,8 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             />
           </div>
           <div className="mx-auto flex w-full max-w-[520px] items-center justify-center md:hidden">
-            <isrc={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}hero-vector.svg`}
+            <img
+              src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
               alt="Ilustrasi pembelajaran digital SIMPATIK"
               className="block h-auto max-h-56 w-full object-contain"
               width="520"
