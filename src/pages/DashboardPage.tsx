@@ -141,7 +141,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
       </section>
 
       <main className="relative z-10 mx-auto max-w-[1240px] space-y-5 px-4 pt-3 pb-24 md:px-8 md:pb-8">
-        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
           <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-sm">
             <div className="bg-[#E3F7EC] px-5 py-4">
               <h2 className="text-base font-extrabold text-[#076B3A]">Presensi Siswa Hari Ini</h2>
@@ -149,7 +149,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             </div>
             <div className="p-5">
               <div className="flex items-center gap-5">
-                <div className="relative h-36 w-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${attendanceGradient})` }}>
+                <div className="relative h-32 w-32 shrink-0 rounded-full sm:h-36 sm:w-36" style={{ background: `conic-gradient(${attendanceGradient})` }}>
                   <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
                     <span className="text-3xl font-black text-slate-800">{attendanceTotal ? Math.round(attendanceTotals.Hadir / attendanceTotal * 100) : 0}%</span>
                     <span className="text-[10px] font-semibold text-slate-500">Hadir</span>
