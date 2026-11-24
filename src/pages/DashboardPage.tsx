@@ -1,76 +1,130 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Search } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { NavTab } from '../components/layout/Sidebar';
 import { getClassLevel } from '../lib/classes';
-import {
-  Users,
-  BookOpen,
-  ClipboardList,
-  Settings,
-  FileText,
-  ClipboardCheck,
-  CalendarCheck,
-} from 'lucide-react';
+
+type PrayerLevel = 'Lancar' | 'Cukup Lancar' | 'Perlu Bimbingan';
+
+const attendanceColors: Record<string, string> = {
+  Hadir: '#0B8F4D',
+  Izin: '#E9A23B',
+  Sakit: '#3985D6',
+  Alpa: '#E05252',
+};
+
+const prayerColors: Record<PrayerLevel, string> = {
+  Lancar: '#0B8F4D',
+  'Cukup Lancar': '#E9A23B',
+  'Perlu Bimbingan': '#3985D6',
+};
+
+function demoPrayerLevel(studentId: string): PrayerLevel {
+  const seed = [...studentId].reduce((total, char) => total + char.charCodeAt(0), 0) % 10;
+  return seed < 5 ? 'Lancar' : seed < 8 ? 'Cukup Lancar' : 'Perlu Bimbingan';
+}
+
+function localDateString() {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+}
 
 export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({ onNavigate }) => {
-  const [attendancePeriod, setAttendancePeriod] = useState<'today'|'week'|'1'|'2'|'3'|'4'|'semester'>('today');
-  const [journalPeriod, setJournalPeriod] = useState<'today'|'week'|'1'|'2'|'3'>('today');
-  const [attendanceClass, setAttendanceClass] = useState('Semua Kelas');
-  const { students, classes, attendances, journals, settings } = useData();
-  const { currentUser } = useAuth();
-  const [homeSearch, setHomeSearch] = useState('');
+  const { students, attendances, behaviors, studentJournals, settings } = useData();
+  const [showAbsent, setShowAbsent] = useState(false);
+  const today = localDateString();
+  const activeStudents = students.filter(student => student.status === 'Aktif');
 
-  const today = new Date();
-  const todayStr = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
-  const periodStart = new Date(today);
-  if (attendancePeriod === 'today') { /* today only */ }
-  else if (attendancePeriod === 'week') periodStart.setDate(periodStart.getDate() - 6);
-  else if (attendancePeriod === 'semester') periodStart.setMonth(periodStart.getMonth() - 5);
-  else periodStart.setMonth(periodStart.getMonth() - Number(attendancePeriod));
-  const periodStartStr = [periodStart.getFullYear(), String(periodStart.getMonth() + 1).padStart(2, '0'), String(periodStart.getDate()).padStart(2, '0')].join('-');
-  const relevantAttendances = attendances.filter(record =>
+  const todayRecords = attendances.filter(record =>
+    record.date === today &&
     record.academicYear === settings.activeAcademicYear &&
-    record.semester === settings.activeSemester &&
-    record.date >= periodStartStr && record.date <= todayStr &&
-    (attendanceClass === 'Semua Kelas' || getClassLevel(record.className) === getClassLevel(attendanceClass))
+    record.semester === settings.activeSemester
   );
-  const attendanceDate = relevantAttendances.reduce((latest, record) => record.date > latest ? record.date : latest, '');
-  const realTotals = { Hadir: 0, Izin: 0, Sakit: 0, Alpa: 0 };
-  const absentByStudent = new Map<string, { student: typeof students[number]; status: string; count: number }>();
-  relevantAttendances.forEach(record => {
+
+  const attendanceTotals = { Hadir: 0, Izin: 0, Sakit: 0, Alpa: 0 };
+  const absentMap = new Map<string, { student: typeof activeStudents[number]; status: string }>();
+  todayRecords.forEach(record => {
     Object.entries(record.records || {}).forEach(([studentId, status]) => {
-      if (status in realTotals) realTotals[status as keyof typeof realTotals]++;
+      if (status in attendanceTotals) attendanceTotals[status as keyof typeof attendanceTotals]++;
       if (status !== 'Hadir') {
-        const student = students.find(item => item.id === studentId);
-        if (student) {
-          const key = studentId + ':' + status;
-          const previous = absentByStudent.get(key);
-          absentByStudent.set(key, { student, status, count: (previous?.count || 0) + 1 });
-        }
+        const student = activeStudents.find(item => item.id === studentId);
+        if (student) absentMap.set(studentId, { student, status });
       }
     });
   });
-  const totalRecorded = Object.values(realTotals).reduce((sum, value) => sum + value, 0);
-  const totals = realTotals;
-  const attendancePercent = totalRecorded > 0 ? Math.round((totals.Hadir / totalRecorded) * 100) : 0;
-  const absentStudents = Array.from(absentByStudent.values()).sort((a,b) => a.student.name.localeCompare(b.student.name));
-  const attendancePeriodLabel = attendancePeriod === 'today' ? 'Kehadiran hari ini' : attendancePeriod === 'week' ? '1 pekan terakhir' : attendancePeriod === 'semester' ? '1 semester' : attendancePeriod + ' bulan terakhir';
+  const attendanceTotal = Object.values(attendanceTotals).reduce((sum, count) => sum + count, 0);
+  const attendanceGradient = attendanceTotal
+    ? (() => {
+        let start = 0;
+        return Object.entries(attendanceTotals).map(([status, count]) => {
+          const from = start;
+          start += count / attendanceTotal * 100;
+          return `${attendanceColors[status]} ${from}% ${start}%`;
+        }).join(', ');
+      })()
+    : '#E8EEF0 0% 100%';
 
-  const journalStart = new Date(today);
-  if (journalPeriod === 'week') journalStart.setDate(journalStart.getDate() - 6);
-  else if (journalPeriod !== 'today') journalStart.setMonth(journalStart.getMonth() - Number(journalPeriod));
-  const journalStartStr = [journalStart.getFullYear(), String(journalStart.getMonth() + 1).padStart(2, '0'), String(journalStart.getDate()).padStart(2, '0')].join('-');
-  const visibleJournals = journals.filter(journal => journal.date >= journalStartStr && journal.date <= todayStr).sort((a,b) => b.date.localeCompare(a.date));
-  const journalPeriodLabel = journalPeriod === 'today' ? 'Jurnal hari ini' : journalPeriod === 'week' ? '1 pekan terakhir' : journalPeriod + ' bulan terakhir';
+  const prayerStats = useMemo(() => {
+    const levels: PrayerLevel[] = ['Lancar', 'Cukup Lancar', 'Perlu Bimbingan'];
+    return ['VII', 'VIII', 'IX'].map(level => {
+      const roster = activeStudents.filter(student => getClassLevel(student.className) === level);
+      const counts = levels.reduce((acc, item) => {
+        acc[item] = roster.filter(student => demoPrayerLevel(student.id) === item).length;
+        return acc;
+      }, {} as Record<PrayerLevel, number>);
+      const total = roster.length || 1;
+      return {
+        label: `Kelas ${level}`,
+        total: roster.length,
+        counts,
+        percentages: levels.reduce((acc, item) => {
+          acc[item] = Math.round(counts[item] / total * 100);
+          return acc;
+        }, {} as Record<PrayerLevel, number>),
+      };
+    });
+  }, [students]);
+
+  const problemBehaviors = behaviors
+    .filter(item => item.category !== 'Perilaku Positif' && (item.points ?? -1) < 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const recentStudentNotes = [...studentJournals]
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 4);
+  const absentStudents = Array.from(absentMap.values()).sort((a, b) => a.student.name.localeCompare(b.student.name));
+
+  const attendanceWarnings = activeStudents.map(student => {
+    const sessions = attendances.filter(record =>
+      record.academicYear === settings.activeAcademicYear &&
+      record.semester === settings.activeSemester &&
+      Object.prototype.hasOwnProperty.call(record.records || {}, student.id)
+    );
+    if (sessions.length < 5) return null;
+    const present = sessions.filter(record => record.records[student.id] === 'Hadir').length;
+    const rate = Math.round(present / sessions.length * 100);
+    return rate <= 75 ? { student, rate, sessions: sessions.length } : null;
+  }).filter((item): item is { student: typeof activeStudents[number]; rate: number; sessions: number } => item !== null)
+    .sort((a, b) => a.rate - b.rate);
+
+  const frequentCases = useMemo(() => {
+    const counts = new Map<string, { studentName: string; className: string; count: number; latest: string }>();
+    problemBehaviors.forEach(item => {
+      const previous = counts.get(item.studentId);
+      counts.set(item.studentId, {
+        studentName: item.studentName,
+        className: item.className,
+        count: (previous?.count || 0) + 1,
+        latest: !previous || item.date > previous.latest ? item.date : previous.latest,
+      });
+    });
+    return Array.from(counts.values()).sort((a, b) => b.count - a.count || b.latest.localeCompare(a.latest));
+  }, [behaviors]);
+
   return (
     <div className="min-h-screen w-full bg-white font-sans text-slate-800 antialiased">
       <section className="relative w-full bg-white pb-2 pt-1">
         <div className="mx-auto max-w-[1240px] px-4 pt-2 md:px-8">
           <div className="mb-4 md:hidden">
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
-            <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
           <div className="hidden min-h-[150px] items-center justify-between gap-6 py-5 md:flex">
             <div className="min-w-0">
@@ -78,55 +132,84 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               <p className="mt-2 whitespace-nowrap text-[15px] font-semibold text-slate-700">Sistem Informasi Manajemen &amp; Pembelajaran SMPI Al-Wasi</p>
               <p className="mt-1 whitespace-nowrap text-sm font-medium text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
             </div>
-            <img
-              src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`}
-              alt="Ilustrasi pembelajaran digital SIMPATIK"
-              className="h-32 w-44 shrink-0 object-contain lg:h-40 lg:w-56"
-              width="224"
-              height="160"
-              loading="eager"
-            />
+            <img src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-32 w-44 shrink-0 object-contain lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
           </div>
           <div className="mx-auto flex w-full max-w-[520px] items-center justify-center md:hidden">
-            <img
-              src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
-              alt="Ilustrasi pembelajaran digital SIMPATIK"
-              className="block h-auto max-h-56 w-full object-contain"
-              width="520"
-              height="360"
-              loading="eager"
-            />
+            <img src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="block h-auto max-h-56 w-full object-contain" width="520" height="360" loading="eager" />
           </div>
-          <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
-            <Search size={18} className="shrink-0 text-[#0B8F4D]"/>
-            <input value={homeSearch} onChange={event=>setHomeSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Search (siswa/layanan)" className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
-          </form>
         </div>
       </section>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="relative z-10 mx-auto max-w-[1240px] space-y-6 px-4 pt-3 pb-24 md:px-8 md:pb-6">
-        <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#E3F7EC] px-5 py-4">
-            <div><h2 className="text-lg font-extrabold text-[#076B3A]">Rekap Presensi Siswa</h2><p className="text-xs text-slate-500">{attendancePeriodLabel} · {settings.activeAcademicYear} · {settings.activeSemester}</p></div>
-            <select value={attendanceClass} onChange={e=>setAttendanceClass(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"><option>Semua Kelas</option>{classes.map(cls=><option key={cls} value={cls}>{cls}</option>)}</select>
-          </div>
-          <div className="space-y-4 p-4 md:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-semibold text-slate-600">Periode kehadiran</p><select value={attendancePeriod} onChange={e=>setAttendancePeriod(e.target.value as typeof attendancePeriod)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-[#076B3A]"><option value="today">Hari Ini</option><option value="week">1 Pekan</option><option value="1">1 Bulan</option><option value="2">2 Bulan</option><option value="3">3 Bulan</option><option value="4">4 Bulan</option><option value="semester">1 Semester</option></select></div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{[{label:'Hadir',value:totals.Hadir,color:'text-[#0B8F4D]',bg:'bg-[#E3F7EC]'},{label:'Sakit',value:totals.Sakit,color:'text-blue-700',bg:'bg-blue-50'},{label:'Izin',value:totals.Izin,color:'text-amber-700',bg:'bg-amber-50'},{label:'Alpa',value:totals.Alpa,color:'text-rose-700',bg:'bg-rose-50'}].map(item=><div key={item.label} className={'rounded-2xl p-4 '+item.bg}><p className={'text-xs font-bold '+item.color}>{item.label}</p><p className={'mt-1 text-2xl font-black '+item.color}>{item.value}</p></div>)}</div>
-            <div><div className="mb-2 flex items-center justify-between"><h3 className="font-bold text-slate-800">Siswa tidak hadir</h3><span className="text-xs text-slate-500">{absentStudents.length} catatan siswa</span></div>
-              {absentStudents.length ? <div className="max-h-72 overflow-auto rounded-xl border border-slate-100"><table className="w-full text-left text-sm"><thead className="sticky top-0 bg-slate-50 text-xs text-slate-500"><tr><th className="p-3">Nama siswa</th><th className="p-3">Kelas</th><th className="p-3">Status</th><th className="p-3 text-right">Jumlah</th></tr></thead><tbody className="divide-y divide-slate-100">{absentStudents.map(item=><tr key={item.student.id+item.status}><td className="p-3 font-semibold">{item.student.name}</td><td className="p-3">{item.student.className}</td><td className="p-3"><span className={'rounded-full px-2 py-1 text-xs font-bold '+(item.status==='Sakit'?'bg-blue-50 text-blue-700':item.status==='Izin'?'bg-amber-50 text-amber-700':'bg-rose-50 text-rose-700')}>{item.status}</span></td><td className="p-3 text-right font-bold">{item.count}×</td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">Belum ada catatan siswa sakit, izin, atau alpa pada periode ini.</p>}
+      <main className="relative z-10 mx-auto max-w-[1240px] space-y-5 px-4 pt-3 pb-24 md:px-8 md:pb-8">
+        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-3">
+          <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-sm">
+            <div className="bg-[#E3F7EC] px-5 py-4">
+              <h2 className="text-base font-extrabold text-[#076B3A]">Presensi Siswa Hari Ini</h2>
+              <p className="mt-1 text-xs text-slate-500">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
-          </div>
-        </section>
+            <div className="p-5">
+              <div className="flex items-center gap-5">
+                <div className="relative h-36 w-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${attendanceGradient})` }}>
+                  <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-white">
+                    <span className="text-3xl font-black text-slate-800">{attendanceTotal ? Math.round(attendanceTotals.Hadir / attendanceTotal * 100) : 0}%</span>
+                    <span className="text-[10px] font-semibold text-slate-500">Hadir</span>
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
+                  {Object.entries(attendanceTotals).map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="flex items-center gap-2 font-semibold text-slate-600"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: attendanceColors[status] }} />{status}</span>
+                      <span className="font-extrabold text-slate-800">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-slate-500">{attendanceTotal ? `${attendanceTotal} catatan presensi tercatat hari ini.` : 'Belum ada presensi yang disimpan untuk hari ini.'}</p>
+              <button type="button" onClick={() => setShowAbsent(value => !value)} className="mt-4 w-full rounded-xl border border-[#CDE8D7] bg-[#F5FBF7] px-3 py-2.5 text-xs font-bold text-[#087F49] hover:bg-[#E3F7EC]">{showAbsent ? 'Tutup daftar siswa' : 'Lihat siswa tidak hadir'} ({absentStudents.length})</button>
+              {showAbsent && <div className="mt-3 max-h-48 space-y-2 overflow-y-auto rounded-xl bg-slate-50 p-3">{absentStudents.length ? absentStudents.map(item => <div key={item.student.id} className="flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate font-semibold text-slate-700">{item.student.name}<span className="ml-1 font-normal text-slate-400">{item.student.className}</span></span><span className="shrink-0 font-bold" style={{ color: attendanceColors[item.status] }}>{item.status}</span></div>) : <p className="text-center text-xs text-slate-500">Belum ada siswa tidak hadir tercatat.</p>}</div>}
+              <button type="button" onClick={() => onNavigate('attendance')} className="mt-3 text-xs font-bold text-[#087F49] hover:underline">Buka presensi lengkap →</button>
+            </div>
+          </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-br from-[#0B8F4D] to-[#087640] px-5 py-4 text-white">
-            <div><h2 className="text-lg font-extrabold">Jurnal Pembelajaran</h2><p className="text-xs text-white/85">{journalPeriodLabel} · {visibleJournals.length} jurnal</p></div>
-            <select value={journalPeriod} onChange={e=>setJournalPeriod(e.target.value as typeof journalPeriod)} className="rounded-xl border border-white/30 bg-white px-3 py-2 text-sm font-semibold text-[#076B3A]"><option value="today">Hari Ini</option><option value="week">1 Pekan</option><option value="1">1 Bulan</option><option value="2">2 Bulan</option><option value="3">3 Bulan</option></select>
-          </div>
-          <div className="p-4 md:p-5">
-            {visibleJournals.length ? <div className="divide-y divide-slate-100">{visibleJournals.map(journal=><article key={journal.id} className="grid gap-2 py-4 first:pt-0 last:pb-0 sm:grid-cols-[130px_1fr]"><div><p className="text-sm font-bold text-[#076B3A]">{journal.date}</p><p className="text-xs text-slate-500">{journal.lessonHours}</p></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-slate-800">{journal.subject} · {journal.className}</h3><span className="rounded-full bg-[#E3F7EC] px-2 py-1 text-[10px] font-bold text-[#076B3A]">{journal.status}</span></div><p className="mt-1 text-sm font-semibold text-slate-700">{journal.topic}</p><p className="mt-1 text-sm text-slate-600">{journal.activity}</p><p className="mt-1 text-xs text-slate-400">{journal.teacherName}</p></div></article>)}</div> : <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">Belum ada jurnal pada periode ini.</p>}
+          <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-sm">
+            <div className="flex items-start justify-between gap-2 bg-[#F1F7FF] px-5 py-4">
+              <div><h2 className="text-base font-extrabold text-slate-800">Islamic Life Skill Siswa</h2><p className="mt-1 text-xs text-slate-500">Kemampuan membaca bacaan sholat</p></div>
+              <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-extrabold text-amber-800">DATA DEMO</span>
+            </div>
+            <div className="space-y-4 p-5">
+              {prayerStats.map(stat => <div key={stat.label}>
+                <div className="mb-2 flex items-center justify-between"><span className="text-xs font-bold text-slate-700">{stat.label}</span><span className="text-[10px] text-slate-400">{stat.total} siswa</span></div>
+                <div className="flex h-3 overflow-hidden rounded-full bg-slate-100">{(['Lancar','Cukup Lancar','Perlu Bimbingan'] as PrayerLevel[]).map(level => <div key={level} style={{ width: `${stat.percentages[level]}%`, backgroundColor: prayerColors[level] }} title={`${level}: ${stat.percentages[level]}%`} />)}</div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">{(['Lancar','Cukup Lancar','Perlu Bimbingan'] as PrayerLevel[]).map(level => <span key={level} className="text-[10px] font-medium text-slate-500">{level}: <b className="text-slate-700">{stat.percentages[level]}%</b></span>)}</div>
+              </div>)}
+              <div className="border-t border-slate-100 pt-3"><p className="text-[10px] leading-5 text-slate-400">Data simulasi berdasarkan daftar siswa aktif saat ini. Bukan hasil penilaian guru dan belum disimpan ke database.</p></div>
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-[24px] border border-[#F0DFD8] bg-white shadow-sm">
+            <div className="bg-[#FFF2ED] px-5 py-4">
+              <h2 className="text-base font-extrabold text-[#9A3412]">Jurnal Siswa</h2>
+              <p className="mt-1 text-xs text-slate-500">Catatan pelanggaran dan hal yang perlu diperhatikan</p>
+            </div>
+            <div className="space-y-3 p-5">
+              {problemBehaviors.length || recentStudentNotes.length ? <>
+                {problemBehaviors.slice(0, 4).map(item => <article key={item.id} className="rounded-xl border border-rose-100 bg-rose-50/60 p-3"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-xs font-extrabold text-slate-800">{item.studentName}</p><p className="mt-0.5 text-[10px] text-slate-500">{item.className} · {item.category}</p></div><span className="shrink-0 text-[10px] font-bold text-rose-700">{item.date}</span></div><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">{item.description}</p><p className="mt-1 text-[10px] font-semibold text-rose-700">{item.status}</p></article>)}
+                {recentStudentNotes.slice(0, Math.max(0, 4 - Math.min(problemBehaviors.length, 4))).map(item => <article key={item.id} className="rounded-xl border border-amber-100 bg-amber-50/60 p-3"><p className="text-xs font-extrabold text-slate-800">{item.studentName} <span className="font-medium text-slate-400">· {item.className}</span></p><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{item.note}</p><p className="mt-1 text-[10px] text-slate-400">{item.date} · Catatan guru</p></article>)}
+              </> : <p className="rounded-xl bg-slate-50 p-5 text-center text-xs text-slate-500">Belum ada catatan masalah atau pelanggaran siswa.</p>}
+              <button type="button" onClick={() => onNavigate('journal')} className="pt-1 text-xs font-bold text-[#087F49] hover:underline">Lihat jurnal siswa →</button>
+            </div>
+          </section>
+        </div>
+
+        <section className="overflow-hidden rounded-[24px] border border-amber-200 bg-white shadow-sm">
+          <div className="flex items-center gap-3 bg-amber-50 px-5 py-4"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700">!</span><div><h2 className="text-base font-extrabold text-amber-900">Peringatan &amp; Perhatian</h2><p className="text-xs text-amber-800/75">Pantauan kehadiran dan catatan kasus siswa</p></div></div>
+          <div className="grid gap-4 p-5 md:grid-cols-2">
+            <div><div className="mb-3 flex items-center justify-between gap-2"><h3 className="text-sm font-extrabold text-slate-800">Kehadiran mendekati 70%</h3><span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800">{attendanceWarnings.length} siswa</span></div>
+              {attendanceWarnings.length ? <div className="space-y-2">{attendanceWarnings.slice(0, 6).map(item => <div key={item.student.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 p-3"><div className="min-w-0"><p className="truncate text-xs font-bold text-slate-800">{item.student.name}</p><p className="text-[10px] text-slate-500">{item.student.className} · {item.sessions} pertemuan tercatat</p></div><span className="shrink-0 text-sm font-black text-rose-600">{item.rate}%</span></div>)}</div> : <p className="rounded-xl bg-slate-50 p-4 text-xs text-slate-500">Belum ada siswa dengan kehadiran 75% atau kurang. Peringatan dihitung setelah minimal 5 pertemuan tercatat.</p>}
+            </div>
+            <div><div className="mb-3 flex items-center justify-between gap-2"><h3 className="text-sm font-extrabold text-slate-800">Siswa dengan kasus terbanyak</h3><span className="rounded-full bg-rose-100 px-2 py-1 text-[10px] font-bold text-rose-700">{frequentCases.length} siswa</span></div>
+              {frequentCases.length ? <div className="space-y-2">{frequentCases.slice(0, 6).map(item => <div key={item.studentName+item.className} className="flex items-center justify-between gap-3 rounded-xl border border-rose-100 p-3"><div className="min-w-0"><p className="truncate text-xs font-bold text-slate-800">{item.studentName}</p><p className="text-[10px] text-slate-500">{item.className} · Terakhir {item.latest}</p></div><span className="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-extrabold text-rose-700">{item.count} kasus</span></div>)}</div> : <p className="rounded-xl bg-slate-50 p-4 text-xs text-slate-500">Belum ada catatan pelanggaran siswa.</p>}
+            </div>
           </div>
         </section>
       </main>
