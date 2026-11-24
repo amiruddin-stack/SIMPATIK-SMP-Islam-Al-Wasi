@@ -72,76 +72,16 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <style>{`
-            .simpatik-hero {
-              --hero-dark: #076B3A;
-              --hero-mid: #0B8F4D;
-              --hero-light: #16A05A;
-              --hero-accent: #087640;
-              position: relative;
-              isolation: isolate;
-              width: 100%;
-              max-width: 960px;
-              aspect-ratio: 960 / 340;
-              min-height: 190px;
-              margin: 0 auto;
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              gap: 12px;
-              overflow: hidden;
-              border-radius: 36px;
-              border: 1px solid rgba(255,255,255,.2);
-              padding: 20px 24px;
-              background: linear-gradient(120deg, var(--hero-mid) 0%, var(--hero-light) 60%, var(--hero-mid) 100%);
-              box-shadow: 0 14px 30px rgba(0,0,0,.18);
-              text-align: left;
-            }
-            .simpatik-hero-waves {
-              position: absolute;
-              inset: 0;
-              z-index: 0;
-              width: 100%;
-              height: 100%;
-              display: block;
-            }
-            @media (max-width: 700px) {
-              .simpatik-hero { border-radius: 24px; padding: 16px; }
-            }
-          `}</style>
-          <div className="simpatik-hero">
-            <svg className="simpatik-hero-waves" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <defs>
-                <pattern id="simpatik-hero-stripes" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
-                  <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(255,255,255,.14)" strokeWidth="2" />
-                </pattern>
-                <pattern id="simpatik-hero-stripes-dark" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
-                  <line x1="0" y1="0" x2="0" y2="20" stroke="rgba(0,0,0,.12)" strokeWidth="2" />
-                </pattern>
-              </defs>
-              <path d="M0,0 H600 C560,70 480,130 380,120 C250,110 120,170 0,230 Z" fill="var(--hero-light)" opacity=".85" />
-              <path d="M600,0 H1000 V300 C920,262 860,250 790,262 C700,274 650,190 600,120 C585,80 596,40 600,0 Z" fill="var(--hero-accent)" opacity=".45" />
-              <path d="M0,230 C120,190 240,230 330,300 C420,370 520,380 600,330 L0,330 Z" fill="var(--hero-accent)" opacity=".35" />
-              <path d="M0,300 C120,230 260,290 400,330 C560,375 700,345 820,280 C900,236 960,236 1000,256 V560 H0 Z" fill="var(--hero-light)" opacity=".85" />
-              <path d="M0,420 C110,390 220,440 300,510 C340,545 370,560 400,560 H0 Z" fill="var(--hero-accent)" opacity=".5" />
-              <path d="M430,560 C480,510 600,500 700,540 C722,550 732,556 740,560 Z" fill="var(--hero-light)" opacity=".7" />
-              <path d="M720,560 C760,500 860,470 960,490 C1000,500 1000,520 1000,560 Z" fill="var(--hero-light)" opacity=".85" />
-              <path d="M1000,420 C930,450 900,510 880,560 H1000 Z" fill="var(--hero-mid)" opacity=".6" />
-              <path d="M780,40 H1000 V250 C940,232 880,200 820,160 C790,130 780,80 780,40 Z" fill="url(#simpatik-hero-stripes)" />
-              <path d="M900,330 C980,300 1000,300 1000,300 V420 C950,430 900,410 880,380 Z" fill="url(#simpatik-hero-stripes)" opacity=".8" />
-              <path d="M90,600 C100,560 130,470 170,440 C200,420 230,470 260,540 C270,570 270,600 260,600 Z" fill="url(#simpatik-hero-stripes-dark)" />
-            </svg>
-            <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-[10px] font-bold italic tracking-[0.12em] text-white/90 sm:text-xs lg:text-sm">Welcome!</p>
-              <h1 className="mt-1 text-[clamp(20px,4.2vw,48px)] font-black leading-tight tracking-tight text-white drop-shadow-sm">Simpatik for Teachers</h1>
-              <div className="mt-2 space-y-1 text-[clamp(9px,1.45vw,16px)] font-semibold leading-tight tracking-tight text-white">
-                <p>Sistem Informasi Manajemen &amp; Pembelajaran Al-Wasi'</p>
-                <p>yang Terpadu, Interaktif dan Kolaboratif</p>
-              </div>
-            </div>
-            <div className="relative z-10 flex w-[64px] shrink-0 items-center justify-center sm:w-[104px] md:w-[132px] lg:w-[180px]">
-              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo sekolah SMP Islam Al-Wasi’" className="h-full w-full object-contain" loading="eager" />
-            </div>
+          <div className="mx-auto w-full max-w-[960px] overflow-hidden rounded-[36px] shadow-[0_14px_30px_rgba(0,0,0,.18)]">
+            <img
+              src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
+              alt="SIMPATIK for Teachers"
+              className="block h-auto w-full"
+              width="960"
+              height="354"
+              loading="eager"
+              fetchPriority="high"
+            />
           </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
             <Search size={18} className="shrink-0 text-[#0B8F4D]"/>
