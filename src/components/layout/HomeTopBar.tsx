@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Bell, LogOut, Menu, RefreshCw, Search, X, Users } from 'lucide-react';
+import { Bell, LogOut, Menu, RefreshCw, Search, X, Users, GraduationCap, BookOpen, Layers, ClipboardList } from 'lucide-react';
 import { NavTab } from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -10,78 +10,122 @@ interface HomeTopBarProps {
   onOpenMore: () => void;
 }
 
-const searchRoutes: { words: string[]; tab: NavTab; label: string; description: string }[] = [
-  { words: ['presensi', 'absen', 'kehadiran'], tab: 'attendance', label: 'Presensi Siswa', description: 'Kelola dan lihat kehadiran siswa' },
-  { words: ['jurnal'], tab: 'journal', label: 'Jurnal Siswa', description: 'Catatan kegiatan dan perilaku siswa' },
-  { words: ['ujian', 'soal', 'tes'], tab: 'exams', label: 'Ruang Ujian', description: 'Kelola ujian dan soal' },
-  { words: ['nilai', 'rapor'], tab: 'grades', label: 'Nilai dan Rapor', description: 'Lihat rekap nilai siswa' },
-  { words: ['siswa', 'guru', 'data', 'master'], tab: 'master', label: 'Data Siswa dan Guru', description: 'Buka data induk sekolah' },
-  { words: ['bk', 'konseling'], tab: 'counseling', label: 'Bimbingan Konseling', description: 'Layanan BK siswa' },
-  { words: ['kelas'], tab: 'classes', label: 'Data Kelas', description: 'Daftar kelas sekolah' },
-  { words: ['mapel', 'mata pelajaran'], tab: 'subjects', label: 'Mata Pelajaran', description: 'Daftar mata pelajaran' },
-  { words: ['pengaturan', 'profil'], tab: 'settings', label: 'Pengaturan dan Profil Sekolah', description: 'Informasi dan pengaturan sekolah' },
-  { words: ['ils', 'bacaan sholat', 'islamic life skill'], tab: 'ils', label: 'Islamic Life Skill', description: 'Pemantauan bacaan sholat siswa' },
+type SearchResult = {
+  id: string;
+  title: string;
+  detail: string;
+  category: string;
+  tab: NavTab;
+  icon: React.ElementType;
+};
+
+const serviceResults: SearchResult[] = [
+  { id: 'attendance', title: 'Presensi Siswa', detail: 'Kehadiran dan absensi siswa', category: 'Layanan', tab: 'attendance', icon: Users },
+  { id: 'journal', title: 'Jurnal Pembelajaran', detail: 'Kegiatan dan catatan pembelajaran', category: 'Layanan', tab: 'journal', icon: ClipboardList },
+  { id: 'assessment', title: 'Input Nilai Kelas', detail: 'Penilaian hasil belajar siswa', category: 'Layanan', tab: 'assessment', icon: BookOpen },
+  { id: 'grades', title: 'Rekap Nilai dan Rapor', detail: 'Nilai dan hasil belajar', category: 'Layanan', tab: 'grades', icon: ClipboardList },
+  { id: 'exams', title: 'Ruang Ujian', detail: 'Ujian, tes, dan bank soal', category: 'Layanan', tab: 'exams', icon: BookOpen },
+  { id: 'master', title: 'Data Guru dan Siswa', detail: 'Data induk warga sekolah', category: 'Layanan', tab: 'master', icon: Users },
+  { id: 'classes', title: 'Data Kelas', detail: 'Daftar kelas VII, VIII, dan IX', category: 'Layanan', tab: 'classes', icon: GraduationCap },
+  { id: 'subjects', title: 'Mata Pelajaran', detail: 'Daftar dan pengelolaan mapel', category: 'Layanan', tab: 'subjects', icon: BookOpen },
+  { id: 'settings', title: 'Pengaturan dan Profil Sekolah', detail: 'Identitas dan pengaturan sekolah', category: 'Layanan', tab: 'settings', icon: Layers },
+  { id: 'ils', title: 'Islamic Life Skill', detail: 'Pemantauan bacaan sholat siswa', category: 'Layanan', tab: 'ils', icon: BookOpen },
+  { id: 'homeroom', title: 'Guru Wali', detail: 'Layanan guru wali kelas', category: 'Layanan', tab: 'homeroom', icon: Users },
+  { id: 'schedule', title: 'Jadwal', detail: 'Jadwal kegiatan dan pembelajaran', category: 'Layanan', tab: 'schedule', icon: ClipboardList },
+  { id: 'reports', title: 'Laporan', detail: 'Laporan kegiatan sekolah', category: 'Layanan', tab: 'reports', icon: ClipboardList },
+  { id: 'more', title: 'Layanan Lainnya', detail: 'Layanan tambahan SIMPATIK', category: 'Layanan', tab: 'more', icon: Layers },
 ];
+
+const normalize = (value: unknown) => String(value ?? '').toLocaleLowerCase('id-ID').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+const matches = (query: string, values: unknown[]) => {
+  const terms = normalize(query).split(/\s+/).filter(Boolean);
+  const haystack = normalize(values.filter(Boolean).join(' '));
+  return terms.every(term => haystack.includes(term) || haystack.split(/\s+/).some(word => word.startsWith(term)));
+};
 
 export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, onOpenMore }) => {
   const { currentUser, firebaseUser, logout } = useAuth();
-  const { students } = useData();
+  const { students, teachers, classes, subjects, extracurriculars, journals, assessments, behaviors, counselings } = useData();
   const [search, setSearch] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const profileName = currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
-  const query = search.trim().toLocaleLowerCase('id-ID');
+  const query = normalize(search);
 
-  const results = useMemo(() => {
-    if (!query) return { studentMatches: [], serviceMatches: [] };
-    const studentMatches = students
-      .filter(student => student.name.toLocaleLowerCase('id-ID').includes(query) ||
-        student.className.toLocaleLowerCase('id-ID').includes(query) ||
-        student.nis?.toLocaleLowerCase('id-ID').includes(query) ||
-        student.nisn?.toLocaleLowerCase('id-ID').includes(query))
-      .slice(0, 6);
-    const serviceMatches = searchRoutes.filter(route =>
-      route.words.some(word => word.includes(query) || query.includes(word)) ||
-      route.label.toLocaleLowerCase('id-ID').includes(query)
-    ).slice(0, 5);
-    return { studentMatches, serviceMatches };
-  }, [query, students]);
+  const results = useMemo<SearchResult[]>(() => {
+    if (!query) return [];
+    const found: SearchResult[] = [];
+    const add = (item: SearchResult) => {
+      if (matches(query, [item.title, item.detail, item.category])) found.push(item);
+    };
+
+    serviceResults.forEach(add);
+    students.forEach(student => {
+      if (matches(query, [student.name, student.className, student.nis, student.nisn])) {
+        found.push({ id: 'student-' + student.id, title: student.name, detail: [student.className, student.status, student.nis ? 'NIS ' + student.nis : ''].filter(Boolean).join(' · '), category: 'Siswa', tab: 'master', icon: Users });
+      }
+    });
+    teachers.forEach(teacher => {
+      if (matches(query, [teacher.name, teacher.subject, teacher.role, teacher.nip, teacher.email, teacher.assignedClass])) {
+        found.push({ id: 'teacher-' + teacher.id, title: teacher.name, detail: [teacher.subject, teacher.assignedClass].filter(Boolean).join(' · ') || 'Data guru', category: 'Guru', tab: 'master', icon: GraduationCap });
+      }
+    });
+    subjects.forEach((subject, index) => {
+      if (matches(query, [subject])) found.push({ id: 'subject-' + index, title: subject, detail: 'Mata pelajaran', category: 'Mapel', tab: 'subjects', icon: BookOpen });
+    });
+    classes.forEach((className, index) => {
+      if (matches(query, [className])) found.push({ id: 'class-' + index, title: className, detail: 'Data kelas', category: 'Kelas', tab: 'classes', icon: GraduationCap });
+    });
+    extracurriculars.forEach((name, index) => {
+      if (matches(query, [name])) found.push({ id: 'extra-' + index, title: name, detail: 'Kegiatan ekstrakurikuler', category: 'Ekstrakurikuler', tab: 'more', icon: Layers });
+    });
+    journals.forEach(item => {
+      if (matches(query, [item.topic, item.activity, item.subject, item.className])) found.push({ id: 'journal-' + item.id, title: item.topic || item.activity, detail: [item.subject, item.className, 'Jurnal pembelajaran'].filter(Boolean).join(' · '), category: 'Jurnal', tab: 'journal', icon: ClipboardList });
+    });
+    assessments.forEach(item => {
+      if (matches(query, [item.subject, item.className, item.assessmentType, item.teacherName])) found.push({ id: 'assessment-' + item.id, title: item.subject, detail: [item.className, item.assessmentType, 'Penilaian'].filter(Boolean).join(' · '), category: 'Penilaian', tab: 'assessment', icon: BookOpen });
+    });
+    behaviors.forEach(item => {
+      if (matches(query, [item.studentName, item.className, item.category, item.description])) found.push({ id: 'behavior-' + item.id, title: item.studentName, detail: [item.className, item.category, item.description].filter(Boolean).join(' · '), category: 'Catatan perilaku', tab: 'journal', icon: Users });
+    });
+    counselings.forEach(item => {
+      if (matches(query, [item.studentName, item.className, item.serviceType, item.issueSummary])) found.push({ id: 'counseling-' + item.id, title: item.studentName, detail: [item.className, item.serviceType, item.issueSummary].filter(Boolean).join(' · '), category: 'Catatan BK', tab: 'more', icon: Users });
+    });
+    return found.slice(0, 12);
+  }, [query, students, teachers, classes, subjects, extracurriculars, journals, assessments, behaviors, counselings]);
 
   const openResult = (tab: NavTab) => {
     onNavigate(tab);
     setSearch('');
+    setSearchOpen(false);
     setMobileSearchOpen(false);
   };
 
+  const renderResults = () => (
+    <div className="mt-2 max-h-[min(60vh,420px)] space-y-1 overflow-y-auto">
+      {results.map(result => {
+        const Icon = result.icon;
+        return <button key={result.id} type="button" onClick={() => openResult(result.tab)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#F0FAF4]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><Icon size={17}/></span>
+          <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-800">{result.title}</span><span className="block truncate text-xs text-slate-500">{result.detail}</span></span>
+          <span className="shrink-0 text-[10px] font-bold text-[#087F49]">{result.category}</span>
+        </button>;
+      })}
+      {!results.length && <p className="px-3 py-5 text-center text-xs text-slate-500">Tidak ditemukan hasil yang cocok.</p>}
+    </div>
+  );
+
   const searchPanel = (mobile = false) => (
-    <div className={mobile ? 'absolute left-3 right-3 top-full z-50 mt-2 rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl' : 'absolute right-0 top-full z-50 mt-2 w-[min(420px,90vw)] rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl'}>
+    <div className={mobile ? 'absolute left-3 right-3 top-full z-50 mt-2 rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl' : 'absolute right-0 top-full z-50 mt-2 w-[min(440px,90vw)] rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl'}>
       <div className="flex items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-3 py-2.5">
         <Search size={17} className="shrink-0 text-[#087F49]"/>
-        <input autoFocus={mobile} value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
-          if (event.key === 'Escape') { setSearch(''); setMobileSearchOpen(false); }
-          if (event.key === 'Enter' && results.studentMatches.length) openResult('master');
-          else if (event.key === 'Enter' && results.serviceMatches.length) openResult(results.serviceMatches[0].tab);
-        }} type="search" aria-label="Cari siswa atau layanan" placeholder="Ketik nama siswa atau layanan..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
+        <input autoFocus={mobile} value={search} onFocus={() => setSearchOpen(true)} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
+          if (event.key === 'Escape') { setSearch(''); setSearchOpen(false); setMobileSearchOpen(false); }
+          if (event.key === 'Enter' && results.length) openResult(results[0].tab);
+        }} type="search" aria-label="Cari seluruh SIMPATIK" placeholder="Cari siswa, guru, mapel, kelas, layanan..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
         {search && <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="text-slate-400 hover:text-slate-700"><X size={16}/></button>}
       </div>
-      {!query ? <p className="px-2 py-3 text-xs text-slate-500">Cari berdasarkan nama siswa, kelas, NIS/NISN, atau nama layanan.</p> : (
-        <div className="mt-2 max-h-[min(55vh,360px)] space-y-1 overflow-y-auto">
-          {results.studentMatches.map(student => (
-            <button key={student.id} type="button" onClick={() => openResult('master')} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-[#F0FAF4]">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><Users size={17}/></span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-800">{student.name}</span><span className="block text-xs text-slate-500">{student.className} · {student.status}{student.nis ? ` · NIS ${student.nis}` : ''}</span></span>
-              <span className="text-[10px] font-bold text-[#087F49]">Siswa</span>
-            </button>
-          ))}
-          {results.serviceMatches.map(route => (
-            <button key={route.tab} type="button" onClick={() => openResult(route.tab)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-[#F0FAF4]">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600"><Search size={16}/></span>
-              <span className="min-w-0 flex-1"><span className="block text-sm font-bold text-slate-800">{route.label}</span><span className="block text-xs text-slate-500">{route.description}</span></span>
-              <span className="text-[10px] font-bold text-slate-400">Layanan</span>
-            </button>
-          ))}
-          {!results.studentMatches.length && !results.serviceMatches.length && <p className="px-3 py-5 text-center text-xs text-slate-500">Tidak ditemukan siswa atau layanan yang cocok.</p>}
-        </div>
-      )}
+      {!query ? <p className="px-2 py-3 text-xs text-slate-500">Ketik satu huruf atau lebih untuk melihat saran dari seluruh data dan layanan SIMPATIK.</p> : renderResults()}
     </div>
   );
 
@@ -93,9 +137,9 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
           <span className="max-w-[300px] truncate text-sm font-bold text-slate-800">{profileName}</span>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-          {activeTab === 'dashboard' && <div className="relative w-full max-w-[340px]">
-            <div className="flex h-10 w-full items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-3"><Search size={17} className="shrink-0 text-[#0B8F4D]"/><input value={search} onChange={event => setSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Cari siswa atau layanan..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/></div>
-            {searchPanel()}
+          {activeTab === 'dashboard' && <div className="relative w-full max-w-[390px]">
+            <div className="flex h-10 w-full items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-3"><Search size={17} className="shrink-0 text-[#0B8F4D]"/><input value={search} onFocus={() => setSearchOpen(true)} onChange={event => setSearch(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') { setSearch(''); setSearchOpen(false); } if (event.key === 'Enter' && results.length) openResult(results[0].tab); }} type="search" aria-label="Cari seluruh SIMPATIK" placeholder="Cari apa saja di SIMPATIK..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>{search && <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="text-slate-400"><X size={16}/></button>}</div>
+            {searchOpen && searchPanel()}
           </div>}
           <button type="button" onClick={() => window.alert('Belum ada notifikasi baru.')} aria-label="Notifikasi" title="Notifikasi" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]"><Bell size={19} strokeWidth={2}/></button>
           <button type="button" onClick={() => window.location.reload()} aria-label="Refresh halaman" title="Refresh" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]"><RefreshCw size={18} strokeWidth={2}/></button>
@@ -108,7 +152,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
           {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Foto profil" referrerPolicy="no-referrer" className="h-9 w-9 shrink-0 rounded-full border border-[#D5EADB] object-cover" /> : <div aria-label="Foto profil" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-sm font-bold text-[#087F49]">{profileName.trim().charAt(0).toUpperCase()}</div>}
           <span className="min-w-0 truncate text-xs font-bold text-slate-800 sm:text-sm">{profileName}</span>
         </div>
-        {activeTab === 'dashboard' && <button type="button" onClick={() => { setMobileSearchOpen(open => !open); setSearch(''); }} aria-label="Cari siswa atau layanan" title="Cari" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F8FCF9] text-[#087F49] transition hover:bg-[#E3F7EC]"><Search size={19} strokeWidth={2}/></button>}
+        {activeTab === 'dashboard' && <button type="button" onClick={() => { setMobileSearchOpen(open => !open); setSearch(''); }} aria-label="Cari seluruh SIMPATIK" title="Cari" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F8FCF9] text-[#087F49] transition hover:bg-[#E3F7EC]"><Search size={19} strokeWidth={2}/></button>}
         <button type="button" onClick={() => window.alert('Belum ada notifikasi baru.')} aria-label="Notifikasi" title="Notifikasi" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]"><Bell size={20} strokeWidth={2}/></button>
       </div>
       {activeTab === 'dashboard' && mobileSearchOpen && <div className="relative lg:hidden">{searchPanel(true)}</div>}
