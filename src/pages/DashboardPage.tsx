@@ -126,7 +126,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
           <div className="mb-4 md:hidden">
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
           </div>
-          <div className="hidden min-h-[150px] items-center justify-between gap-6 py-5 md:flex">
+          <div className="hidden min-h-[150px] items-center justify-between gap-6 py-5 lg:flex">
             <div className="min-w-0">
               <h1 className="text-5xl font-black tracking-tight text-[#087F49] lg:text-6xl">SIMPATIK</h1>
               <p className="mt-2 whitespace-nowrap text-[15px] font-semibold text-slate-700">Sistem Informasi Manajemen &amp; Pembelajaran SMPI Al-Wasi</p>
@@ -134,8 +134,16 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             </div>
             <img src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-32 w-44 shrink-0 object-contain lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
           </div>
+          <div className="mx-auto hidden min-h-[150px] w-full max-w-[900px] items-center justify-between gap-5 py-4 md:flex lg:hidden">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-4xl font-black tracking-tight text-[#087F49]">SIMPATIK</h1>
+              <p className="mt-2 text-sm font-semibold leading-snug text-slate-700">Sistem Informasi Manajemen &amp; Pembelajaran SMPI Al-Wasi</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
+            </div>
+            <img src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-28 w-40 shrink-0 object-contain" width="224" height="160" loading="eager" />
+          </div>
           <div className="mx-auto flex w-full max-w-[520px] items-center justify-center md:hidden">
-            <img src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="block h-auto max-h-56 w-full object-contain" width="520" height="360" loading="eager" />
+            <img src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="block h-auto max-h-52 w-full object-contain" width="520" height="360" loading="eager" />
           </div>
         </div>
       </section>
