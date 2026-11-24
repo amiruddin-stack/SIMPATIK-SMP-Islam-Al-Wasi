@@ -97,6 +97,16 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               loading="eager"
             />
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <button type="button" onClick={() => onNavigate('attendance')} className="flex min-h-[68px] items-center justify-center gap-2 rounded-2xl border border-[#CDE8D7] bg-[#F1FAF4] px-3 py-3 text-sm font-bold text-[#087F49] shadow-sm transition hover:bg-[#E3F7EC] active:scale-[0.99]">
+              <CalendarCheck size={20} className="shrink-0" />
+              <span>Isi Absensi</span>
+            </button>
+            <button type="button" onClick={() => onNavigate('journal')} className="flex min-h-[68px] items-center justify-center gap-2 rounded-2xl border border-[#CDE8D7] bg-[#F1FAF4] px-3 py-3 text-sm font-bold text-[#087F49] shadow-sm transition hover:bg-[#E3F7EC] active:scale-[0.99]">
+              <FileText size={20} className="shrink-0" />
+              <span>Tulis Jurnal</span>
+            </button>
+          </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
             <Search size={18} className="shrink-0 text-[#0B8F4D]"/>
             <input value={homeSearch} onChange={event=>setHomeSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Search (siswa/layanan)" className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
