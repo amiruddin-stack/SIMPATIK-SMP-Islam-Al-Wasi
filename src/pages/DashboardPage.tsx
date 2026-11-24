@@ -72,8 +72,20 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div className="hidden py-5 md:block">
-            <h1 className="text-5xl font-black tracking-tight text-[#087F49] lg:text-6xl">SIMPATIK</h1>
+          <div className="hidden min-h-[150px] items-center justify-between gap-6 py-5 md:flex">
+            <div className="min-w-0">
+              <h1 className="text-5xl font-black tracking-tight text-[#087F49] lg:text-6xl">SIMPATIK</h1>
+              <p className="mt-2 whitespace-nowrap text-[15px] font-semibold text-slate-700">Sistem Informasi Manajemen &amp; Pembelajaran SMPI Al-Wasi</p>
+              <p className="mt-1 whitespace-nowrap text-sm font-medium text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
+            </div>
+            <img
+              src={`${import.meta.env.BASE_URL}logo-alwasi.png`}
+              alt="Logo SMP Islam Al-Wasi"
+              className="h-24 w-24 shrink-0 object-contain lg:h-28 lg:w-28"
+              width="112"
+              height="112"
+              loading="eager"
+            />
           </div>
           <div className="mx-auto block w-full max-w-[960px] md:hidden">
             <img
