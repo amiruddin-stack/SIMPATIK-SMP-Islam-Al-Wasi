@@ -45,21 +45,20 @@ const academicItems: { tab: NavTab; label: string; icon: React.ElementType }[] =
 ];
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNavigate }) => {
-  const { currentUser, firebaseUser, logout } = useAuth();
   const itemClass = (tab: NavTab) =>
     `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
       activeTab === tab
-        ? 'bg-white text-[#045F4E] shadow-sm'
+        ? 'bg-white text-[#047857] shadow-sm'
         : 'text-white hover:bg-white/10 hover:text-white'
     }`;
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#03483B] bg-[#045F4E] px-4 pb-5 pt-3 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#047857] bg-[#059669] px-4 pb-5 pt-3 md:flex">
       <div className="mb-4 border-b border-white/20 px-2 pb-3">
         <p className="text-sm font-extrabold tracking-tight text-white">SMP Islam Al-Wasi'</p>
       </div>
 
-      <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+      <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {primaryItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
             <Icon size={18} strokeWidth={1.9} />{label}
@@ -80,12 +79,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
       </nav>
 
       <div className="mt-4 border-t border-white/20 pt-4">
-        {firebaseUser && !firebaseUser.isAnonymous && currentUser && (
-          <button type="button" onClick={() => void logout()} className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold text-white hover:bg-white/10 hover:text-white">
-            <LogOut size={15} />Keluar
-          </button>
-        )}
-        <p className="mt-3 px-2 text-[10px] leading-5 text-white/70">Qurani, Ramah Anak dan Berkarakter</p>
+        <p className="mt-1 px-2 text-[10px] leading-5 text-white/80">Qurani, Ramah Anak dan Berkarakter</p>
       </div>
     </aside>
   );
