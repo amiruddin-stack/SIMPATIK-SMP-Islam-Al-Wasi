@@ -30,6 +30,7 @@ const serviceResults: SearchResult[] = [
   { id: 'subjects', title: 'Mata Pelajaran', detail: 'Daftar dan pengelolaan mapel', category: 'Layanan', tab: 'subjects', icon: BookOpen },
   { id: 'settings', title: 'Pengaturan dan Profil Sekolah', detail: 'Identitas dan pengaturan sekolah', category: 'Layanan', tab: 'settings', icon: Layers },
   { id: 'ils', title: 'Islamic Life Skill', detail: 'Pemantauan bacaan sholat siswa', category: 'Layanan', tab: 'ils', icon: BookOpen },
+  { id: 'counseling', title: 'Bimbingan Konseling', detail: 'Layanan konseling dan pendampingan siswa', category: 'Layanan', tab: 'more', icon: Users },
   { id: 'homeroom', title: 'Guru Wali', detail: 'Layanan guru wali kelas', category: 'Layanan', tab: 'homeroom', icon: Users },
   { id: 'schedule', title: 'Jadwal', detail: 'Jadwal kegiatan dan pembelajaran', category: 'Layanan', tab: 'schedule', icon: ClipboardList },
   { id: 'reports', title: 'Laporan', detail: 'Laporan kegiatan sekolah', category: 'Layanan', tab: 'reports', icon: ClipboardList },
@@ -117,14 +118,14 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
 
   const searchPanel = (mobile = false) => (
     <div className={mobile ? 'absolute left-3 right-3 top-full z-50 mt-2 rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl' : 'absolute right-0 top-full z-50 mt-2 w-[min(440px,90vw)] rounded-2xl border border-[#D5EADB] bg-white p-3 shadow-xl'}>
-      <div className="flex items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-3 py-2.5">
+      {mobile && <div className="flex items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-3 py-2.5">
         <Search size={17} className="shrink-0 text-[#087F49]"/>
-        <input autoFocus={mobile} value={search} onFocus={() => setSearchOpen(true)} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
+        <input autoFocus value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
           if (event.key === 'Escape') { setSearch(''); setSearchOpen(false); setMobileSearchOpen(false); }
           if (event.key === 'Enter' && results.length) openResult(results[0].tab);
         }} type="search" aria-label="Cari seluruh SIMPATIK" placeholder="Cari siswa, guru, mapel, kelas, layanan..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
         {search && <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="text-slate-400 hover:text-slate-700"><X size={16}/></button>}
-      </div>
+      </div>}
       {!query ? <p className="px-2 py-3 text-xs text-slate-500">Ketik satu huruf atau lebih untuk melihat saran dari seluruh data dan layanan SIMPATIK.</p> : renderResults()}
     </div>
   );
