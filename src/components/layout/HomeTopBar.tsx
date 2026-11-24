@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Menu, RefreshCw } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import { NavTab } from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 
