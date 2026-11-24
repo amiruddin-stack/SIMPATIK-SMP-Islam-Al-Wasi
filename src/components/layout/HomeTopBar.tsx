@@ -27,12 +27,21 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
   const [search, setSearch] = useState('');
   const profileName = currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
 
-  const submitSearch = (event: React.FormEvent) => {
-    event.preventDefault();
-    const query = search.trim().toLocaleLowerCase('id-ID');
+  const navigateSearch = (value: string) => {
+    const query = value.trim().toLocaleLowerCase('id-ID');
     if (!query) return;
     const match = searchRoutes.find(([words]) => words.some(word => query.includes(word)));
     if (match) onNavigate(match[1]);
+  };
+
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    navigateSearch(search);
+  };
+
+  const openMobileSearch = () => {
+    const query = window.prompt('Cari siswa atau layanan');
+    if (query !== null) navigateSearch(query);
   };
 
   return (
@@ -51,7 +60,11 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
       </div>
       <div className="mx-auto flex min-h-[56px] w-full items-center gap-2 px-3 py-2 sm:px-5 lg:hidden">
         <button type="button" onClick={onOpenMore} aria-label="Buka sidebar navigasi" aria-haspopup="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F4FBF6] text-[#087F49] transition hover:bg-[#E3F7EC]"><Menu size={25} strokeWidth={2.2}/></button>
-        {activeTab === 'dashboard' && <form onSubmit={submitSearch} className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#D5EADB] bg-[#F8FCF9] px-2"><Search size={16} className="shrink-0 text-[#0B8F4D]"/><input value={search} onChange={event => setSearch(event.target.value)} type="search" aria-label="Cari siswa atau layanan" placeholder="Cari..." className="w-full min-w-0 bg-transparent text-xs text-slate-700 outline-none placeholder:text-slate-400"/></form>}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Foto profil" referrerPolicy="no-referrer" className="h-9 w-9 shrink-0 rounded-full border border-[#D5EADB] object-cover" /> : <div aria-label="Foto profil" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-sm font-bold text-[#087F49]">{profileName.trim().charAt(0).toUpperCase()}</div>}
+          <span className="min-w-0 truncate text-xs font-bold text-slate-800 sm:text-sm">{profileName}</span>
+        </div>
+        {activeTab === 'dashboard' && <button type="button" onClick={openMobileSearch} aria-label="Cari siswa atau layanan" title="Cari" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F8FCF9] text-[#087F49] transition hover:bg-[#E3F7EC]"><Search size={19} strokeWidth={2}/></button>}
         <button type="button" onClick={() => window.alert('Belum ada notifikasi baru.')} aria-label="Notifikasi" title="Notifikasi" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]"><Bell size={20} strokeWidth={2}/></button>
       </div>
     </header>
