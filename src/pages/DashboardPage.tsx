@@ -68,11 +68,14 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
     <div className="min-h-screen w-full bg-white font-sans text-slate-800 antialiased">
       <section className="relative w-full bg-white pb-2 pt-1">
         <div className="mx-auto max-w-[1240px] px-4 pt-2 md:px-8">
-          <div className="mb-4">
+          <div className="mb-4 md:hidden">
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div className="mx-auto block w-full max-w-[960px]">
+          <div className="hidden py-5 md:block">
+            <h1 className="text-5xl font-black tracking-tight text-[#087F49] lg:text-6xl">SIMPATIK</h1>
+          </div>
+          <div className="mx-auto block w-full max-w-[960px] md:hidden">
             <img
               src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
               alt="SIMPATIK for Teachers"
