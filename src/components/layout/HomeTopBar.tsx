@@ -8,6 +8,7 @@ interface HomeTopBarProps {
   activeTab: NavTab;
   onNavigate: (tab: NavTab) => void;
   onOpenMore: () => void;
+  onOpenStudentProfile: (studentId: string) => void;
 }
 
 type SearchResult = {
@@ -17,6 +18,7 @@ type SearchResult = {
   category: string;
   tab: NavTab;
   icon: React.ElementType;
+  studentId?: string;
 };
 
 const serviceResults: SearchResult[] = [
@@ -44,7 +46,7 @@ const matches = (query: string, values: unknown[]) => {
   return terms.every(term => haystack.split(/\s+/).some(word => word.startsWith(term)));
 };
 
-export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, onOpenMore }) => {
+export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, onOpenMore, onOpenStudentProfile }) => {
   const { currentUser, firebaseUser, logout } = useAuth();
   const { students, teachers, classes, subjects, extracurriculars, journals, assessments, behaviors, counselings } = useData();
   const [search, setSearch] = useState('');
@@ -63,7 +65,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
     serviceResults.forEach(add);
     students.forEach(student => {
       if (matches(query, [student.name, student.className, student.nis, student.nisn])) {
-        found.push({ id: 'student-' + student.id, title: student.name, detail: [student.className, student.status, student.nis ? 'NIS ' + student.nis : ''].filter(Boolean).join(' · '), category: 'Siswa', tab: 'master', icon: Users });
+        found.push({ id: 'student-' + student.id, title: student.name, detail: [student.className, student.status, student.nis ? 'NIS ' + student.nis : ''].filter(Boolean).join(' · '), category: 'Siswa', tab: 'master', icon: Users, studentId: student.id });
       }
     });
     teachers.forEach(teacher => {
@@ -95,8 +97,9 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
     return found.slice(0, 12);
   }, [query, students, teachers, classes, subjects, extracurriculars, journals, assessments, behaviors, counselings]);
 
-  const openResult = (tab: NavTab) => {
-    onNavigate(tab);
+  const openResult = (result: SearchResult) => {
+    if (result.studentId) onOpenStudentProfile(result.studentId);
+    else onNavigate(result.tab);
     setSearch('');
     setSearchOpen(false);
     setMobileSearchOpen(false);
@@ -106,7 +109,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
     <div className="mt-2 max-h-[min(60vh,420px)] space-y-1 overflow-y-auto">
       {results.map(result => {
         const Icon = result.icon;
-        return <button key={result.id} type="button" onClick={() => openResult(result.tab)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#F0FAF4]">
+        return <button key={result.id} type="button" onClick={() => openResult(result)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#F0FAF4]">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-[#087F49]"><Icon size={17}/></span>
           <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-800">{result.title}</span><span className="block truncate text-xs text-slate-500">{result.detail}</span></span>
           <span className="shrink-0 text-[10px] font-bold text-[#087F49]">{result.category}</span>
@@ -122,7 +125,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
         <Search size={17} className="shrink-0 text-[#087F49]"/>
         <input autoFocus value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => {
           if (event.key === 'Escape') { setSearch(''); setSearchOpen(false); setMobileSearchOpen(false); }
-          if (event.key === 'Enter' && results.length) openResult(results[0].tab);
+          if (event.key === 'Enter' && results.length) openResult(results[0]);
         }} type="search" aria-label="Cari seluruh SIMPATIK" placeholder="Cari siswa, guru, mapel, kelas, layanan..." className="w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"/>
         {search && <button type="button" onClick={() => setSearch('')} aria-label="Hapus pencarian" className="text-slate-400 hover:text-slate-700"><X size={16}/></button>}
       </div>}
