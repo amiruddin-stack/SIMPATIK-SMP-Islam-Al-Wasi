@@ -54,11 +54,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
     }`;
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#03483B] bg-[#045F4E] px-4 py-5 md:flex">
-      <div className="mb-7 border-b border-white/20 px-2 pb-5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/70">Guru</p>
-        <p className="mt-1 truncate text-base font-extrabold tracking-tight text-white">{currentUser?.displayName || currentUser?.email || 'Nama Guru'}</p>
-        <p className="mt-0.5 text-[10px] font-semibold text-white/70">{currentUser?.role === 'super_admin' ? 'Admin Utama' : 'Guru'}</p>
+    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#03483B] bg-[#045F4E] px-4 pb-5 pt-3 md:flex">
+      <div className="mb-4 border-b border-white/20 px-2 pb-3">
+        <p className="text-sm font-extrabold tracking-tight text-white">SMP Islam Al-Wasi'</p>
       </div>
 
       <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-1 overflow-y-auto">
@@ -67,7 +65,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
             <Icon size={18} strokeWidth={1.9} />{label}
           </button>
         ))}
-        <p className="px-3 pb-1 pt-6 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/70">Akademik</p>
+        <p className="px-3 pb-1 pt-4 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/70">Akademik</p>
         {academicItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
             <Icon size={18} strokeWidth={1.9} />{label}
