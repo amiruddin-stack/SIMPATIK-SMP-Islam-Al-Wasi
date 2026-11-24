@@ -46,41 +46,37 @@ const academicItems: { tab: NavTab; label: string; icon: React.ElementType }[] =
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNavigate }) => {
   const itemClass = (tab: NavTab) =>
-    `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-semibold transition-colors ${
+    `flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold leading-5 transition-colors ${
       activeTab === tab
         ? 'bg-white text-[#047857] shadow-sm'
         : 'text-white hover:bg-white/10 hover:text-white'
     }`;
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#047857] bg-[#059669] px-4 pb-5 pt-3 md:flex">
-      <div className="mb-4 border-b border-white/20 px-2 pb-3">
-        <p className="text-sm font-extrabold tracking-tight text-white">SMP Islam Al-Wasi'</p>
+    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#047857] bg-[#059669] px-3 pb-3 pt-2 md:flex">
+      <div className="mb-2 border-b border-white/20 px-2 pb-2">
+        <p className="text-xs font-extrabold tracking-tight text-white">SMP Islam Al-Wasi'</p>
       </div>
 
-      <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {primaryItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
-            <Icon size={18} strokeWidth={1.9} />{label}
+            <Icon size={16} strokeWidth={1.9} />{label}
           </button>
         ))}
-        <p className="px-3 pb-1 pt-4 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/70">Akademik</p>
+        <p className="px-2.5 pb-0.5 pt-2.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/70">Akademik</p>
         {academicItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
-            <Icon size={18} strokeWidth={1.9} />{label}
+            <Icon size={16} strokeWidth={1.9} />{label}
           </button>
         ))}
         <button type="button" onClick={() => onNavigate('ils')} className={itemClass('ils')}>
-          <BookOpen size={18} strokeWidth={1.9} />ILS
+          <BookOpen size={16} strokeWidth={1.9} />ILS
         </button>
         <button type="button" onClick={() => onNavigate('more')} className={itemClass('more')}>
-          <MoreHorizontal size={18} strokeWidth={1.9} />Layanan Lainnya
+          <MoreHorizontal size={16} strokeWidth={1.9} />Layanan Lainnya
         </button>
       </nav>
-
-      <div className="mt-4 border-t border-white/20 pt-4">
-        <p className="mt-1 px-2 text-[10px] leading-5 text-white/80">Qurani, Ramah Anak dan Berkarakter</p>
-      </div>
     </aside>
   );
 };
