@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, LogOut, Menu, RefreshCw } from 'lucide-react';
 import { NavTab } from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,34 +9,28 @@ interface HomeTopBarProps {
   onOpenMore: () => void;
 }
 
-const pageTitles: Partial<Record<NavTab, string>> = {
-  dashboard: 'Beranda',
-  attendance: 'Presensi Siswa',
-  journal: 'Jurnal Pembelajaran',
-  assessment: 'Input Nilai Kelas',
-  grades: 'Rekap Nilai',
-  exams: 'Ujian',
-  reports: 'Laporan',
-  settings: 'Profil',
-  classes: 'Data Kelas',
-  subjects: 'Mata Pelajaran',
-  master: 'Data Guru & Siswa',
-  homeroom: 'Guru Wali',
-  schedule: 'Jadwal',
-  ils: 'ILS',
-  more: 'Layanan Lainnya',
-  'google-form-exams': 'Ujian Form',
-};
-
-export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onOpenMore }) => {
-  const { currentUser, firebaseUser } = useAuth();
+export const HomeTopBar: React.FC<HomeTopBarProps> = ({ onOpenMore }) => {
+  const { currentUser, firebaseUser, logout } = useAuth();
   const profileName = currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#E1EEE6] bg-white/95 shadow-[0_2px_10px_rgba(15,70,40,0.04)] backdrop-blur">
       <div className="mx-auto hidden min-h-[82px] w-full items-center justify-between gap-4 px-7 md:flex">
-        <div className="ml-auto flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Foto profil" referrerPolicy="no-referrer" className="h-10 w-10 shrink-0 rounded-full border border-[#D5EADB] object-cover" /> : <div aria-label="Foto profil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-sm font-bold text-[#087F49]">{profileName.trim().charAt(0).toUpperCase()}</div>}
-          <span className="max-w-[280px] truncate text-sm font-bold text-slate-800">{profileName}</span>
+          <span className="max-w-[360px] truncate text-sm font-bold text-slate-800">{profileName}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={() => window.alert('Belum ada notifikasi baru.')} aria-label="Notifikasi" title="Notifikasi" className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]">
+            <Bell size={19} strokeWidth={2}/>
+          </button>
+          <button type="button" onClick={() => window.location.reload()} aria-label="Refresh halaman" title="Refresh" className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5EADB] bg-white text-[#087F49] transition hover:bg-[#F0FAF4]">
+            <RefreshCw size={18} strokeWidth={2}/>
+          </button>
+          <button type="button" onClick={() => void logout()} aria-label="Keluar dari akun" title="Keluar" className="flex h-10 items-center justify-center gap-2 rounded-xl border border-[#F1D8D8] bg-white px-3 text-sm font-semibold text-[#B42318] transition hover:bg-[#FFF5F5]">
+            <LogOut size={18} strokeWidth={2}/>
+            <span>Keluar</span>
+          </button>
         </div>
       </div>
       <div className="relative mx-auto flex min-h-[56px] w-full items-center justify-between px-4 py-2 md:hidden">
