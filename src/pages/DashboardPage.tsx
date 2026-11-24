@@ -79,7 +79,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               <p className="mt-1 whitespace-nowrap text-sm font-medium text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
             </div>
             <img
-              src={`${import.meta.env.BASE_URL}images/simpatik-hero-vector.svg`}
+              src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`}
               alt="Ilustrasi pembelajaran digital SIMPATIK"
               className="h-32 w-44 shrink-0 object-contain lg:h-40 lg:w-56"
               width="224"
@@ -88,8 +88,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             />
           </div>
           <div className="mx-auto flex w-full max-w-[520px] items-center justify-center md:hidden">
-            <img
-              src={`${import.meta.env.BASE_URL}images/simpatik-hero-vector.svg`}
+            <isrc={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}hero-vector.svg`}
               alt="Ilustrasi pembelajaran digital SIMPATIK"
               className="block h-auto max-h-56 w-full object-contain"
               width="520"
