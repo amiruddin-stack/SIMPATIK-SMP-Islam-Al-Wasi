@@ -1,10 +1,13 @@
 import React from 'react';
 import { BookOpen, Building2, GraduationCap, HeartHandshake, MapPin, Phone, School, Sparkles, Target } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { initialSchoolSetting } from '../data/initialData';
 
 export const SettingsPage: React.FC = () => {
   const { settings, extracurriculars } = useData();
   const schoolName = settings.schoolName || 'SMP Islam Al-Wasi’';
+  const schoolNpsn = initialSchoolSetting.npsn;
+  const schoolPrincipal = initialSchoolSetting.principal;
   const address = [settings.address, settings.subdistrict, settings.district, settings.province, settings.postalCode]
     .filter(Boolean)
     .join(', ');
@@ -38,12 +41,12 @@ export const SettingsPage: React.FC = () => {
           </div>
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><Building2 size={19}/></span>
-            <div><p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">NPSN</p><p className="mt-1 text-sm font-semibold text-slate-700">{settings.npsn || 'Belum tersedia'}</p></div>
+            <div><p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">NPSN</p><p className="mt-1 text-sm font-semibold text-slate-700">{schoolNpsn}</p></div>
           </div>
-          {settings.principal && (
+          {schoolPrincipal && (
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E3F7EC] text-[#087F49]"><GraduationCap size={19}/></span>
-              <div><p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Kepala Sekolah</p><p className="mt-1 text-sm font-semibold text-slate-700">{settings.principal}</p></div>
+              <div><p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Kepala Sekolah</p><p className="mt-1 text-sm font-semibold text-slate-700">{schoolPrincipal}</p></div>
             </div>
           )}
           {(settings.phone || settings.email) && (
