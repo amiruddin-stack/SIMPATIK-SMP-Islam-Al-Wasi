@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bell, Menu, RefreshCw } from 'lucide-react';
 import { NavTab } from './Sidebar';
+import { useAuth } from '../../context/AuthContext';
 
 interface HomeTopBarProps {
   activeTab: NavTab;
@@ -28,24 +29,14 @@ const pageTitles: Partial<Record<NavTab, string>> = {
 };
 
 export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onOpenMore }) => {
+  const { currentUser, firebaseUser } = useAuth();
+  const profileName = currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#E1EEE6] bg-white/95 shadow-[0_2px_10px_rgba(15,70,40,0.04)] backdrop-blur">
       <div className="mx-auto hidden min-h-[82px] w-full items-center justify-between gap-4 px-7 md:flex">
-        <div className="flex min-w-0 items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi'" className="h-12 w-12 shrink-0 rounded-xl object-contain" />
-          <div className="min-w-0 leading-tight">
-            <p className="text-[21px] font-black tracking-tight text-[#087F49]">SIMPATIK</p>
-            <p className="text-[11px] font-semibold text-slate-700">Sistem Informasi Manajemen dan Pembelajaran AL-Wasi'</p>
-            <p className="text-[10px] font-medium tracking-wide text-slate-500">Terpadu, Interaktif dan Kolaboratif</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button type="button" onClick={() => window.location.reload()} aria-label="Refresh halaman" title="Refresh" className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5EADB] bg-[#F4FBF6] text-[#087F49] transition hover:bg-[#E3F7EC]">
-            <RefreshCw size={19} strokeWidth={2.2}/>
-          </button>
-          <span aria-label="Notifikasi" title="Notifikasi" className="flex h-10 w-10 items-center justify-center rounded-xl text-[#087F49]">
-            <Bell size={21} strokeWidth={2}/>
-          </span>
+        <div className="ml-auto flex min-w-0 items-center gap-3">
+          {firebaseUser?.photoURL ? <img src={firebaseUser.photoURL} alt="Foto profil" referrerPolicy="no-referrer" className="h-10 w-10 shrink-0 rounded-full border border-[#D5EADB] object-cover" /> : <div aria-label="Foto profil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E3F7EC] text-sm font-bold text-[#087F49]">{profileName.trim().charAt(0).toUpperCase()}</div>}
+          <span className="max-w-[280px] truncate text-sm font-bold text-slate-800">{profileName}</span>
         </div>
       </div>
       <div className="relative mx-auto flex min-h-[56px] w-full items-center justify-between px-4 py-2 md:hidden">
