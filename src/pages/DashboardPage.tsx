@@ -72,7 +72,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="text-sm font-semibold text-slate-500">Assalamu’alaikum</p>
             <h2 className="mt-0.5 text-lg font-extrabold text-slate-900">{currentUser?.displayName || currentUser?.email || 'Nama Pengguna'}</h2>
           </div>
-          <div className="mx-auto w-full max-w-[960px] overflow-hidden rounded-[36px] shadow-[0_14px_30px_rgba(0,0,0,.18)]">
+          <div className="mx-auto w-full max-w-[960px]">
             <img
               src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
               alt="SIMPATIK for Teachers"
