@@ -41,7 +41,7 @@ const normalize = (value: unknown) => String(value ?? '').toLocaleLowerCase('id-
 const matches = (query: string, values: unknown[]) => {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
   const haystack = normalize(values.filter(Boolean).join(' '));
-  return terms.every(term => haystack.includes(term) || haystack.split(/\s+/).some(word => word.startsWith(term)));
+  return terms.every(term => haystack.split(/\s+/).some(word => word.startsWith(term)));
 };
 
 export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, onOpenMore }) => {
