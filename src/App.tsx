@@ -22,6 +22,7 @@ import { GoogleFormExamPage } from './pages/GoogleFormExamPage';
 import { LoginPage } from './pages/LoginPage';
 import { MorePage } from './pages/MorePage';
 import { StudentPortalPage } from './pages/StudentPortalPage';
+import { StudentProfilePage } from './pages/StudentProfilePage';
 
 function ComingSoonPage({ title, description }: { title: string; description: string }) {
   return (
@@ -38,6 +39,7 @@ function ComingSoonPage({ title, description }: { title: string; description: st
 function AppContent() {
   const { currentUser, loading } = useAuth();
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
+  const [selectedStudentProfileId, setSelectedStudentProfileId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [attendanceHasUnsaved, setAttendanceHasUnsaved] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<NavTab | null>(null);
@@ -126,8 +128,8 @@ function AppContent() {
       case 'journal': return <JournalPage />;
       case 'assessment': return <AssessmentPage />;
       case 'grades': return <GradeSummaryPage />;
-      case 'master': return <MasterDataPage />;
-      case 'classes': return <MasterDataPage initialSubTab="kelas" />;
+      case 'master': return <MasterDataPage onOpenStudentProfile={setSelectedStudentProfileId} />;
+      case 'classes': return <MasterDataPage initialSubTab="kelas" onOpenStudentProfile={setSelectedStudentProfileId} />;
       case 'subjects': return <MasterDataPage initialSubTab="mapel" />;
       case 'reports': return <ReportsPage />;
       case 'settings': return <SettingsPage />;
@@ -146,11 +148,11 @@ function AppContent() {
       <div className="flex min-h-screen w-full">
         <DesktopSidebar activeTab={activeTab} onNavigate={setActiveTab} />
         <div className="min-w-0 flex-1">
-          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMobileSidebarOpen(open => !open)} />
+          <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMobileSidebarOpen(open => !open)} onOpenStudentProfile={setSelectedStudentProfileId} />
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
               {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
-              {renderCurrentPage()}
+              {selectedStudentProfileId ? <StudentProfilePage studentId={selectedStudentProfileId} onBack={() => setSelectedStudentProfileId(null)} /> : renderCurrentPage()}
             </div>
           </main>
         </div>
