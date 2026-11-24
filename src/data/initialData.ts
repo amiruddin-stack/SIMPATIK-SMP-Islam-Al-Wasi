@@ -13,7 +13,7 @@ import {
 export const initialSchoolSetting: SchoolSetting = {
   id: 'main-setting',
   schoolName: 'SMP Islam Al-Wasi’',
-  npsn: '69987123',
+  npsn: '40300223',
   address: 'Jl. Poros Maros - Pangkep Km. 24, Kec. Maros Baru',
   subdistrict: 'Maros Baru',
   district: 'Kabupaten Maros',
@@ -22,7 +22,7 @@ export const initialSchoolSetting: SchoolSetting = {
   phone: '(0411) 3781290',
   email: 'info@smpialwasi-maros.sch.id',
   website: 'https://smpialwasi-maros.sch.id',
-  principal: 'H. Amiruddin, S.Pd.I., M.Pd.',
+  principal: 'Yuli Purwani, S. Pi.',
   principalNip: '197805142005011003',
   activeAcademicYear: '2026/2027',
   activeSemester: 'Ganjil',
