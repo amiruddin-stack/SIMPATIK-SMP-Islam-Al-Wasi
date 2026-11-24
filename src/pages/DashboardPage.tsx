@@ -87,15 +87,14 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
               loading="eager"
             />
           </div>
-          <div className="mx-auto block w-full max-w-[960px] md:hidden">
+          <div className="mx-auto flex w-full max-w-[520px] items-center justify-center md:hidden">
             <img
-              src={`${import.meta.env.BASE_URL}images/HomeA_20261124_090213_0000.png`}
-              alt="SIMPATIK for Teachers"
-              className="block h-auto w-full"
-              width="960"
-              height="354"
+              src={`${import.meta.env.BASE_URL}images/simpatik-hero-vector.svg`}
+              alt="Ilustrasi pembelajaran digital SIMPATIK"
+              className="block h-auto max-h-56 w-full object-contain"
+              width="520"
+              height="360"
               loading="eager"
-              fetchPriority="high"
             />
           </div>
           <form onSubmit={event => { event.preventDefault(); const query=homeSearch.trim().toLowerCase(); if (!query) return; const keys:[string[],string][]=[ [['presensi','absen','kehadiran'],'attendance'],[['jurnal'],'journal'],[['ujian','soal','tes'],'exams'],[['nilai','rapor'],'grades'],[['siswa','guru','data'],'master'],[['bk','konseling'],'counseling'],[['kelas'],'classes'],[['mapel','mata pelajaran'],'subjects'],[['pengaturan','profil'],'settings'] ]; const found=keys.find(([words])=>words.some(word=>query.includes(word))); if(found) onNavigate(found[1] as NavTab); }} className="mt-4 flex h-11 items-center gap-2 rounded-full border border-[#D5EADB] bg-[#F8FCF9] px-4 shadow-sm">
