@@ -48,14 +48,14 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
   const itemClass = (tab: NavTab) =>
     `flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold leading-5 transition-colors ${
       activeTab === tab
-        ? 'bg-white text-[#047857] shadow-sm'
-        : 'text-white hover:bg-white/10 hover:text-white'
+        ? 'bg-[#E8F7EF] text-[#047857] shadow-sm'
+        : 'text-slate-600 hover:bg-[#F2FAF5] hover:text-[#076B3A]'
     }`;
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-[#047857] bg-[#059669] px-3 pb-3 pt-2 md:flex">
-      <div className="mb-2 border-b border-white/20 px-2 pb-2">
-        <p className="text-xs font-extrabold tracking-tight text-white">SMP Islam Al-Wasi'</p>
+    <aside className="sticky top-0 hidden h-screen w-[258px] shrink-0 flex-col border-r border-slate-200 bg-white px-3 pb-3 pt-2 md:flex">
+      <div className="mb-2 border-b border-slate-200 px-2 pb-2">
+        <p className="text-xs font-extrabold tracking-tight text-slate-900">SMP Islam Al-Wasi'</p>
       </div>
 
       <nav aria-label="Navigasi utama" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -64,7 +64,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
             <Icon size={16} strokeWidth={1.9} />{label}
           </button>
         ))}
-        <p className="px-2.5 pb-0.5 pt-2.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-white/70">Akademik</p>
+        <p className="px-2.5 pb-0.5 pt-2.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Akademik</p>
         {academicItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
             <Icon size={16} strokeWidth={1.9} />{label}
