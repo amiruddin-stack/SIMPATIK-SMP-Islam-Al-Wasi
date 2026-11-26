@@ -146,7 +146,10 @@ export const StudentGoogleFormExams: React.FC<{
         } else {
           await setDoc(controlRef, { examId: selected.id, studentId, ownerUid: uid, blocked: false, resetVersion: 0, updatedAt: new Date().toISOString() });
         }
-      } catch (error) { console.warn('Kontrol peserta belum dapat diklaim:', error); }
+      } catch (error) {
+        try { await updateDoc(controlRef, { ownerUid: uid }); }
+        catch (claimError) { console.warn('Kontrol peserta belum dapat diklaim:', claimError || error); }
+      }
     };
     void claimControl();
     const stop = onSnapshot(controlRef, snapshot => {
