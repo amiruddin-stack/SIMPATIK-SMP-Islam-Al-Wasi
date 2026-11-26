@@ -130,16 +130,15 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
             <p className="mt-1 text-[10px] font-semibold leading-snug text-slate-700 sm:mt-2 sm:text-xs md:text-sm lg:text-[15px]">Sistem Informasi Manajemen &amp; Pembelajaran SMPI Al-Wasi</p>
             <p className="mt-1 text-[9px] font-medium text-slate-500 sm:text-[11px] md:text-xs lg:text-sm">Terpadu, Interaktif dan Kolaboratif</p>
           </div>
-          <img src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-20 w-28 shrink-0 object-contain sm:h-24 sm:w-36 md:h-32 md:w-44 lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
+          <div className="flex shrink-0 flex-col items-end gap-1 sm:gap-2">
+            <div className="max-w-[150px] truncate rounded-full border border-[#D5EADB] bg-[#F4FBF6] px-2.5 py-1 text-[10px] font-bold text-[#087F49] sm:max-w-[220px] sm:px-3 sm:text-xs md:max-w-[260px]">{currentUser?.fullName || currentUser?.displayName || 'Guru'}</div>
+            <img src={\`\${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png\`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-16 w-24 object-contain sm:h-24 sm:w-36 md:h-32 md:w-44 lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
+          </div>
         </div>
       </section>
 
-      <main className="relative z-10 mx-auto max-w-[1240px] space-y-5 px-4 pt-3 pb-24 md:px-8 md:pb-8">
-        <section className="rounded-2xl border border-[#D5EADB] bg-gradient-to-r from-[#E8F7EF] via-white to-[#F4FBF6] px-4 py-4 sm:px-6">
-          <p className="text-xs font-semibold text-[#087F49]">Assalamu’alaikum,</p>
-          <h2 className="mt-1 text-xl font-black text-slate-800 sm:text-2xl">{currentUser?.nickname || currentUser?.fullName || currentUser?.displayName || 'Guru'} <span className="text-[#087F49]">👋</span></h2>
-          <p className="mt-1 text-xs text-slate-500">Selamat datang kembali di SIMPATIK.</p>
-        </section>
+<main className="relative z-10 mx-auto max-w-[1240px] space-y-5 px-4 pt-3 pb-24 md:px-8 md:pb-8">
+        
         <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
           <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-sm">
             <div className="bg-[#E3F7EC] px-5 py-4">
