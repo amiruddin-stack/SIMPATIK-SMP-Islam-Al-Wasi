@@ -132,7 +132,7 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1 sm:gap-2">
             <div className="max-w-[150px] truncate rounded-full border border-[#D5EADB] bg-[#F4FBF6] px-2.5 py-1 text-[10px] font-bold text-[#087F49] sm:max-w-[220px] sm:px-3 sm:text-xs md:max-w-[260px]">{currentUser?.fullName || currentUser?.displayName || 'Guru'}</div>
-            <img src={\`\${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png\`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-16 w-24 object-contain sm:h-24 sm:w-36 md:h-32 md:w-44 lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
+            <img src={`${import.meta.env.BASE_URL}images/file_00000000eb048211946c4f7244fe33ac.png`} alt="Ilustrasi pembelajaran digital SIMPATIK" className="h-16 w-24 object-contain sm:h-24 sm:w-36 md:h-32 md:w-44 lg:h-40 lg:w-56" width="224" height="160" loading="eager" />
           </div>
         </div>
       </section>
