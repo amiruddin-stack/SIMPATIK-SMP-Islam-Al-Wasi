@@ -226,17 +226,19 @@ service cloud.firestore {
       allow list: if isGuruOrAdmin();
       allow create: if isGuruOrAdmin()
         || (signedIn()
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
           && request.resource.data.ownerUid == request.auth.uid
           && request.resource.data.blocked == false
           && request.resource.data.resetVersion == 0
-          && request.resource.data.keys().hasOnly(['examId', 'studentId', 'ownerUid', 'blocked', 'resetVersion', 'updatedAt']));
+          && request.resource.data.keys().hasOnly(['examId', 'studentId', 'ownerUid', 'blocked', 'resetVersion', 'updatedAt'])
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous'
+            || (isStudent() && request.resource.data.studentId == request.auth.token.studentId)));
       allow update: if isGuruOrAdmin()
         || (signedIn()
-          && request.auth.token.firebase.sign_in_provider == 'anonymous'
           && (!('ownerUid' in resource.data) || resource.data.ownerUid == null)
           && request.resource.data.ownerUid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid'])
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous'
+            || (isStudent() && resource.data.studentId == request.auth.token.studentId)));
       allow delete: if isAdmin();
     }
 
