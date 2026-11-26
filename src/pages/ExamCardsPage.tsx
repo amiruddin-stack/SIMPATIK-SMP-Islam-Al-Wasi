@@ -101,7 +101,7 @@ export const ExamCardsPage: React.FC = () => {
             padding: 5mm !important;
             overflow: hidden !important;
           }
-          .exam-card-preview { break-inside: auto !important; }
+          .exam-card-preview { break-inside: auto !important; }\n          .exam-card:nth-child(8n+1):not(:first-child) { break-before: page !important; page-break-before: always !important; }
         }
       `}</style>
     </div>
