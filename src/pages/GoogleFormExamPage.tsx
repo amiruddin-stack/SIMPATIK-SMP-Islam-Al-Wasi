@@ -96,6 +96,7 @@ export const GoogleFormExamPage: React.FC = () => {
   const [participantStudents, setParticipantStudents] = useState<ParticipantStudent[]>([]);
   const [participantControls, setParticipantControls] = useState<ExamParticipantControl[]>([]);
   const [participantSearch, setParticipantSearch] = useState('');
+  const [pendingParticipantControlId, setPendingParticipantControlId] = useState('');
 
   const canManage = Boolean(firebaseUser && !firebaseUser.isAnonymous && currentUser &&
     ['super_admin', 'kepala_sekolah', 'operator', 'guru', 'wali_kelas'].includes(currentUser.role || ''));
@@ -154,6 +155,9 @@ export const GoogleFormExamPage: React.FC = () => {
     const control = participantControl(exam.id, student.id);
     const blocked = !(control?.blocked);
     const controlId = exam.id + '_' + student.id;
+    if (pendingParticipantControlId) return;
+    setPendingParticipantControlId(controlId);
+    setNotice('');
     try {
       await setDoc(doc(db, 'googleFormExamParticipants', controlId), {
         examId: exam.id, studentId: student.id, studentName: student.name || '',
@@ -161,10 +165,15 @@ export const GoogleFormExamPage: React.FC = () => {
         blocked, resetVersion: control?.resetVersion || 0, updatedAt: new Date().toISOString(),
         updatedBy: firebaseUser?.uid || ''
       }, { merge: true });
-      setNotice(blocked ? 'Peserta dibatasi dari ujian ini.' : 'Akses peserta dibuka kembali.');
+      setNotice(blocked ? 'Berhasil: peserta dibatasi dari ujian ini.' : 'Berhasil: akses peserta dibuka kembali.');
     } catch (error) {
       console.error('Gagal mengubah pembatasan peserta:', error);
-      setNotice('Status peserta belum dapat diubah. Periksa izin Firestore.');
+      const errorCode = (error as { code?: string })?.code || '';
+      setNotice(errorCode === 'permission-denied'
+        ? 'Gagal: izin Firestore menolak perubahan. Rules googleFormExamParticipants perlu diperiksa/dipublikasikan.'
+        : 'Gagal menyimpan pembatasan peserta. Periksa koneksi internet, lalu coba lagi.');
+    } finally {
+      setPendingParticipantControlId('');
     }
   };
 
@@ -331,7 +340,7 @@ export const GoogleFormExamPage: React.FC = () => {
               const control = participantControl(selectedParticipantExam.id, student.id);
               return <div key={student.id} className="flex flex-col gap-3 rounded-xl border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0"><p className="truncate text-sm font-bold text-slate-800">{student.name || 'Nama siswa'}</p><p className="text-xs text-slate-400">{student.className || 'Kelas'}{student.nisn ? ' · NISN '+student.nisn : ''}</p><span className={'mt-1 inline-flex rounded-full px-2 py-1 text-[10px] font-bold '+(control?.blocked ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700')}>{control?.blocked ? 'Dibatasi' : 'Diizinkan mengikuti ujian'}</span></div>
-                <div className="flex shrink-0 gap-2"><button type="button" onClick={() => void toggleParticipantRestriction(selectedParticipantExam, student)} className={'inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-extrabold sm:flex-none '+(control?.blocked ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white')}><Ban size={13}/>{control?.blocked ? 'Buka Akses' : 'Batasi'}</button><button type="button" onClick={() => void restartParticipant(selectedParticipantExam, student)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-600 sm:flex-none"><RotateCcw size={13}/>Restart</button></div>
+                <div className="flex shrink-0 gap-2"><button type="button" onClick={() => void toggleParticipantRestriction(selectedParticipantExam, student)} disabled={pendingParticipantControlId === selectedParticipantExam.id + '_' + student.id || Boolean(pendingParticipantControlId)} className={'inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-extrabold sm:flex-none disabled:cursor-wait disabled:opacity-60 '+(control?.blocked ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white')}><Ban size={13}/>{pendingParticipantControlId === selectedParticipantExam.id + '_' + student.id ? 'Menyimpan…' : control?.blocked ? 'Buka Akses' : 'Batasi'}</button><button type="button" onClick={() => void restartParticipant(selectedParticipantExam, student)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-600 sm:flex-none"><RotateCcw size={13}/>Restart</button></div>
               </div>;
             })}
           </div>
