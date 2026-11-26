@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useData } from '../context/DataContext';
 import { NavTab } from '../components/layout/Sidebar';
 import { getClassLevel } from '../lib/classes';
+import { useAuth } from '../context/AuthContext';
 
 type PrayerLevel = 'Lancar' | 'Cukup Lancar' | 'Perlu Bimbingan';
 
@@ -30,6 +31,7 @@ function localDateString() {
 
 export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({ onNavigate }) => {
   const { students, attendances, behaviors, studentJournals, settings } = useData();
+  const { currentUser } = useAuth();
   const [showAbsent, setShowAbsent] = useState(false);
   const today = localDateString();
   const activeStudents = students.filter(student => student.status === 'Aktif');
@@ -133,6 +135,11 @@ export const DashboardPage: React.FC<{ onNavigate: (tab: NavTab) => void }> = ({
       </section>
 
       <main className="relative z-10 mx-auto max-w-[1240px] space-y-5 px-4 pt-3 pb-24 md:px-8 md:pb-8">
+        <section className="rounded-2xl border border-[#D5EADB] bg-gradient-to-r from-[#E8F7EF] via-white to-[#F4FBF6] px-4 py-4 sm:px-6">
+          <p className="text-xs font-semibold text-[#087F49]">Assalamu’alaikum,</p>
+          <h2 className="mt-1 text-xl font-black text-slate-800 sm:text-2xl">{currentUser?.nickname || currentUser?.fullName || currentUser?.displayName || 'Guru'} <span className="text-[#087F49]">👋</span></h2>
+          <p className="mt-1 text-xs text-slate-500">Selamat datang kembali di SIMPATIK.</p>
+        </section>
         <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
           <section className="overflow-hidden rounded-[24px] border border-[#D5EADB] bg-white shadow-sm">
             <div className="bg-[#E3F7EC] px-5 py-4">
