@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { collection, doc, onSnapshot, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { CalendarClock, CheckCircle2, FileText, ShieldAlert, Timer } from 'lucide-react';
 import { auth, db } from '../firebase/config';
 import { simpatikApi } from '../lib/backendApi';
@@ -139,7 +139,13 @@ export const StudentGoogleFormExams: React.FC<{
     const uid = auth.currentUser.uid;
     const claimControl = async () => {
       try {
-        await setDoc(controlRef, { examId: selected.id, studentId, ownerUid: uid, blocked: false, resetVersion: 0, updatedAt: new Date().toISOString() }, { merge: true });
+        const existing = await getDoc(controlRef);
+        if (existing.exists()) {
+          const data = existing.data();
+          if (!data.ownerUid) await updateDoc(controlRef, { ownerUid: uid });
+        } else {
+          await setDoc(controlRef, { examId: selected.id, studentId, ownerUid: uid, blocked: false, resetVersion: 0, updatedAt: new Date().toISOString() });
+        }
       } catch (error) { console.warn('Kontrol peserta belum dapat diklaim:', error); }
     };
     void claimControl();
