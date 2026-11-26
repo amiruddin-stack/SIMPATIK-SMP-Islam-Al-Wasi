@@ -37,7 +37,14 @@ function ComingSoonPage({ title, description }: { title: string; description: st
 }
 
 function AppContent() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, updateTeacherIdentity } = useAuth();
+  const [identityForm, setIdentityForm] = useState({ fullName: currentUser?.fullName || currentUser?.displayName || '', nickname: currentUser?.nickname || '', position: currentUser?.position || '' });
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identityError, setIdentityError] = useState('');
+  React.useEffect(() => {
+    if (!currentUser) return;
+    setIdentityForm({ fullName: currentUser.fullName || currentUser.displayName || '', nickname: currentUser.nickname || '', position: currentUser.position || '' });
+  }, [currentUser?.uid, currentUser?.fullName, currentUser?.nickname, currentUser?.position, currentUser?.displayName]);
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
   const [selectedStudentProfileId, setSelectedStudentProfileId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -121,6 +128,19 @@ function AppContent() {
 
   if (!currentUser) return <LoginPage />;
 
+  const needsTeacherIdentity = !currentUser.fullName?.trim() || !currentUser.nickname?.trim() || !currentUser.position?.trim();
+  const saveTeacherIdentity = async () => {
+    setIdentityError('');
+    setIdentitySaving(true);
+    try {
+      await updateTeacherIdentity(identityForm);
+    } catch (error) {
+      setIdentityError(error instanceof Error ? error.message : 'Identitas gagal disimpan. Silakan coba lagi.');
+    } finally {
+      setIdentitySaving(false);
+    }
+  };
+
   const renderCurrentPage = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardPage onNavigate={setActiveTab} />;
@@ -178,6 +198,22 @@ function AppContent() {
               <button type="button" onClick={() => { setShowUnsavedDialog(false); setPendingNavigation(null); }} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-600">Kembali mengisi</button>
               <button type="button" onClick={discardAndNavigate} className="rounded-xl bg-rose-600 px-3 py-2.5 text-xs font-bold text-white">Keluar tanpa simpan</button>
             </div>
+          </div>
+        </div>
+      )}
+      {needsTeacherIdentity && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="teacher-identity-title">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">👤</div>
+            <h2 id="teacher-identity-title" className="text-xl font-bold text-slate-900">Lengkapi Identitas</h2>
+            <p className="mt-1.5 text-sm leading-5 text-slate-500">Lengkapi identitas Anda terlebih dahulu untuk menggunakan SIMPATIK.</p>
+            <div className="mt-5 space-y-4">
+              <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Nama Lengkap</span><input autoComplete="name" value={identityForm.fullName} onChange={event => setIdentityForm(form => ({ ...form, fullName: event.target.value }))} placeholder="Masukkan nama lengkap" className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></label>
+              <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Nama Panggilan</span><input value={identityForm.nickname} onChange={event => setIdentityForm(form => ({ ...form, nickname: event.target.value }))} placeholder="Nama panggilan" className="w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" /></label>
+              <label className="block"><span className="mb-1.5 block text-sm font-semibold text-slate-700">Jabatan</span><select value={identityForm.position} onChange={event => setIdentityForm(form => ({ ...form, position: event.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"><option value="">Pilih jabatan</option>{['Kepala Sekolah','Wakasek Kesiswaan','Sarpras','Waka Kurikulum','Guru','TU'].map(position => <option key={position} value={position}>{position}</option>)}</select></label>
+            </div>
+            {identityError && <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{identityError}</p>}
+            <button type="button" disabled={identitySaving || !identityForm.fullName.trim() || !identityForm.nickname.trim() || !identityForm.position} onClick={saveTeacherIdentity} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 font-bold text-white shadow-sm transition hover:bg-[#06683B] disabled:cursor-not-allowed disabled:opacity-50">{identitySaving ? 'Menyimpan…' : 'Simpan Identitas'}</button>
           </div>
         </div>
       )}
