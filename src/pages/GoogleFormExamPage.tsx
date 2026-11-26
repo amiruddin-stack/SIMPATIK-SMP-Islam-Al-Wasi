@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, Trash2, X, Users, RotateCcw, Ban, MoreVertical } from 'lucide-react';
+import { Archive, ChevronDown, ExternalLink, FilePlus2, Link2, Pencil, Save, Trash2, X, Users, RotateCcw, Ban, MoreVertical } from 'lucide-react';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
