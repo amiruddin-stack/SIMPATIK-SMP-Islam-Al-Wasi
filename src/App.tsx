@@ -41,6 +41,10 @@ function AppContent() {
   const [identityForm, setIdentityForm] = useState({ fullName: currentUser?.fullName || currentUser?.displayName || '', nickname: currentUser?.nickname || '', position: currentUser?.position || '' });
   const [identitySaving, setIdentitySaving] = useState(false);
   const [identityError, setIdentityError] = useState('');
+  React.useEffect(() => {
+    if (!currentUser) return;
+    setIdentityForm({ fullName: currentUser.fullName || currentUser.displayName || '', nickname: currentUser.nickname || '', position: currentUser.position || '' });
+  }, [currentUser?.uid, currentUser?.fullName, currentUser?.nickname, currentUser?.position, currentUser?.displayName]);
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
   const [selectedStudentProfileId, setSelectedStudentProfileId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
