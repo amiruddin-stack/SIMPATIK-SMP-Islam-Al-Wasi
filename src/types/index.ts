@@ -10,6 +10,9 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
+  fullName?: string;
+  nickname?: string;
+  position?: string;
   role: UserRole;
   nip?: string;
   assignedClass?: string;
