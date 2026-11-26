@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import { CalendarClock, CheckCircle2, FileText, ShieldAlert, Timer } from 'lucide-react';
-import { db } from '../firebase/config';
+import { auth, db } from '../firebase/config';
+import { simpatikApi } from '../lib/backendApi';
 import { getClassLevel } from '../lib/classes';
 
 type StudentFormExam = {
@@ -21,7 +22,7 @@ type StudentFormExam = {
   status: string;
 };
 
-type ExamAttempt = { startedAt: number; lockUntil: number; violations: number; lastExitAt: number; completedAt?: number };
+type ExamAttempt = { startedAt: number; lockUntil: number; violations: number; lastExitAt: number; completedAt?: number; participantCode?: string; resetVersion?: number };
 
 const NISN_PREFILL_MARKER = 'SIMPATIK_NISN_PREFILL';
 const PENALTY_MS = 3 * 60 * 1000;
@@ -97,10 +98,12 @@ export const StudentGoogleFormExams: React.FC<{
   const [openError, setOpenError] = useState('');
   const [closeTabFallback, setCloseTabFallback] = useState(false);
   const [timeWarningOpen, setTimeWarningOpen] = useState(false);
+  const [participantBlocked, setParticipantBlocked] = useState(false);
+  const [participantResetVersion, setParticipantResetVersion] = useState(0);
   const timeWarningExamRef = useRef('');
   const selected = exams.find(item => item.id === selectedId);
   const storageKey = selected ? attemptStorageKey(selected.id, studentId, nisn) : '';
-  const selectedFormUrl = selected ? embedUrl(selected.formUrl, nisn, studentId, studentName, className) : '';
+  const selectedFormUrl = selected ? embedUrl(selected.formUrl, nisn, attempt?.participantCode || studentId, studentName, className) : '';
   const started = Boolean(attempt && !attempt.completedAt);
   const countdownEndsAt = attempt && selected?.enableCountdown !== false ? attempt.startedAt + (Math.max(1, selected?.duration || 60) * 60 * 1000) : 0;
   const remainingExam = countdownEndsAt ? Math.max(0, countdownEndsAt - now) : Infinity;
@@ -129,6 +132,50 @@ export const StudentGoogleFormExams: React.FC<{
     });
     return stop;
   }, [classLevel, examRoomId]);
+
+  useEffect(() => {
+    if (!selected || !studentId || !auth.currentUser) { setParticipantBlocked(false); setParticipantResetVersion(0); return; }
+    const controlRef = doc(db, 'googleFormExamParticipants', selected.id + '_' + studentId);
+    const uid = auth.currentUser.uid;
+    const claimControl = async () => {
+      try {
+        const existing = await getDoc(controlRef);
+        if (existing.exists()) {
+          const data = existing.data();
+          if (!data.ownerUid) await updateDoc(controlRef, { ownerUid: uid });
+        } else {
+          await setDoc(controlRef, { examId: selected.id, studentId, ownerUid: uid, blocked: false, resetVersion: 0, updatedAt: new Date().toISOString() });
+        }
+      } catch (error) {
+        try { await updateDoc(controlRef, { ownerUid: uid }); }
+        catch (claimError) { console.warn('Kontrol peserta belum dapat diklaim:', claimError || error); }
+      }
+    };
+    void claimControl();
+    const stop = onSnapshot(controlRef, snapshot => {
+      const control = snapshot.exists() ? snapshot.data() : {};
+      setParticipantBlocked(Boolean(control.blocked));
+      const version = Number(control.resetVersion || 0);
+      setParticipantResetVersion(version);
+      const attemptKey = attemptStorageKey(selected.id, studentId, nisn);
+      const saved = readAttempt(attemptKey);
+      if (saved && version > Number(saved.resetVersion || 0)) {
+        try { localStorage.removeItem(attemptKey); localStorage.removeItem(activeExamStorageKey(studentId)); } catch (error) { console.warn('Status ujian tidak dapat direset di perangkat:', error); }
+        setAttempt(null);
+        if (examRoom) {
+          const portalUrl = new URL(window.location.href);
+          portalUrl.searchParams.delete('examRoom');
+          portalUrl.searchParams.delete('page');
+          portalUrl.searchParams.set('student', '1');
+          window.location.assign(portalUrl.toString());
+        }
+      }
+    }, error => {
+      console.error('Gagal membaca kontrol peserta:', error);
+      setParticipantBlocked(true);
+    });
+    return stop;
+  }, [selected?.id, studentId, nisn, examRoom]);
 
   useEffect(() => {
     setAttempt(selected && storageKey ? readAttempt(storageKey) : null);
@@ -191,29 +238,44 @@ export const StudentGoogleFormExams: React.FC<{
     return () => window.removeEventListener('storage', syncAttempt);
   }, [examRoom, storageKey]);
 
-  const startExam = () => {
-    if (!selected || !storageKey || attempt) return;
-    const target = new URL(window.location.href);
-    target.searchParams.set('student', '1');
-    target.searchParams.set('examRoom', selected.id);
-    target.searchParams.delete('page');
+  const startExam = async () => {
+    if (!selected || !storageKey || attempt || participantBlocked) return;
     const roomWindowName = 'SIMPATIK_EXAM_' + studentId + '_' + selected.id;
-    const examWindow = window.open(target.toString(), roomWindowName);
+    const examWindow = window.open('about:blank', roomWindowName);
     if (!examWindow) {
       setOpenError('Tab ujian tidak dapat dibuka. Izinkan pop-up untuk SIMPATIK, lalu tekan Mulai Ujian kembali.');
       return;
     }
-    const next: ExamAttempt = { startedAt: Date.now(), lockUntil: 0, violations: 0, lastExitAt: 0 };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      localStorage.setItem(activeKey, JSON.stringify({ examId: selected.id, title: selected.title, startedAt: next.startedAt }));
-    } catch (error) {
-      console.error('Gagal menyimpan awal ujian:', error);
-    }
-    setAttempt(next);
-    setNow(Date.now());
     setOpenError('');
-    window.dispatchEvent(new Event('simpatik-exam-start'));
+    try {
+      examWindow.document.title = 'Menyiapkan ruang ujian SIMPATIK';
+      examWindow.document.body.innerHTML = '<p style="font-family:sans-serif;padding:24px;text-align:center">Memverifikasi akses ujian…</p>';
+      const user = auth.currentUser;
+      if (!user) throw new Error('Sesi siswa tidak ditemukan. Silakan buka kembali SIMPATIK.');
+      const idToken = await user.getIdToken();
+      const response = await fetch(simpatikApi('/api/google-form-participant-token'), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, examId: selected.id, studentId, nisn })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success || !payload.participantCode) throw new Error(payload.message || 'Akses ujian belum dapat diberikan.');
+      const next: ExamAttempt = { startedAt: Date.now(), lockUntil: 0, violations: 0, lastExitAt: 0, participantCode: String(payload.participantCode), resetVersion: participantResetVersion };
+      const target = new URL(window.location.href);
+      target.searchParams.set('student', '1');
+      target.searchParams.set('examRoom', selected.id);
+      target.searchParams.delete('page');
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+        localStorage.setItem(activeKey, JSON.stringify({ examId: selected.id, title: selected.title, startedAt: next.startedAt }));
+      } catch (error) { console.error('Gagal menyimpan awal ujian:', error); }
+      examWindow.location.href = target.toString();
+      setAttempt(next);
+      setNow(Date.now());
+      window.dispatchEvent(new Event('simpatik-exam-start'));
+    } catch (error) {
+      examWindow.close();
+      setOpenError(error instanceof Error ? error.message : 'Tidak dapat memulai ujian. Periksa koneksi internet.');
+    }
   };
 
   const continueExam = () => {
@@ -231,7 +293,7 @@ export const StudentGoogleFormExams: React.FC<{
 
   const finishExam = () => {
     if (!attempt || !storageKey) return;
-    const next = { ...attempt, completedAt: Date.now() };
+    const next = { ...attempt, completedAt: Date.now(), resetVersion: participantResetVersion };
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
       localStorage.removeItem(activeKey);
@@ -265,6 +327,7 @@ export const StudentGoogleFormExams: React.FC<{
 
   if (examRoom) {
     if (loading || !selected || !attempt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5 text-center text-sm font-semibold text-slate-500">Menyiapkan ruang ujian SIMPATIK…</main>;
+    if (participantBlocked) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5"><section className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm"><ShieldAlert className="mx-auto text-rose-600" size={40}/><h1 className="mt-3 text-lg font-black text-slate-800">Akses ujian dibatasi</h1><p className="mt-2 text-sm leading-6 text-slate-500">Guru telah membatasi akses Anda ke ujian ini. Hubungi guru pengawas.</p><button type="button" onClick={returnToStudentPortal} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Kembali ke SIMPATIK</button></section></main>;
     if (attempt.completedAt) return <main className="flex min-h-screen items-center justify-center bg-[#F7FBF8] p-5"><section className="w-full max-w-md rounded-2xl border border-emerald-100 bg-white p-6 text-center shadow-sm"><CheckCircle2 className="mx-auto text-emerald-600" size={42}/><h1 className="mt-3 text-xl font-black text-slate-800">Ujian telah ditandai selesai</h1><p className="mt-2 text-sm leading-6 text-slate-500">Terima kasih. Status ini merupakan konfirmasi dari siswa; SIMPATIK tidak dapat membaca tombol Kirim Google Forms secara langsung.</p><button type="button" onClick={closeExamTab} className="mt-5 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Tutup tab ujian</button>{closeTabFallback && <div role="alert" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left"><p className="text-xs leading-5 text-amber-900">Browser tidak mengizinkan tab ini ditutup otomatis. Anda dapat kembali ke halaman SIMPATIK tanpa login ulang.</p><button type="button" onClick={returnToStudentPortal} className="mt-3 w-full rounded-lg bg-[#087F49] px-3 py-2.5 text-sm font-bold text-white">Kembali ke SIMPATIK</button></div>}</section></main>;
     return (
       <main className="h-screen overflow-hidden bg-[#F7FBF8]">
@@ -293,8 +356,9 @@ export const StudentGoogleFormExams: React.FC<{
         <>
           <div className="grid gap-3 sm:grid-cols-2">{exams.map(exam => <button key={exam.id} type="button" onClick={() => setSelectedId(exam.id)} className={'rounded-xl border p-4 text-left transition ' + (selectedId === exam.id ? 'border-[#0B8F4D] bg-[#F2FBF5] ring-2 ring-[#D5EADB]' : 'border-slate-200 bg-white hover:border-emerald-300')}><span className="text-sm font-extrabold text-slate-800">{exam.title}</span><span className="mt-1 block text-xs text-slate-500">{exam.subject} · {exam.duration || 60} menit</span>{exam.endAt && <span className="mt-2 flex items-center gap-1 text-[11px] text-slate-400"><CalendarClock size={13}/> Batas: {new Date(exam.endAt).toLocaleString('id-ID')}</span>}</button>)}</div>
           {selected && !selectedFormUrl && <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-800">Tautan Google Form belum valid. Guru perlu memeriksa tautan ujian di SIMPATIK.</div>}
-          {selected && selectedFormUrl && !started && <section className="rounded-2xl border border-[#D5EADB] bg-white p-4 shadow-sm"><h3 className="text-sm font-extrabold text-slate-800">{selected.title}</h3><p className="mt-1 text-xs text-slate-500">{selected.subject} · {selected.examType || 'Ujian Form'}</p><p className="mt-3 text-xs leading-5 text-slate-600">Saat menekan Mulai Ujian, ruang ujian akan terbuka di tab baru. Waktu ujian dimulai pada saat itu.</p><button type="button" onClick={startExam} className="mt-4 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Mulai Ujian</button>{openError && <p role="alert" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
-          {selected && started && <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2 font-extrabold text-emerald-800"><CheckCircle2 size={18}/> Ujian sedang berlangsung di tab baru</div><p className="mt-2 text-xs leading-5 text-emerald-800">Lanjutkan ujian pada tab SIMPATIK Exam Room. Jawaban dan waktu ujian tetap tersimpan; tidak membuat sesi baru. Pelanggaran tercatat: {attempt?.violations || 0}.</p><button type="button" onClick={continueExam} className="mt-3 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Lanjutkan Ujian</button>{openError && <p role="alert" className="mt-2 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
+          {selected && participantBlocked && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800">Akses Anda ke ujian ini dibatasi oleh guru. Silakan hubungi guru pengawas.</div>}
+          {selected && selectedFormUrl && !started && !participantBlocked && <section className="rounded-2xl border border-[#D5EADB] bg-white p-4 shadow-sm"><h3 className="text-sm font-extrabold text-slate-800">{selected.title}</h3><p className="mt-1 text-xs text-slate-500">{selected.subject} · {selected.examType || 'Ujian Form'}</p><p className="mt-3 text-xs leading-5 text-slate-600">Saat menekan Mulai Ujian, ruang ujian akan terbuka di tab baru. Waktu ujian dimulai pada saat itu.</p><button type="button" onClick={() => void startExam()} className="mt-4 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Mulai Ujian</button>{openError && <p role="alert" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
+          {selected && started && !participantBlocked && <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2 font-extrabold text-emerald-800"><CheckCircle2 size={18}/> Ujian sedang berlangsung di tab baru</div><p className="mt-2 text-xs leading-5 text-emerald-800">Lanjutkan ujian pada tab SIMPATIK Exam Room. Jawaban dan waktu ujian tetap tersimpan; tidak membuat sesi baru. Pelanggaran tercatat: {attempt?.violations || 0}.</p><button type="button" onClick={continueExam} className="mt-3 w-full rounded-xl bg-[#087F49] px-4 py-3 text-sm font-extrabold text-white">Lanjutkan Ujian</button>{openError && <p role="alert" className="mt-2 rounded-lg bg-amber-50 p-3 text-xs font-semibold text-amber-800">{openError}</p>}</section>}
         </>
       )}
       <p className="text-[11px] leading-5 text-slate-400">Status dan waktu ujian disimpan di perangkat siswa. Penalti bergantung pada kemampuan browser mendeteksi perpindahan tab/aplikasi. Google Forms berasal dari layanan Google sehingga SIMPATIK tidak dapat membaca secara langsung apakah tombol Kirim sudah berhasil ditekan.</p>
