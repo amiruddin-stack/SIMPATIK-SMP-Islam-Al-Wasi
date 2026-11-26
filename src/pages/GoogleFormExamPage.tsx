@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, Trash2, X } from 'lucide-react';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { Archive, ExternalLink, FilePlus2, Link2, Pencil, Save, Trash2, X, Users, RotateCcw, Ban, CheckCircle2 } from 'lucide-react';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -29,6 +29,8 @@ type FormExam = {
 const NO_SUBJECT = '__NO_SUBJECT__';
 
 type GoogleFormResult = { id: string; examId: string; studentName: string; nisn: string; score: number; total: number; percent: number; submittedAt: string };
+type ParticipantStudent = { id: string; name?: string; className?: string; status?: string; nisn?: string };
+type ExamParticipantControl = { id: string; examId: string; studentId: string; studentName: string; classLevel: string; blocked: boolean; resetVersion: number; updatedAt?: string };
 
 type FormExamDraft = { title: string; examType: string; subject: string; className: string; formUrl: string; enableSchedule: boolean; startAt: string; endAt: string; enableCountdown: boolean; duration: number; enablePenalty: boolean; status: FormExam['status'] };
 
@@ -89,6 +91,9 @@ export const GoogleFormExamPage: React.FC = () => {
   const [editingId, setEditingId] = useState('');
   const [previewId, setPreviewId] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [participantPanelId, setParticipantPanelId] = useState('');
+  const [participantStudents, setParticipantStudents] = useState<ParticipantStudent[]>([]);
+  const [participantControls, setParticipantControls] = useState<ExamParticipantControl[]>([]);
 
   const canManage = Boolean(firebaseUser && !firebaseUser.isAnonymous && currentUser &&
     ['super_admin', 'kepala_sekolah', 'operator', 'guru', 'wali_kelas'].includes(currentUser.role || ''));
@@ -118,6 +123,64 @@ export const GoogleFormExamPage: React.FC = () => {
     }, error => console.error('Gagal memuat hasil Ujian Form:', error));
     return stop;
   }, [canManage]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    const stop = onSnapshot(collection(db, 'students'), snapshot => {
+      const rows = snapshot.docs.map(item => ({ id: item.id, ...item.data() } as ParticipantStudent))
+        .filter(item => String(item.status || '').toLowerCase() === 'aktif')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'id'));
+      setParticipantStudents(rows);
+    }, error => console.error('Gagal memuat daftar peserta:', error));
+    return stop;
+  }, [canManage]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    const stop = onSnapshot(collection(db, 'googleFormExamParticipants'), snapshot => {
+      setParticipantControls(snapshot.docs.map(item => ({ id: item.id, ...item.data() } as ExamParticipantControl)));
+    }, error => console.error('Gagal memuat kontrol peserta ujian:', error));
+    return stop;
+  }, [canManage]);
+
+  const participantControl = (examId: string, studentId: string) =>
+    participantControls.find(item => item.examId === examId && item.studentId === studentId);
+
+  const toggleParticipantRestriction = async (exam: FormExam, student: ParticipantStudent) => {
+    const control = participantControl(exam.id, student.id);
+    const blocked = !(control?.blocked);
+    const controlId = exam.id + '_' + student.id;
+    try {
+      await setDoc(doc(db, 'googleFormExamParticipants', controlId), {
+        examId: exam.id, studentId: student.id, studentName: student.name || '',
+        classLevel: getClassLevel(student.className) || exam.classLevel,
+        blocked, resetVersion: control?.resetVersion || 0, updatedAt: new Date().toISOString(),
+        updatedBy: firebaseUser?.uid || ''
+      }, { merge: true });
+      setNotice(blocked ? 'Peserta dibatasi dari ujian ini.' : 'Akses peserta dibuka kembali.');
+    } catch (error) {
+      console.error('Gagal mengubah pembatasan peserta:', error);
+      setNotice('Status peserta belum dapat diubah. Periksa izin Firestore.');
+    }
+  };
+
+  const restartParticipant = async (exam: FormExam, student: ParticipantStudent) => {
+    const control = participantControl(exam.id, student.id);
+    const controlId = exam.id + '_' + student.id;
+    if (!window.confirm('Reset status pengerjaan ' + (student.name || 'siswa') + ' untuk ujian ini? Siswa dapat memulai ulang, tetapi respons Google Form yang sudah dikirim tidak dihapus.')) return;
+    try {
+      await setDoc(doc(db, 'googleFormExamParticipants', controlId), {
+        examId: exam.id, studentId: student.id, studentName: student.name || '',
+        classLevel: getClassLevel(student.className) || exam.classLevel,
+        blocked: Boolean(control?.blocked), resetVersion: (control?.resetVersion || 0) + 1,
+        updatedAt: new Date().toISOString(), updatedBy: firebaseUser?.uid || ''
+      }, { merge: true });
+      setNotice('Status pengerjaan siswa direset. Siswa dapat memulai ujian kembali.');
+    } catch (error) {
+      console.error('Gagal mereset peserta:', error);
+      setNotice('Status pengerjaan belum dapat direset. Periksa izin Firestore.');
+    }
+  };
 
   const validFormUrl = useMemo(() => getGoogleFormUrl(draft.formUrl), [draft.formUrl]);
   const [activeClassTab, setActiveClassTab] = useState<'VII' | 'VIII' | 'IX'>('VII');
@@ -285,7 +348,12 @@ export const GoogleFormExamPage: React.FC = () => {
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">Memuat data ujian…</div> : exams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-7 text-center"><FilePlus2 className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-sm font-bold text-slate-600">Belum ada Ujian Form</p><p className="mt-1 text-xs text-slate-400">Buat ujian pertama melalui formulir di atas.</p></div> : classFilteredExams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center"><p className="text-sm font-bold text-slate-600">Belum ada ujian untuk Kelas {activeClassTab}</p><p className="mt-1 text-xs text-slate-400">Ujian yang dibuat untuk kelas ini akan tampil di sini.</p></div> : classFilteredExams.map(exam => (
           <article key={exam.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h4 className="text-lg font-extrabold leading-snug text-slate-800 sm:text-xl">{exam.subject || 'Tanpa Mata Pelajaran'}</h4><p className="mt-1 text-sm font-semibold text-slate-600">{exam.title}</p><p className="mt-2 text-[11px] text-slate-500">Kelas {getClassLevel(exam.className) || getClassDisplayName(exam.className) || exam.className} · {exam.duration} menit</p><p className="mt-1 text-[11px] text-slate-400">{exam.startAt ? new Date(exam.startAt).toLocaleString('id-ID') : 'Jadwal belum ditentukan'}{exam.endAt ? ' — ' + new Date(exam.endAt).toLocaleString('id-ID') : ''}</p></div><span className={'rounded-full px-3 py-1 text-[11px] font-extrabold ' + (exam.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : exam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700')}>{exam.status}</span></div>
-            <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setPreviewId(previewId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button type="button" onClick={() => editExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><Pencil size={14}/> Ubah</button>{exam.status !== 'Arsip' && <button type="button" onClick={() => void changeStatus(exam, 'Arsip')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"><Archive size={14}/> Arsipkan</button>}<button type="button" disabled={deletingId === exam.id} onClick={() => void deleteExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Trash2 size={14}/>{deletingId === exam.id ? 'Menghapus…' : 'Hapus'}</button></div>
+            <div className="mt-4 flex flex-wrap gap-2"><button type="button" onClick={() => setPreviewId(previewId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button type="button" onClick={() => setParticipantPanelId(participantPanelId === exam.id ? '' : exam.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700"><Users size={14}/>{participantPanelId === exam.id ? 'Tutup Peserta' : 'Kelola Peserta'}</button><button type="button" onClick={() => editExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><Pencil size={14}/> Ubah</button>{exam.status !== 'Arsip' && <button type="button" onClick={() => void changeStatus(exam, 'Arsip')} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500"><Archive size={14}/> Arsipkan</button>}<button type="button" disabled={deletingId === exam.id} onClick={() => void deleteExam(exam)} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Trash2 size={14}/>{deletingId === exam.id ? 'Menghapus…' : 'Hapus'}</button></div>
+            {participantPanelId === exam.id && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><h5 className="text-sm font-extrabold text-slate-800">Kelola Peserta · Kelas {getClassLevel(exam.className)}</h5><p className="text-[10px] text-slate-500">Batasi akses atau reset pengerjaan siswa.</p></div>
+              {participantStudents.filter(student => getClassLevel(student.className) === getClassLevel(exam.className)).length === 0 ? <p className="mt-3 rounded-lg bg-white p-3 text-xs text-slate-500">Belum ada siswa aktif pada kelas ini.</p> : <div className="mt-3 space-y-2">{participantStudents.filter(student => getClassLevel(student.className) === getClassLevel(exam.className)).map(student => { const control = participantControl(exam.id, student.id); return <div key={student.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-white p-3"><div className="min-w-0"><p className="truncate text-xs font-bold text-slate-700">{student.name || 'Nama siswa'}</p><p className="text-[10px] text-slate-400">{student.className || 'Kelas'}{student.nisn ? ' · NISN '+student.nisn : ''}</p><span className={'mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold '+(control?.blocked ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700')}>{control?.blocked ? 'Dibatasi' : 'Diizinkan'}</span></div><div className="flex flex-wrap gap-1.5"><button type="button" onClick={() => void toggleParticipantRestriction(exam, student)} className={'inline-flex items-center gap-1 rounded-md px-2.5 py-2 text-[10px] font-extrabold '+(control?.blocked ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white')}><Ban size={12}/>{control?.blocked ? 'Buka Akses' : 'Batasi'}</button><button type="button" onClick={() => void restartParticipant(exam, student)} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-2 text-[10px] font-extrabold text-slate-600"><RotateCcw size={12}/>Restart</button></div></div>})}</div>}
+              <p className="mt-2 text-[10px] leading-4 text-slate-500">Restart hanya mereset status SIMPATIK. Respons Google Form yang sudah terkirim tidak dihapus; pengiriman ulang bergantung pada setelan formulir.</p>
+            </div>}
             {previewId === exam.id && <div className="mt-4 overflow-hidden rounded-xl border border-slate-200"><iframe title={'Pratinjau ' + exam.title} src={getEmbedUrl(exam.formUrl)} className="h-[620px] w-full bg-slate-50" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/></div>}
             <div className="mt-4 border-t border-slate-100 pt-3">
               <div className="flex items-center justify-between gap-2"><h5 className="text-xs font-extrabold text-slate-700">Hasil masuk</h5><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{results.filter(result => result.examId === exam.id).length} siswa</span></div>
