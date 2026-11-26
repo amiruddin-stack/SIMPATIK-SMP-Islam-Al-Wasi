@@ -54,7 +54,7 @@ export const ExamCardsPage: React.FC = () => {
           <article key={student.id} className="exam-card relative overflow-hidden rounded-xl border border-[#CDE5D5] bg-white p-4 shadow-sm">
             <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full border-[12px] border-[#E3F7EC]"/>
             <div className="relative flex items-center gap-2 border-b border-[#D9EEE2] pb-2">
-              <img src="/logo-alwasi.png" alt="Logo SMP Islam Al-Wasi’" className="h-10 w-10 shrink-0 object-contain" />
+              <img src={`${import.meta.env.BASE_URL}logo-alwasi.png`} alt="Logo SMP Islam Al-Wasi’" className="h-10 w-10 shrink-0 object-contain" />
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-wide text-slate-800">SMP Islam Al-Wasi’</p>
                 <p className="text-[9px] font-bold tracking-wider text-[#087F49]">KARTU PESERTA UJIAN</p>
