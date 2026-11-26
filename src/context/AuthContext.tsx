@@ -22,6 +22,7 @@ interface AuthContextType {
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  updateTeacherIdentity: (identity: { fullName: string; nickname: string; position: string }) => Promise<void>;
   switchRole: (role: UserRole) => void;
   canAccessBK: boolean;
   canManageSettings: boolean;
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   loginWithGoogle: async () => {},
   logout: async () => {},
+  updateTeacherIdentity: async () => {},
   switchRole: () => {},
   canAccessBK: false,
   canManageSettings: false,
@@ -61,6 +63,7 @@ async function buildSchoolProfile(user: FirebaseUser): Promise<UserProfile> {
     uid: user.uid,
     email,
     displayName: user.displayName || previous.displayName || 'Guru SMP Islam Al-Wasi’',
+    fullName: previous.fullName || user.displayName || previous.displayName || '',
     role: isAdmin ? 'super_admin' : 'guru',
   };
   await setDoc(profileRef, profile, { merge: true });
@@ -169,6 +172,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateTeacherIdentity = async (identity: { fullName: string; nickname: string; position: string }) => {
+    if (!firebaseUser || !currentUser) throw new Error('Akun guru belum aktif.');
+    const cleaned = { fullName: identity.fullName.trim(), nickname: identity.nickname.trim(), position: identity.position.trim() };
+    if (!cleaned.fullName || !cleaned.nickname || !cleaned.position) throw new Error('Lengkapi semua identitas terlebih dahulu.');
+    const profileRef = doc(db, 'users', firebaseUser.uid);
+    await setDoc(profileRef, cleaned, { merge: true });
+    setCurrentUser(previous => previous ? { ...previous, ...cleaned } : previous);
+  };
+
   const switchRole = (_newRole: UserRole) => {
     // Hak akses berasal dari identitas Firebase, bukan pilihan lokal pengguna.
   };
@@ -189,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         loginWithGoogle,
         logout,
+        updateTeacherIdentity,
         switchRole,
         canAccessBK,
         canManageSettings,
