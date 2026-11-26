@@ -427,7 +427,7 @@ export const GoogleFormExamPage: React.FC = () => {
           </article>
         ))}</div>)}
       </section>
-      <p className="text-[11px] leading-5 text-slate-400">Catatan: Pratinjau hanya berhasil jika pengaturan berbagi Google Form mengizinkan siswa membuka formulir. Penyimpanan nilai otomatis dari Google Forms akan disambungkan pada tahap integrasi berikutnya.</p>
+      
     </div>
   );
 };
