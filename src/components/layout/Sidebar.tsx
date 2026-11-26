@@ -3,13 +3,13 @@ import { useAuth } from '../../context/AuthContext';
 import {
   Home, UserRound, GraduationCap, BookOpen, ClipboardList,
   Users, NotebookPen, ClipboardCheck,
-  FileText, LogOut, CalendarDays, MoreHorizontal, X
+  FileText, LogOut, CalendarDays, MoreHorizontal, X, Settings, ChevronDown, ChevronRight
 } from 'lucide-react';
 
 export type NavTab =
   | 'dashboard' | 'attendance' | 'journal'
   | 'assessment' | 'exams' | 'grades' | 'master' | 'reports'
-  | 'settings' | 'classes' | 'subjects' | 'ils' | 'homeroom' | 'schedule' | 'more' | 'google-form-exams';
+  | 'settings' | 'account' | 'classes' | 'subjects' | 'ils' | 'homeroom' | 'schedule' | 'more' | 'google-form-exams';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -27,7 +27,6 @@ interface DesktopSidebarProps {
 
 const primaryItems: { tab: NavTab; label: string; icon: React.ElementType }[] = [
   { tab: 'dashboard', label: 'Beranda', icon: Home },
-  { tab: 'settings', label: 'Profil', icon: UserRound },
   { tab: 'classes', label: 'Kelas', icon: GraduationCap },
   { tab: 'subjects', label: 'Mapel', icon: BookOpen },
 ];
@@ -45,6 +44,7 @@ const academicItems: { tab: NavTab; label: string; icon: React.ElementType }[] =
 ];
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNavigate }) => {
+  const [settingsOpen, setSettingsOpen] = React.useState(activeTab === 'account' || activeTab === 'settings');
   const itemClass = (tab: NavTab) =>
     `flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold leading-5 transition-colors ${
       activeTab === tab
@@ -64,6 +64,13 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, onNav
             <Icon size={16} strokeWidth={1.9} />{label}
           </button>
         ))}
+        <button type="button" onClick={() => setSettingsOpen(open => !open)} className={itemClass(activeTab === 'account' || activeTab === 'settings' ? activeTab : 'dashboard')} aria-expanded={settingsOpen}>
+          <Settings size={16} strokeWidth={1.9}/>Pengaturan{settingsOpen ? <ChevronDown className="ml-auto" size={15}/> : <ChevronRight className="ml-auto" size={15}/>}
+        </button>
+        {settingsOpen && <div className="ml-3 space-y-0.5 border-l border-slate-200 pl-2">
+          <button type="button" onClick={() => onNavigate('account')} className={itemClass('account')}><UserRound size={15}/>Akun</button>
+          <button type="button" onClick={() => onNavigate('settings')} className={itemClass('settings')}><GraduationCap size={15}/>Profil Sekolah</button>
+        </div>}
         <p className="px-2.5 pb-0.5 pt-2.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Akademik</p>
         {academicItems.map(({ tab, label, icon: Icon }) => (
           <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
@@ -91,6 +98,7 @@ interface MobileSidebarProps {
 
 export const MobileSidebar: React.FC<MobileSidebarProps> = ({ activeTab, onNavigate, isOpen, onClose }) => {
   const { currentUser, firebaseUser, logout } = useAuth();
+  const [settingsOpen, setSettingsOpen] = React.useState(activeTab === 'account' || activeTab === 'settings');
   if (!isOpen) return null;
 
   const itemClass = (tab: NavTab) =>
@@ -118,6 +126,13 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ activeTab, onNavig
               <Icon size={19} strokeWidth={1.9}/>{label}
             </button>
           ))}
+          <button type="button" onClick={() => setSettingsOpen(open => !open)} className={itemClass(activeTab === 'account' || activeTab === 'settings' ? activeTab : 'dashboard')} aria-expanded={settingsOpen}>
+            <Settings size={19} strokeWidth={1.9}/>Pengaturan{settingsOpen ? <ChevronDown className="ml-auto" size={16}/> : <ChevronRight className="ml-auto" size={16}/>}
+          </button>
+          {settingsOpen && <div className="ml-3 space-y-1 border-l border-slate-200 pl-2">
+            <button type="button" onClick={() => onNavigate('account')} className={itemClass('account')}><UserRound size={18}/>Akun</button>
+            <button type="button" onClick={() => onNavigate('settings')} className={itemClass('settings')}><GraduationCap size={18}/>Profil Sekolah</button>
+          </div>}
           <p className="px-3 pb-1 pt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-400">Akademik</p>
           {academicItems.map(({ tab, label, icon: Icon }) => (
             <button key={tab} type="button" onClick={() => onNavigate(tab)} className={itemClass(tab)}>
