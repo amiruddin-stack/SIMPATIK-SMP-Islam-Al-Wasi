@@ -52,7 +52,7 @@ export const HomeTopBar: React.FC<HomeTopBarProps> = ({ activeTab, onNavigate, o
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const profileName = currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
+  const profileName = currentUser?.fullName || currentUser?.displayName || firebaseUser?.displayName || currentUser?.email || 'Pengguna';
   const query = normalize(search);
 
   const results = useMemo<SearchResult[]>(() => {
