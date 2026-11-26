@@ -283,6 +283,12 @@ async function startServer() {
         return;
       }
 
+      const participantControl = await services.adminDb.collection('googleFormExamParticipants').doc(examId + '_' + studentId).get();
+      if (participantControl.exists && participantControl.data()?.blocked === true) {
+        res.status(403).json({ success: false, message: 'Akses siswa ke ujian ini dibatasi oleh guru.' });
+        return;
+      }
+
       const participantCode = randomBytes(32).toString('hex');
       const codeHash = createHash('sha256').update(participantCode).digest('hex');
       const expiresAt = new Date(now + 12 * 60 * 60 * 1000).toISOString();
