@@ -9,6 +9,7 @@ import { NavTab } from './Sidebar';
 const pageDetails: Record<NavTab, { title: string; description: string; icon: React.ElementType }> = {
   dashboard: { title: 'Beranda', description: 'Pusat informasi dan aktivitas sekolah', icon: Home },
   settings: { title: 'Profil Sekolah', description: 'Mengenal identitas, visi, misi, dan program sekolah', icon: School },
+  account: { title: 'Akun Saya', description: 'Kelola nama lengkap, nama panggilan, dan jabatan akun', icon: UserRound },
   classes: { title: 'Kelas', description: 'Pengelolaan tingkat dan data kelas', icon: GraduationCap },
   subjects: { title: 'Mapel', description: 'Daftar dan pengelolaan mata pelajaran', icon: BookOpen },
   attendance: { title: 'Presensi Siswa', description: 'Pencatatan dan pemantauan kehadiran siswa', icon: CalendarCheck },
@@ -43,7 +44,7 @@ export const PageBanner: React.FC<PageBannerProps> = ({ activeTab, onBack, title
           <ArrowLeft size={20}/>
         </button>
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/85 sm:text-[11px]">{activeTab === 'settings' ? 'PROFIL SEKOLAH' : 'SIMPATIK · SMP ISLAM AL-WASI’'}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/85 sm:text-[11px]">{activeTab === 'settings' ? 'PROFIL SEKOLAH' : activeTab === 'account' ? 'PENGATURAN · AKUN' : 'SIMPATIK · SMP ISLAM AL-WASI’'}</p>
           <h1 className="mt-0.5 truncate text-xl font-black tracking-tight text-white sm:text-2xl md:text-[28px]">{title || details.title}</h1>
           <p className="mt-0.5 line-clamp-1 text-[11px] font-medium text-white/90 sm:text-xs">{description || details.description}</p>
         </div>

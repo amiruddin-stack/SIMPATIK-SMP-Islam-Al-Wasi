@@ -23,6 +23,7 @@ import { LoginPage } from './pages/LoginPage';
 import { MorePage } from './pages/MorePage';
 import { StudentPortalPage } from './pages/StudentPortalPage';
 import { StudentProfilePage } from './pages/StudentProfilePage';
+import { AccountPage } from './pages/AccountPage';
 
 function ComingSoonPage({ title, description }: { title: string; description: string }) {
   return (
@@ -153,6 +154,7 @@ function AppContent() {
       case 'subjects': return <MasterDataPage initialSubTab="mapel" />;
       case 'reports': return <ReportsPage />;
       case 'settings': return <SettingsPage />;
+      case 'account': return <AccountPage />;
       case 'exams': return <ExamHubPage />;
       case 'google-form-exams': return <GoogleFormExamPage />;
       case 'ils': return <ComingSoonPage title="ILS" description="Informasi dan layanan ILS sedang dalam tahap persiapan." />;
