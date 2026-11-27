@@ -46,6 +46,7 @@ function AppContent() {
     if (!currentUser) return;
     setIdentityForm({ fullName: currentUser.fullName || currentUser.displayName || '', nickname: currentUser.nickname || '', position: currentUser.position || '' });
   }, [currentUser?.uid, currentUser?.fullName, currentUser?.nickname, currentUser?.position, currentUser?.displayName]);
+  const [examSection, setExamSection] = useState<'home' | 'simpatik' | 'gform' | 'cards'>('home');
   const [activeTab, setActiveTabState] = useState<NavTab>(() => (new URLSearchParams(window.location.search).get('page') as NavTab) || 'dashboard');
   const [selectedStudentProfileId, setSelectedStudentProfileId] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -155,7 +156,7 @@ function AppContent() {
       case 'reports': return <ReportsPage />;
       case 'settings': return <SettingsPage />;
       case 'account': return <AccountPage />;
-      case 'exams': return <ExamHubPage />;
+      case 'exams': return <ExamHubPage section={examSection} onSectionChange={setExamSection} />;
       case 'google-form-exams': return <GoogleFormExamPage />;
       case 'ils': return <ComingSoonPage title="ILS" description="Informasi dan layanan ILS sedang dalam tahap persiapan." />;
       case 'homeroom': return <ComingSoonPage title="Guru Wali" description="Ruang kerja Guru Wali sedang dalam tahap persiapan." />;
@@ -173,7 +174,7 @@ function AppContent() {
           <HomeTopBar activeTab={activeTab} onNavigate={setActiveTab} onOpenMore={() => setMobileSidebarOpen(open => !open)} onOpenStudentProfile={setSelectedStudentProfileId} />
           <main className="min-h-screen w-full p-0">
             <div className={activeTab === 'dashboard' ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 pt-5 pb-24 md:px-6 md:py-6'}>
-              {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} onBack={() => { if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
+              {activeTab !== 'dashboard' && activeTab !== 'subjects' && <PageBanner activeTab={activeTab} title={activeTab === 'exams' && examSection === 'gform' ? 'Ujian G-Form' : undefined} description={activeTab === 'exams' && examSection === 'gform' ? 'Pengelolaan ujian berbasis Google Forms' : undefined} onBack={() => { if (activeTab === 'exams' && examSection === 'gform') { setExamSection('home'); return; } if (window.history.state?.simpatikTab) window.history.back(); else setActiveTab('dashboard'); }} />}
               {selectedStudentProfileId ? <StudentProfilePage studentId={selectedStudentProfileId} onBack={() => setSelectedStudentProfileId(null)} /> : renderCurrentPage()}
             </div>
           </main>
