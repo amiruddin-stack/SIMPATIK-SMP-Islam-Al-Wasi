@@ -91,6 +91,8 @@ export const GoogleFormExamPage: React.FC = () => {
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
   const [editingId, setEditingId] = useState('');
   const [previewId, setPreviewId] = useState('');
+  const [previewTab, setPreviewTab] = useState<'preview' | 'participants'>('preview');
+  const [previewSearch, setPreviewSearch] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [examMenuId, setExamMenuId] = useState('');
   const [participantPanelId, setParticipantPanelId] = useState('');
@@ -370,14 +372,72 @@ export const GoogleFormExamPage: React.FC = () => {
   }
 
   const previewExam = exams.find(exam => exam.id === previewId);
+  const previewClassStudents = previewExam ? participantStudents.filter(student =>
+    getClassLevel(student.className) === getClassLevel(previewExam.className)
+  ) : [];
+  const previewStudents = previewClassStudents.filter(student =>
+    (student.name || '').toLowerCase().includes(previewSearch.toLowerCase()) ||
+    (student.nisn || '').includes(previewSearch)
+  );
+  const previewBlockedCount = previewClassStudents.filter(student =>
+    participantControl(previewExam!.id, student.id)?.blocked
+  ).length;
+  const previewCompletedCount = previewClassStudents.filter(student =>
+    results.some(result => result.examId === previewExam!.id &&
+      (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()))
+  ).length;
+  const previewPendingCount = previewClassStudents.length - previewCompletedCount;
 
   if (previewExam) {
     return (
       <section className="fixed inset-0 z-[250] flex min-h-0 flex-col bg-white">
-        <div className="flex shrink-0 items-center border-b border-slate-200 bg-white px-3 py-2 shadow-sm">
-          <button type="button" onClick={() => setPreviewId('')} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"><span aria-hidden="true">←</span> Kembali</button>
+        <div className="flex shrink-0 flex-col border-b border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center px-3 py-1.5">
+            <button type="button" onClick={() => { setPreviewId(''); setPreviewTab('preview'); setPreviewSearch(''); }} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"><span aria-hidden="true">←</span> Kembali</button>
+            <div className="ml-2 min-w-0 flex-1 truncate text-xs font-semibold text-slate-500">{previewExam.subject || 'Tanpa Mata Pelajaran'} · Kelas {getClassLevel(previewExam.className)}</div>
+          </div>
+          <div role="tablist" aria-label="Menu halaman ujian" className="flex gap-1 px-3 pb-2">
+            <button type="button" role="tab" aria-selected={previewTab === 'preview'} onClick={() => setPreviewTab('preview')} className={'flex-1 rounded-lg px-3 py-2 text-sm font-extrabold transition-colors ' + (previewTab === 'preview' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}>Pratinjau Soal</button>
+            <button type="button" role="tab" aria-selected={previewTab === 'participants'} onClick={() => setPreviewTab('participants')} className={'flex-1 rounded-lg px-3 py-2 text-sm font-extrabold transition-colors ' + (previewTab === 'participants' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}>Peserta Ujian</button>
+          </div>
         </div>
-        <iframe title={'Pratinjau Form ' + previewExam.title} src={getEmbedUrl(previewExam.formUrl)} className="min-h-0 flex-1 w-full bg-white" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/>
+        {previewTab === 'preview' ? <iframe title={'Pratinjau Form ' + previewExam.title} src={getEmbedUrl(previewExam.formUrl)} className="min-h-0 flex-1 w-full bg-white" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/> : <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 p-3 sm:p-4">
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs text-slate-500">Jumlah peserta</p><p className="mt-1 text-xl font-extrabold text-slate-800">{previewClassStudents.length}</p></div>
+            <div className="rounded-xl border border-rose-100 bg-rose-50 p-3"><p className="text-xs text-rose-600">Diblokir</p><p className="mt-1 text-xl font-extrabold text-rose-700">{previewBlockedCount}</p></div>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3"><p className="text-xs text-emerald-700">Selesai</p><p className="mt-1 text-xl font-extrabold text-emerald-700">{previewCompletedCount}</p></div>
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-3"><p className="text-xs text-amber-700">Belum selesai</p><p className="mt-1 text-xl font-extrabold text-amber-700">{previewPendingCount}</p></div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+            <label className="block"><span className="sr-only">Cari peserta</span><input value={previewSearch} onChange={e => setPreviewSearch(e.target.value)} placeholder="Cari nama atau NISN peserta..." className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-500"/></label>
+            <div className="mt-3 space-y-2">
+              {previewStudents.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500">{previewSearch ? 'Peserta tidak ditemukan.' : 'Belum ada peserta aktif di kelas ini.'}</p> : previewStudents.map(student => {
+                const control = participantControl(previewExam.id, student.id);
+                const isCompleted = results.some(result => result.examId === previewExam.id && (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()));
+                const isBlocked = Boolean(control?.blocked);
+                const controlId = previewExam.id + '_' + student.id;
+                return <article key={student.id} className="rounded-xl border border-slate-200 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-800">{student.name || 'Nama siswa'}</p>
+                      <p className="text-xs text-slate-400">{student.className || 'Kelas'}{student.nisn ? ' · NISN ' + student.nisn : ''}</p>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        <span className={'rounded-full px-2 py-1 text-[10px] font-bold ' + (isBlocked ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700')}>{isBlocked ? 'Diblokir' : 'Diizinkan'}</span>
+                        <span className={'rounded-full px-2 py-1 text-[10px] font-bold ' + (isCompleted ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700')}>{isCompleted ? 'Selesai' : 'Belum selesai'}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button type="button" onClick={() => void toggleParticipantRestriction(previewExam, student)} disabled={Boolean(pendingParticipantControlId)} className={'inline-flex flex-1 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-extrabold text-white disabled:cursor-wait disabled:opacity-50 sm:flex-none ' + (isBlocked ? 'bg-emerald-600' : 'bg-rose-600')}>{pendingParticipantControlId === controlId ? 'Menyimpan…' : isBlocked ? 'Izinkan' : 'Blokir'}</button>
+                      <button type="button" onClick={() => void restartParticipant(previewExam, student)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-600 sm:flex-none"><RotateCcw size={13}/>Restart</button>
+                    </div>
+                  </div>
+                </article>;
+              })}
+            </div>
+          </div>
+          <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Restart mereset kontrol pengerjaan di SIMPATIK, bukan menghapus jawaban yang sudah terkirim ke Google Form. Pengiriman ulang tetap mengikuti pengaturan Google Form.</p>
+          {notice && <p role="status" className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">{notice}</p>}
+        </div>}
       </section>
     );
   }
