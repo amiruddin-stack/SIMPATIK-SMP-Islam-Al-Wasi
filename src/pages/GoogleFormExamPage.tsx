@@ -489,7 +489,7 @@ export const GoogleFormExamPage: React.FC = () => {
       {notice && <p role="status" className="rounded-xl border border-[#CDEBD8] bg-[#F1FAF4] px-4 py-3 text-xs font-semibold text-[#087640]">{notice}</p>}
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-2"><h3 className="font-extrabold text-slate-800">Data Ujian</h3><div className="flex items-center gap-2"><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{classFilteredExams.length} ujian</span><button type="button" onClick={() => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-flex items-center gap-1 rounded-lg bg-[#087F49] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#06683C]"><FilePlus2 size={14}/> Buat Ujian</button></div></div>
+        <div className="flex items-center justify-between gap-2"><h3 className="font-extrabold text-slate-800">Data Ujian</h3><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{classFilteredExams.length} ujian</span></div>
         <div role="tablist" aria-label="Filter kelas ujian" className="flex gap-1 rounded-xl bg-slate-100 p-1">
           {(['VII', 'VIII', 'IX'] as const).map(level => <button key={level} type="button" role="tab" aria-selected={activeClassTab === level} onClick={() => setActiveClassTab(level)} className={'flex-1 rounded-lg px-3 py-2.5 text-sm font-extrabold transition-colors ' + (activeClassTab === level ? 'bg-white text-[#087F49] shadow-sm' : 'text-slate-500 hover:text-slate-700')}>Kelas {level}</button>)}
         </div>
