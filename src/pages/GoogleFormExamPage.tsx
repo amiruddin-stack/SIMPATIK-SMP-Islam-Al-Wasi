@@ -448,7 +448,6 @@ export const GoogleFormExamPage: React.FC = () => {
             </div>
             <p className="mt-0.5 truncate text-[11px] font-medium leading-tight text-slate-500">{exam.title}</p>
             <p className="text-[10px] leading-tight text-slate-400">{exam.duration} menit{exam.startAt ? ' · ' + new Date(exam.startAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}{exam.endAt ? '–' + new Date(exam.endAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
-            }
           </article>
         ))}</div>)}
       </section>
