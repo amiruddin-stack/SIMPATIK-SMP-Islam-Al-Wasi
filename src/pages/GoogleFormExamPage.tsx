@@ -49,6 +49,29 @@ const emptyForm: FormExamDraft = {
   status: 'Draft',
 };
 
+const ExamTitleMarquee: React.FC<{ title: string }> = ({ title }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      if (!containerRef.current || !textRef.current) return;
+      setOverflow(Math.max(0, textRef.current.scrollWidth - containerRef.current.clientWidth));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [title]);
+
+  return (
+    <div ref={containerRef} className="mt-0.5 overflow-hidden whitespace-nowrap text-[11px] font-medium leading-tight text-slate-500">
+      <span ref={textRef} className={overflow > 2 ? 'inline-block animate-exam-title-marquee' : 'inline-block'} style={overflow > 2 ? { ['--exam-title-distance' as string]: overflow + 'px', animationDuration: Math.max(5, overflow / 18) + 's' } as React.CSSProperties : undefined}>{title}</span>
+      {overflow > 2 && <style>{'@keyframes examTitleMarquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-1 * var(--exam-title-distance))); } } .animate-exam-title-marquee { animation-name: examTitleMarquee; animation-timing-function: linear; animation-iteration-count: infinite; }'}</style>}
+    </div>
+  );
+};
+
 function getGoogleFormUrl(value: string) {
   try {
     const url = new URL(value.trim());
@@ -492,15 +515,16 @@ export const GoogleFormExamPage: React.FC = () => {
         </div>
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">Memuat data ujian…</div> : exams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-7 text-center"><FilePlus2 className="mx-auto text-slate-300" size={30}/><p className="mt-2 text-sm font-bold text-slate-600">Belum ada Ujian Form</p><p className="mt-1 text-xs text-slate-400">Buat ujian pertama melalui formulir di atas.</p></div> : classFilteredExams.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center"><p className="text-sm font-bold text-slate-600">Belum ada ujian untuk Kelas {activeClassTab}</p><p className="mt-1 text-xs text-slate-400">Ujian yang dibuat untuk kelas ini akan tampil di sini.</p></div> : examDateGroups.map(group => <div key={group.dateKey} className="space-y-2"><h4 className="border-b border-[#BFE8CF] pb-1.5 pt-2 text-sm font-extrabold capitalize text-[#087F49]">{group.label}</h4>{group.exams.map(exam => (
           <article key={exam.id} role="button" tabIndex={0} onClick={() => setPreviewId(exam.id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setPreviewId(exam.id); } }} className="cursor-pointer rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/30 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {exam.startAt && <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-1 text-[10px] font-extrabold tabular-nums text-emerald-700">{new Date(exam.startAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>}
               <h4 className="min-w-0 flex-1 truncate text-sm font-extrabold leading-tight text-slate-800">{exam.subject || 'Tanpa Mata Pelajaran'}</h4>
               <div className="flex shrink-0 items-center gap-1">
                 <span className={'rounded-full px-2 py-0.5 text-[10px] font-bold ' + (exam.status === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : exam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700')}>{exam.status}</span>
                 <div className="relative"><button type="button" aria-label="Menu ujian" aria-haspopup="menu" aria-expanded={examMenuId === exam.id} onClick={event => { event.stopPropagation(); setExamMenuId(examMenuId === exam.id ? '' : exam.id); }} className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"><MoreVertical size={17}/></button>{examMenuId === exam.id && <div role="menu" className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"><button role="menuitem" type="button" onClick={event => { event.stopPropagation(); setPreviewId(exam.id); setExamMenuId(''); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"><ExternalLink size={14}/>{previewId === exam.id ? 'Tutup Pratinjau' : 'Pratinjau Form'}</button><button role="menuitem" type="button" onClick={() => { setParticipantPanelId(exam.id); setParticipantSearch(''); setExamMenuId(''); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"><Users size={14}/>Kelola Peserta</button><button role="menuitem" type="button" onClick={() => { editExam(exam); setExamMenuId(''); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"><Pencil size={14}/>Ubah</button>{exam.status !== 'Arsip' && <button role="menuitem" type="button" onClick={() => { void changeStatus(exam, 'Arsip'); setExamMenuId(''); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50"><Archive size={14}/>Arsipkan</button>}<button role="menuitem" type="button" disabled={deletingId === exam.id} onClick={() => { void deleteExam(exam); setExamMenuId(''); }} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"><Trash2 size={14}/>{deletingId === exam.id ? 'Menghapus…' : 'Hapus'}</button></div>}</div>
               </div>
             </div>
-            <p className="mt-0.5 truncate text-[11px] font-medium leading-tight text-slate-500">{exam.title}</p>
-            <p className="text-[10px] leading-tight text-slate-400">{exam.duration} menit{exam.startAt ? ' · ' + new Date(exam.startAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}{exam.endAt ? '–' + new Date(exam.endAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+            <ExamTitleMarquee title={exam.title} />
+            <p className="text-[10px] leading-tight text-slate-400">{exam.duration} menit{exam.endAt ? ' · sampai ' + new Date(exam.endAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''}</p>
           </article>
         ))}</div>)}
       </section>
