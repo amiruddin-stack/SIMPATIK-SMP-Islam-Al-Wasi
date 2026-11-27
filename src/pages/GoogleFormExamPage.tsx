@@ -373,17 +373,11 @@ export const GoogleFormExamPage: React.FC = () => {
 
   if (previewExam) {
     return (
-      <section className="space-y-3">
-        <button type="button" onClick={() => setPreviewId('')} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"><span aria-hidden="true">←</span> Kembali ke Daftar Ujian</button>
-        <header className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0"><p className="text-xs font-bold text-emerald-700">PRATINJAU GOOGLE FORM</p><h2 className="mt-1 text-lg font-extrabold text-slate-800">{previewExam.subject || 'Tanpa Mata Pelajaran'}</h2><p className="mt-1 text-sm font-semibold text-slate-600">{previewExam.title}</p><p className="mt-1 text-xs text-slate-500">Kelas {getClassLevel(previewExam.className)} · {previewExam.duration} menit</p></div>
-            <span className={'rounded-full px-3 py-1 text-xs font-bold ' + (previewExam.status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : previewExam.status === 'Arsip' ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700')}>{previewExam.status}</span>
-          </div>
-        </header>
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <iframe title={'Pratinjau Form ' + previewExam.title} src={getEmbedUrl(previewExam.formUrl)} className="h-[calc(100vh-250px)] min-h-[560px] w-full bg-slate-50" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/>
+      <section className="fixed inset-0 z-[250] flex min-h-0 flex-col bg-white">
+        <div className="flex shrink-0 items-center border-b border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <button type="button" onClick={() => setPreviewId('')} className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"><span aria-hidden="true">←</span> Kembali</button>
         </div>
+        <iframe title={'Pratinjau Form ' + previewExam.title} src={getEmbedUrl(previewExam.formUrl)} className="min-h-0 flex-1 w-full bg-white" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="camera; microphone; geolocation"/>
       </section>
     );
   }
