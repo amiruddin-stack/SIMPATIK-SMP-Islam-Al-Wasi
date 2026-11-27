@@ -449,7 +449,7 @@ export const GoogleFormExamPage: React.FC = () => {
         <div className="flex items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#DDF5E6] text-[#087F49]"><FilePlus2 size={23}/></span>
           <div className="min-w-0 flex-1"><h2 className="text-base font-extrabold text-slate-800">Buat Ujian dari Google Form</h2><p className="mt-1 text-xs leading-5 text-slate-500">Daftarkan Google Form, tentukan kelas dan jadwal, lalu kelola status ujian dari SIMPATIK.</p></div>
-          <span className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white">Buat</span>
+          
         </div>
       </button>
 
