@@ -30,7 +30,7 @@ const NO_SUBJECT = '__NO_SUBJECT__';
 
 type GoogleFormResult = { id: string; examId: string; studentName: string; nisn: string; score: number; total: number; percent: number; submittedAt: string };
 type ParticipantStudent = { id: string; name?: string; className?: string; status?: string; nisn?: string };
-type ExamParticipantControl = { id: string; examId: string; studentId: string; studentName: string; classLevel: string; blocked: boolean; resetVersion: number; updatedAt?: string };
+type ExamParticipantControl = { id: string; examId: string; studentId: string; studentName: string; classLevel: string; blocked: boolean; resetVersion: number; completedAt?: any; updatedAt?: string };
 
 type FormExamDraft = { title: string; examType: string; subject: string; className: string; formUrl: string; enableSchedule: boolean; startAt: string; endAt: string; enableCountdown: boolean; duration: number; enablePenalty: boolean; status: FormExam['status'] };
 
@@ -212,7 +212,7 @@ export const GoogleFormExamPage: React.FC = () => {
       await setDoc(doc(db, 'googleFormExamParticipants', controlId), {
         examId: exam.id, studentId: student.id, studentName: student.name || '',
         classLevel: getClassLevel(student.className) || exam.classLevel,
-        blocked: Boolean(control?.blocked), resetVersion: (control?.resetVersion || 0) + 1,
+        blocked: Boolean(control?.blocked), resetVersion: (control?.resetVersion || 0) + 1, completedAt: null,
         updatedAt: new Date().toISOString(), updatedBy: firebaseUser?.uid || ''
       }, { merge: true });
       setNotice('Status pengerjaan siswa direset. Siswa dapat memulai ujian kembali.');
@@ -406,7 +406,7 @@ export const GoogleFormExamPage: React.FC = () => {
     participantControl(previewExam!.id, student.id)?.blocked
   ).length;
   const previewCompletedCount = previewClassStudents.filter(student =>
-    results.some(result => result.examId === previewExam!.id &&
+    Boolean(participantControl(previewExam!.id, student.id)?.completedAt) || results.some(result => result.examId === previewExam!.id &&
       (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()))
   ).length;
   const previewPendingCount = previewClassStudents.length - previewCompletedCount;
@@ -436,7 +436,7 @@ export const GoogleFormExamPage: React.FC = () => {
             <div className="mt-3 space-y-2">
               {previewStudents.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500">{previewSearch ? 'Peserta tidak ditemukan.' : 'Belum ada peserta aktif di kelas ini.'}</p> : previewStudents.map(student => {
                 const control = participantControl(previewExam.id, student.id);
-                const isCompleted = results.some(result => result.examId === previewExam.id && (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()));
+                const isCompleted = Boolean(control?.completedAt) || results.some(result => result.examId === previewExam.id && (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()));
                 const isBlocked = Boolean(control?.blocked);
                 const controlId = previewExam.id + '_' + student.id;
                 return <article key={student.id} className="flex items-center gap-2 border-b border-slate-100 px-2 py-2.5 last:border-b-0">

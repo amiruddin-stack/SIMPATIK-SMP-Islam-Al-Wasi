@@ -238,6 +238,13 @@ service cloud.firestore {
           && request.resource.data.ownerUid == request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid'])
           && (request.auth.token.firebase.sign_in_provider == 'anonymous'
+            || (isStudent() && resource.data.studentId == request.auth.token.studentId)))
+        || (signedIn()
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedAt'])
+          && (request.resource.data.completedAt == null || request.resource.data.completedAt is timestamp)
+          && (request.auth.token.firebase.sign_in_provider == 'anonymous'
             || (isStudent() && resource.data.studentId == request.auth.token.studentId)));
       allow delete: if isAdmin();
     }
