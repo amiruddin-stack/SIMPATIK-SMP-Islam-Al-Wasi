@@ -436,7 +436,10 @@ export const GoogleFormExamPage: React.FC = () => {
             <div className="mt-3 space-y-2">
               {previewStudents.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500">{previewSearch ? 'Peserta tidak ditemukan.' : 'Belum ada peserta aktif di kelas ini.'}</p> : previewStudents.map(student => {
                 const control = participantControl(previewExam.id, student.id);
-                const isCompleted = Boolean(control?.completedAt) || results.some(result => result.examId === previewExam.id && (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()));
+                const isFormSubmitted = results.some(result => result.examId === previewExam.id && (student.nisn ? result.nisn === student.nisn : (result.studentName || '').trim().toLowerCase() === (student.name || '').trim().toLowerCase()));
+                const isStudentConfirmed = Boolean(control?.completedAt);
+                const isCompleted = isFormSubmitted || isStudentConfirmed;
+                const completionLabel = isFormSubmitted ? 'Form terkirim' : isStudentConfirmed ? 'Konfirmasi siswa' : 'Belum selesai';
                 const isBlocked = Boolean(control?.blocked);
                 const controlId = previewExam.id + '_' + student.id;
                 return <article key={student.id} className="flex items-center gap-2 border-b border-slate-100 px-2 py-2.5 last:border-b-0">
@@ -445,7 +448,7 @@ export const GoogleFormExamPage: React.FC = () => {
                     <p className="truncate text-[10px] text-slate-400">{student.className || 'Kelas'}{student.nisn ? ' · NISN ' + student.nisn : ''}</p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <span className={'rounded-full px-1.5 py-0.5 text-[9px] font-bold ' + (isBlocked ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700')}>{isBlocked ? 'Diblokir' : 'Diizinkan'}</span>
-                      <span className={'rounded-full px-1.5 py-0.5 text-[9px] font-bold ' + (isCompleted ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700')}>{isCompleted ? 'Selesai' : 'Belum selesai'}</span>
+                      <span className={'rounded-full px-1.5 py-0.5 text-[9px] font-bold ' + (isCompleted ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700')}>{completionLabel}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
