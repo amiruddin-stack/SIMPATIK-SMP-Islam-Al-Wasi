@@ -212,7 +212,7 @@ export const GoogleFormExamPage: React.FC = () => {
       await setDoc(doc(db, 'googleFormExamParticipants', controlId), {
         examId: exam.id, studentId: student.id, studentName: student.name || '',
         classLevel: getClassLevel(student.className) || exam.classLevel,
-        blocked: Boolean(control?.blocked), resetVersion: (control?.resetVersion || 0) + 1,
+        blocked: Boolean(control?.blocked), resetVersion: (control?.resetVersion || 0) + 1, completedAt: null,
         updatedAt: new Date().toISOString(), updatedBy: firebaseUser?.uid || ''
       }, { merge: true });
       setNotice('Status pengerjaan siswa direset. Siswa dapat memulai ujian kembali.');
